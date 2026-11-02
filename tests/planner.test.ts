@@ -194,6 +194,20 @@ describe('layout planner', () => {
     expect(plan.notes.join(' ')).toMatch(/travel with pasted pixels/);
   });
 
+  it('does not swallow a subtext whose centre falls inside an overextended panel box (luma)', () => {
+    // Spark's panel box (y850-942) overextends below the gold button and
+    // covers the "Free shipping" line's centre — but that line is not one
+    // of the panel's texts, so it must render free, never vanish.
+    const src = analysis({
+      panel: { bbox: { x: 321, y: 850, w: 438, h: 92 }, opaque: true, bg_color: '#c9a24a', text_color: '#ffffff', texts: ['Shop now'] },
+      subtext: { text: 'Free shipping over $50', bbox: { x: 368, y: 920, w: 344, h: 32 }, bold: false, color: '#1e2a36' },
+    });
+    expect(travelsWithPixels(src, src.subtext!.bbox, src.subtext!.text)).toBe(false);
+    expect(freeHeadlineSubtext(src, { headline: {}, subtext: {}, panel: {} }).subtext).toBe(true);
+    // A string that IS panel copy still travels with the panel.
+    expect(travelsWithPixels(src, { x: 400, y: 870, w: 200, h: 40 }, 'Shop now')).toBe(true);
+  });
+
   it('lays wide canvases side-by-side: product left, text column right (rtl)', () => {
     const preset = presetById('fb-link')!;
     const src = analysis({

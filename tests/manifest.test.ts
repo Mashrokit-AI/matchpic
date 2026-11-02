@@ -352,6 +352,69 @@ describe('layout manifest', () => {
   });
 });
 
+describe('session-15 demo regressions', () => {
+  it('grows the hero product to 40% of safe height on square and aligns product bases', () => {
+    const m = manifestFromPlan({
+      plan: plan({
+        logo: null,
+        products: [
+          { x: 100, y: 200, w: 70, h: 225 },
+          { x: 400, y: 210, w: 71, h: 225 },
+          { x: 700, y: 190, w: 224, h: 181 },
+        ],
+        product_scales: [0.65, 0.62, 1.15],
+        headline: { x: 100, y: 700, w: 800, h: 90 },
+        subtext: { x: 100, y: 620, w: 700, h: 60 },
+        panel: { x: 100, y: 900, w: 300, h: 90 },
+      }),
+      preset: presetById('ig-feed-11')!, planner: 'code', direction: 'ltr',
+    });
+    const out = enforceManifest({ manifest: m, direction: 'ltr' });
+    const prods = out.elements.filter((e) => e.kind === 'product');
+    const hero = Math.max(...prods.map((p) => p.box.h));
+    expect(hero).toBeGreaterThanOrEqual(Math.round(994 * 0.4));
+    const bottoms = prods.map((p) => p.box.y + p.box.h);
+    expect(Math.max(...bottoms) - Math.min(...bottoms)).toBeLessThanOrEqual(2);
+    // Scale stayed in sync with the grown box (compositor pastes at scale).
+    for (const p of prods) expect(p.scale).toBeGreaterThan(0);
+  });
+
+  it('keeps a free price with the headline/CTA group on landscape (luma)', () => {
+    const m = manifestFromPlan({
+      plan: plan({
+        preset: 'fb-link', width: 1200, height: 628, safe: { x: 48, y: 25, w: 1104, h: 578 },
+        logo: { x: 84, y: 45, w: 192, h: 56 },
+        products: [{ x: 647, y: 88, w: 153, h: 452 }, { x: 807, y: 208, w: 341, h: 382 }],
+        product_scales: [1.37, 1.79],
+        headline: { x: 84, y: 119, w: 504, h: 176 },
+        subtext: { x: 84, y: 314, w: 504, h: 50 },
+        panel: { x: 84, y: 383, w: 456, h: 69 },
+        other_texts: [{ x: 84, y: 549, w: 168, h: 31 }],
+      }),
+      preset: presetById('fb-link')!, planner: 'wonder', direction: 'ltr',
+    });
+    const out = enforceManifest({ manifest: m, direction: 'ltr' });
+    const price = out.elements.find((e) => e.id === 'other-0')!;
+    const panel = out.elements.find((e) => e.id === 'panel')!;
+    const gapToGroup = Math.min(
+      Math.abs(price.box.y - (panel.box.y + panel.box.h)),
+      Math.abs(panel.box.y - (price.box.y + price.box.h)),
+    );
+    expect(gapToGroup).toBeLessThanOrEqual(30); // adjacent to the CTA, not orphaned at the bottom
+  });
+
+  it('sizes a transparent CTA panel as a button, not a full-width panel', () => {
+    const m = manifestFromPlan({
+      plan: plan({ panel: { x: 122, y: 745, w: 836, h: 270 } }),
+      preset: presetById('ig-feed-11')!, planner: 'code', direction: 'ltr', ctaPanel: true,
+    });
+    const panel = m.elements.find((e) => e.id === 'panel')!;
+    expect(panel.box.h).toBeLessThanOrEqual(Math.round(1080 * 0.12));
+    expect(panel.box.w).toBeLessThanOrEqual(Math.round(994 * 0.55));
+    expect(panel.box.y + panel.box.h).toBe(745 + 270); // bottom anchored
+  });
+});
+
 describe('panel cap and text restack (demo regressions)', () => {
   const overlaps = (a: {x:number;y:number;w:number;h:number}, b: {x:number;y:number;w:number;h:number}) =>
     a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;

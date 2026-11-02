@@ -20,9 +20,14 @@ export function sourceDigest(bytes: Buffer): string {
  * no longer merge two products into one cut; v3: enclosed holes filled +
  * sparse masks retried box-only; v4: logo contrast-grow constrained to the
  * lockup's own ink palette, so photo backgrounds no longer grow into the
- * cut). A mismatch re-segments.
+ * cut; v8: instance separation keeps mask components carrying a large
+ * share of the whole mask, so a part past a sliced Spark box — an earcup
+ * split off by a thin headband — is no longer dropped as a neighbour
+ * sliver; v9: pixels claimed by two product masks are assigned to the
+ * nearer Spark box centre, so an occluder's strip no longer rides along
+ * in an occluded product's cut). A mismatch re-segments.
  */
-export const LAYERS_VERSION = 5;
+export const LAYERS_VERSION = 9;
 
 export interface CachedLayers {
   digest: string;

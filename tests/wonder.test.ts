@@ -118,6 +118,17 @@ describe('wonder review', () => {
     expect(p).toContain('fb-link');
   });
 
+  it('does not treat an intended support surface as a background defect (stride)', async () => {
+    const { PLATE_CHECK_SYSTEM } = await import('../src/server/models/wonder.js');
+    expect(PLATE_CHECK_SYSTEM).toMatch(/support surface/i);
+    expect(PLATE_CHECK_SYSTEM).toMatch(/clean/i);
+    const p = buildWonderReviewPrompt({
+      sourceBytes: Buffer.alloc(8), sourceMime: 'image/png', analysis: analysis(),
+      outputs: [{ preset: 'fb-link', imageBytes: Buffer.alloc(8), mimeType: 'image/png', manifestJson: '{}', checks: [] }],
+    });
+    expect(p).toMatch(/support surface/i);
+  });
+
   it('parses element-level patches', async () => {
     const res = await reviewWithWonder(
       mockClient({ defects: [{ size: 'fb-link', element: 'logo', group: null, action: 'scale', by: 1.3, reason: 'logo too small' }] }),
@@ -195,6 +206,13 @@ describe('deterministic checks', () => {
     const warns = checkManifestGeometry(small, a).filter((f) => f.code === 'product_size');
     expect(warns).toHaveLength(1);
     expect(warns[0]?.element).toBe('product-0');
+  });
+
+  it('fails when the source CTA panel is not placed (northbean)', () => {
+    const m = manifestFromPlan({ plan: goodPlan(), preset: presetById('ig-feed-11')!, planner: 'code', direction: 'rtl' });
+    const findings = checkManifestGeometry(m, analysis());
+    expect(findings.some((f) => f.code === 'missing_element' && f.element === 'panel')).toBe(true);
+    expect(checksPass(findings)).toBe(false);
   });
 
   it('fails safe-area escapes, overlaps, tiny text and missing products', () => {

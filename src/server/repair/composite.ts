@@ -185,6 +185,99 @@ export function defringeCut(src: RgbaImage, edgePx = 2): RgbaImage {
   return { data, width: w, height: h };
 }
 
+/**
+ * Complete a product base torn by a foreground occluder (seen live on
+ * טבע: fruit in front of the bottles in the source, so SAM's mask ends
+ * where the fruit starts and the pasted bottles end in jagged bites and
+ * drips). For each column whose bottom ends well above the group's robust
+ * base line (90th percentile of column bottoms), with deep columns on
+ * BOTH sides (an interior bite, not a naturally curved end like a lying
+ * can), extend the column down to the base line. Filled pixels copy the
+ * column's own lowest product pixel — the bottle continuing, never the
+ * occluder's colours. Mutates the cut; returns the filled pixel count.
+ */
+export function completeOccludedBase(cut: RgbaImage): number {
+  const { width: W, height: H } = cut;
+  const alpha = (x: number, y: number): number => cut.data[(y * W + x) * 4 + 3] as number;
+  const bottoms: number[] = [];
+  const colBottom = new Array<number>(W).fill(-1);
+  for (let x = 0; x < W; x++) {
+    for (let y = H - 1; y >= 0; y--) {
+      if (alpha(x, y) > 0) { colBottom[x] = y; break; }
+    }
+    if (colBottom[x]! >= 0) bottoms.push(colBottom[x]!);
+  }
+  if (bottoms.length < 8) return 0;
+  const sorted = [...bottoms].sort((a, b) => a - b);
+  // Trim narrow deep spikes first: mask strays below the base (a fruit stem
+  // or table edge caught in the bottle mask) would otherwise set the base
+  // line, and the fill below would paste striped "legs" under the bottle
+  // (seen live on טבע). A spike is a narrow run of columns far deeper than
+  // the median bottom; a real curved base is a wide run and stays.
+  const medianY = sorted[Math.floor((sorted.length - 1) * 0.5)] as number;
+  {
+    let runStart = -1;
+    for (let x = 0; x <= W; x++) {
+      const deep = x < W && (colBottom[x] as number) > medianY + 4;
+      if (deep && runStart < 0) runStart = x;
+      if (!deep && runStart >= 0) {
+        if (x - runStart <= Math.max(3, Math.round(W * 0.2))) {
+          for (let cx = runStart; cx < x; cx++) {
+            for (let y = medianY + 1; y < H; y++) cut.data[(y * W + cx) * 4 + 3] = 0;
+            colBottom[cx] = medianY;
+          }
+        }
+        runStart = -1;
+      }
+    }
+  }
+  const resorted = [...colBottom.filter((b) => b >= 0)].sort((a, b) => a - b);
+  const baseY = resorted[Math.floor((resorted.length - 1) * 0.9)] as number;
+  const maxExt = Math.round(H * 0.3);
+  const reach = Math.max(6, Math.round(W * 0.3));
+  const deepNear = (x: number, dir: -1 | 1): boolean => {
+    for (let d = 1; d <= reach; d++) {
+      const nx = x + dir * d;
+      if (nx < 0 || nx >= W) break;
+      if (colBottom[nx]! >= baseY - 4) return true;
+    }
+    return false;
+  };
+  // Edge bite: a fruit against the bottle's SIDE tears the columns at the
+  // cut edge, where no deep column exists on the outward side. Complete
+  // those too when the profile cliffs abruptly into the deep interior (a
+  // naturally curved end rises gradually, never in one step).
+  const abruptCliff = (x: number, dir: -1 | 1): boolean => {
+    for (let d = 1; d < reach; d++) {
+      const prev = colBottom[x + dir * (d - 1)] as number;
+      const next = colBottom[x + dir * d] as number;
+      if (prev >= 0 && next - prev >= 6) return true;
+    }
+    return false;
+  };
+  let filled = 0;
+  for (let x = 0; x < W; x++) {
+    const b = colBottom[x] as number;
+    if (b < 0 || b >= baseY - 6) continue;
+    const ext = baseY - b;
+    if (ext > maxExt) continue;
+    const deepL = deepNear(x, -1);
+    const deepR = deepNear(x, 1);
+    const interiorBite = deepL && deepR;
+    const edgeBite = !interiorBite && ((deepR && x < W * 0.4 && abruptCliff(x, 1)) || (deepL && x >= W * 0.6 && abruptCliff(x, -1)));
+    if (!interiorBite && !edgeBite) continue;
+    const so = (b * W + x) * 4;
+    const r = cut.data[so] as number; const g = cut.data[so + 1] as number; const bl = cut.data[so + 2] as number;
+    for (let y = b + 1; y <= baseY; y++) {
+      const o = (y * W + x) * 4;
+      if (cut.data[o + 3] as number > 0) continue;
+      cut.data[o] = r; cut.data[o + 1] = g; cut.data[o + 2] = bl; cut.data[o + 3] = 255;
+      filled++;
+    }
+  }
+  return filled;
+}
+
 export interface SupportPoint {
   /** Canvas-space center-x of the product's lowest opaque row. */
   cx: number;

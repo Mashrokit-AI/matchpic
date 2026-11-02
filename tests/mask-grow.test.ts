@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { clipMaskToPaddedBox, completeLogoMask, fillMaskHoles, growLogoMask, keepInstanceComponent, maskFillInBox } from '../src/server/repair/masks.js';
+import { clipMaskToPaddedBox, clipProductMask, completeLogoMask, fillMaskHoles, growLogoMask, keepInstanceComponent, maskFillInBox, resolveMaskOverlaps } from '../src/server/repair/masks.js';
 import { padBox } from '../src/shared/geometry.js';
 import type { RgbaImage } from '../src/server/repair/composite.js';
 
@@ -131,6 +131,41 @@ describe('clipMaskToPaddedBox', () => {
   });
 });
 
+describe('clipProductMask (straight-edge regression)', () => {
+  it('expands the clip bound when the mask is sliced by it, instead of cutting the product', () => {
+    // Headphones extend past Spark's box: mask blob x10-70, box ends x44,
+    // padded bound ends x48 — a long opaque run on the bound is a slice.
+    const W = 96; const H = 20;
+    const mask = new Uint8Array(W * H);
+    for (let y = 4; y < 16; y++) for (let x = 10; x < 70; x++) mask[y * W + x] = 1;
+    const r = clipProductMask(mask, W, H, { x: 10, y: 2, w: 34, h: 16 }, 4);
+    expect(r.expanded).toBe(true);
+    expect(countIn(r.mask, 96, 60, 70)).toBe(10 * 12); // far side of the product kept
+    expect(countIn(r.mask, 96, 10, 70)).toBe(60 * 12);
+  });
+
+  it('does not expand into a sibling product box (touching cans stay separate)', () => {
+    const W = 96; const H = 20;
+    const mask = new Uint8Array(W * H);
+    for (let y = 4; y < 16; y++) for (let x = 10; x < 70; x++) mask[y * W + x] = 1;
+    // Sibling box starts at x50: expansion rightward is blocked there.
+    const r = clipProductMask(mask, W, H, { x: 10, y: 2, w: 34, h: 16 }, 4, [{ x: 50, y: 2, w: 30, h: 16 }]);
+    expect(countIn(r.mask, 96, 56, 70)).toBe(0);
+  });
+
+  it('does not expand toward a detached sibling that never touches the bound', () => {
+    const W = 96; const H = 20;
+    const mask = new Uint8Array(W * H);
+    for (let y = 4; y < 16; y++) {
+      for (let x = 2; x < 20; x++) mask[y * W + x] = 1;
+      for (let x = 60; x < 78; x++) mask[y * W + x] = 1;
+    }
+    const r = clipProductMask(mask, W, H, { x: 0, y: 0, w: 24, h: 20 }, 4);
+    expect(r.expanded).toBe(false);
+    expect(countIn(r.mask, 96, 60, 78)).toBe(0);
+  });
+});
+
 describe('keepInstanceComponent', () => {
   it('drops a detached neighbour sliver, keeps the can that owns the box', () => {
     const W = 96;
@@ -144,6 +179,41 @@ describe('keepInstanceComponent', () => {
     expect(dropped).toBe(4 * 12);
     expect(countIn(mask, 96, 10, 30)).toBe(20 * 12);
     expect(countIn(mask, 96, 34, 38)).toBe(0);
+  });
+});
+
+describe('keepInstanceComponent large product parts', () => {
+  it('keeps a detached part carrying a large share of the mask (headphone earcup past a sliced box)', () => {
+    const W = 96; const H = 20;
+    const mask = new Uint8Array(W * H);
+    for (let y = 4; y < 16; y++) {
+      for (let x = 2; x < 62; x++) mask[y * W + x] = 1; // headband + left cup: 60x12
+      for (let x = 72; x < 90; x++) mask[y * W + x] = 1; // right cup: 18x12, ~23% of the whole mask
+    }
+    // Spark box ends before the right cup, so the cup barely overlaps it.
+    const dropped = keepInstanceComponent(mask, W, H, { x: 0, y: 2, w: 66, h: 16 });
+    expect(dropped).toBe(0);
+    expect(countIn(mask, 96, 72, 90)).toBe(18 * 12);
+  });
+});
+
+describe('resolveMaskOverlaps', () => {
+  it('assigns contested pixels to the product whose box centre is nearer (occluder strip removed)', () => {
+    const W = 96; const H = 20;
+    const front = new Uint8Array(W * H);
+    const lying = new Uint8Array(W * H);
+    for (let y = 4; y < 16; y++) {
+      for (let x = 10; x < 50; x++) front[y * W + x] = 1;
+      for (let x = 40; x < 90; x++) lying[y * W + x] = 1; // contested strip x40-49
+    }
+    const masks = new Map([['product-0', front], ['product-1', lying]]);
+    const removed = resolveMaskOverlaps(masks, W, H, [{ x: 10, y: 2, w: 40, h: 16 }, { x: 40, y: 2, w: 50, h: 16 }]);
+    // Front centre x30, lying centre x65: contested x40-47 nearer the front,
+    // x48-49 nearer the lying can (the Voronoi split between the centres).
+    expect(countIn(lying, 96, 40, 48)).toBe(0);
+    expect(countIn(front, 96, 40, 48)).toBe(8 * 12);
+    expect(removed['product-1']).toBe(8 * 12);
+    expect(countIn(lying, 96, 50, 90)).toBe(40 * 12); // own body untouched
   });
 });
 

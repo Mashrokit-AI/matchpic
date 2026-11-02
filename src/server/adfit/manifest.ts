@@ -99,6 +99,8 @@ export interface ManifestFromPlanInput {
   fromTemplateNotes?: string[];
   /** Headline/subtext render free (false when they travel with panel pixels). */
   freeText?: { headline: boolean; subtext: boolean };
+  /** True when the source panel is transparent (a CTA button, not a panel). */
+  ctaPanel?: boolean;
 }
 
 /** Build the manifest element list from a layout plan (pre-enforcement). */
@@ -113,7 +115,22 @@ export function manifestFromPlan(input: ManifestFromPlanInput): ResolvedLayoutMa
   plan.products.forEach((b, i) => {
     elements.push(el(`product-${i}`, 'product', { ...b }, 'products', 20 + i, null, plan.product_scales[i] ?? null, noted('products')));
   });
-  if (plan.panel) elements.push(el('panel', 'panel', { ...plan.panel }, 'offer', 10, textAlign, null, noted('panel')));
+  if (plan.panel) {
+    let panelBox = { ...plan.panel };
+    if (input.ctaPanel) {
+      // A transparent CTA keeps button proportions on every planner path:
+      // bottom-anchored, at most ~10% of the canvas tall and ~55% wide.
+      const h = Math.min(panelBox.h, Math.max(48, Math.round(plan.height * 0.1)));
+      const w = Math.min(panelBox.w, Math.max(Math.round(h * 3.1), Math.min(panelBox.w, 160)), Math.round(plan.safe.w * 0.55));
+      panelBox = {
+        x: Math.round(panelBox.x + panelBox.w / 2 - w / 2),
+        y: panelBox.y + panelBox.h - h,
+        w,
+        h,
+      };
+    }
+    elements.push(el('panel', 'panel', panelBox, 'offer', 10, textAlign, null, noted('panel')));
+  }
   const freeText = input.freeText ?? { headline: true, subtext: true };
   if (plan.headline && freeText.headline) elements.push(el('headline', 'headline', { ...plan.headline }, 'text', 30, textAlign, null, noted('headline')));
   if (plan.subtext && freeText.subtext) elements.push(el('subtext', 'subtext', { ...plan.subtext }, 'text', 31, textAlign, null, noted('subtext')));
@@ -230,9 +247,47 @@ export function enforceManifest(input: EnforceInput): ResolvedLayoutManifest {
   // around the grown products (text blocking growth stranded small products in
   // the top third while the subtext sat underneath them).
   const growProductsTowardFloor = (ignoreText: boolean, pass: string): void => {
+    // Multi-product square/portrait: grow the GROUP proportionally until
+    // the hero reaches the floor — growing every product to the floor
+    // individually would inflate secondary products (a lying can as tall
+    // as the upright cans) and break their source proportions.
+    if (!tall && !wide && pass === '') {
+      const prods = m.elements.filter((e) => e.kind === 'product');
+      const targetH = Math.round(safe.h * 0.4);
+      const hero = prods.reduce((a, b) => (b.box.h > a.box.h ? b : a), prods[0] as ManifestElement);
+      if (prods.length > 1 && hero && hero.box.h < targetH) {
+        const factor = targetH / hero.box.h;
+        const solids = m.elements.filter((o) => o.kind !== 'product' && o.kind !== 'shadow' && o.kind !== 'frame' && o.group !== 'text');
+        const grown = prods.map((e) => {
+          const nw = Math.round(e.box.w * factor);
+          const nh = Math.round(e.box.h * factor);
+          const cx = e.box.x + e.box.w / 2;
+          const cy = e.box.y + e.box.h / 2;
+          return clampInto({ x: Math.round(cx - nw / 2), y: Math.round(cy - nh / 2), w: nw, h: nh }, BB);
+        });
+        const fits = grown.every((g, i) => g.w === Math.round((prods[i] as ManifestElement).box.w * factor)
+          && !solids.some((o) => overlaps(g, o.box))
+          && !grown.some((o, j) => j !== i && overlaps(g, o)));
+        if (fits) {
+          prods.forEach((e, i) => {
+            const prevW = e.box.w;
+            e.box = grown[i] as PlanBox;
+            if (e.scale !== null) e.scale = (e.scale * e.box.w) / Math.max(1, prevW);
+            e.source = 'corrected';
+          });
+          corrections.push(`products: group grew proportionally to 40% safe-height hero floor (${targetH}px)`);
+        } else {
+          corrections.push('products: below 40% safe-height floor but group growth blocked — needs review');
+        }
+      }
+    }
+    const productCount = m.elements.filter((e) => e.kind === 'product').length;
     for (const e of m.elements) {
       if (e.kind !== 'product') continue;
-      const targetH = tall ? Math.round(safe.h * 0.45) : wide ? Math.round(H * 0.7) : 0;
+      // Square/portrait groups already grew proportionally above; only the
+      // hero carries the floor there, secondaries keep source proportions.
+      if (!tall && !wide && productCount > 1) continue;
+      const targetH = tall ? Math.round(safe.h * 0.45) : wide ? Math.round(H * 0.7) : Math.round(safe.h * 0.4);
       if (targetH <= 0 || e.box.h >= targetH) continue;
       const others = m.elements.filter(
         (o) => o !== e && o.kind !== 'shadow' && o.kind !== 'frame' && (!ignoreText || o.group !== 'text'),
@@ -271,6 +326,28 @@ export function enforceManifest(input: EnforceInput): ResolvedLayoutManifest {
     }
   };
   growProductsTowardFloor(tall, '');
+
+  // 2b. Shared surface line: every product stands on the same base — align
+  // product bottoms to the group's lowest bottom (never into the panel).
+  {
+    const prods = m.elements.filter((e) => e.kind === 'product');
+    if (prods.length > 1) {
+      const targetBottom = Math.max(...prods.map((p) => p.box.y + p.box.h));
+      const panel = m.elements.find((e) => e.kind === 'panel');
+      let aligned = 0;
+      for (const p of prods) {
+        const dy = targetBottom - (p.box.y + p.box.h);
+        if (dy === 0) continue;
+        const cand = clampInto({ ...p.box, y: p.box.y + dy }, BB);
+        if (cand.y + cand.h !== targetBottom) continue;
+        if (panel && overlaps(cand, panel.box)) continue;
+        p.box = cand;
+        p.source = 'corrected';
+        aligned++;
+      }
+      if (aligned > 0) corrections.push(`products: ${aligned} aligned to the shared surface line y=${targetBottom}`);
+    }
+  }
 
   // 3. Text group: one shared alignment edge (right for RTL, left for LTR).
   const wantAlign = input.direction === 'rtl' ? 'right' : 'left';
@@ -381,6 +458,31 @@ export function enforceManifest(input: EnforceInput): ResolvedLayoutManifest {
           }
         }
         corrections.push(`text group: tight stack with ${gap}px gaps`);
+      } else {
+        // Fallback: stack the offer group WITH the panel in reading order,
+        // so a free price stays next to the headline/CTA instead of being
+        // stranded alone below the panel (seen live: LUMA "$42" bottom-left).
+        const panel = m.elements.find((e) => e.kind === 'panel');
+        if (panel) {
+          const seq = [...stack, panel].sort((a, b) => a.box.y - b.box.y);
+          const solids2 = m.elements.filter((e) => e !== panel && e.group !== 'text' && e.kind !== 'shadow' && e.kind !== 'frame');
+          const desired2 = new Map<string, PlanBox>();
+          let cursor2 = (seq[0] as ManifestElement).box.y;
+          let ok2 = true;
+          for (const t of seq) {
+            const cand = clampInto({ ...t.box, y: cursor2 }, BB);
+            if (cand.y !== cursor2 || solids2.some((o) => gapBetween(cand, o.box) < minGap)) { ok2 = false; break; }
+            desired2.set(t.id, cand);
+            cursor2 = cand.y + cand.h + gap;
+          }
+          if (ok2) {
+            for (const t of seq) {
+              const next = desired2.get(t.id);
+              if (next && next.y !== t.box.y) { t.box = next; t.source = 'corrected'; }
+            }
+            corrections.push(`text group: tight stack with panel with ${gap}px gaps (offer group kept together)`);
+          }
+        }
       }
     }
   }

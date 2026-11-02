@@ -95,8 +95,19 @@ export function shiftBoxAbovePanel(dst: PlanBox, panel: PlanBox, gap = 12): Plan
 }
 
 /** True when a text bbox travels with pasted element pixels (never re-render). */
-export function travelsWithPixels(source: SourceAnalysis, bbox: BoxLike): boolean {
-  if (source.panel && centerIn(bbox, source.panel.bbox)) return true;
+export function travelsWithPixels(source: SourceAnalysis, bbox: BoxLike, text?: string): boolean {
+  if (source.panel) {
+    // Panel copy travels with the panel. But Spark's panel box can
+    // overextend past the button and cover the next line's centre (LUMA:
+    // the gold box swallowed "Free shipping over $50", which then rendered
+    // nowhere — the rebuilt panel only carries panel.texts). A string
+    // travels only when it IS panel copy, or its bbox is (mostly) inside
+    // the panel box — a centre-point overlap is not enough.
+    if (text && source.panel.texts.some((t) => t.trim() === text.trim())) return true;
+    const ix = Math.max(0, Math.min(bbox.x + bbox.w, source.panel.bbox.x + source.panel.bbox.w) - Math.max(bbox.x, source.panel.bbox.x));
+    const iy = Math.max(0, Math.min(bbox.y + bbox.h, source.panel.bbox.y + source.panel.bbox.h) - Math.max(bbox.y, source.panel.bbox.y));
+    if ((ix * iy) / Math.max(1, bbox.w * bbox.h) >= 0.8) return true;
+  }
   for (const p of source.products) if (containedIn(bbox, p.bbox)) return true;
   if (source.logo_bbox && containedIn(bbox, source.logo_bbox)) return true;
   return false;
@@ -104,7 +115,7 @@ export function travelsWithPixels(source: SourceAnalysis, bbox: BoxLike): boolea
 
 /** The other_texts that need their own plan boxes (same order as the plan). */
 export function freeOtherTexts(source: SourceAnalysis): SourceAnalysis['other_texts'] {
-  return source.other_texts.filter((t) => !travelsWithPixels(source, t.bbox));
+  return source.other_texts.filter((t) => !travelsWithPixels(source, t.bbox, t.text));
 }
 
 /**
@@ -118,18 +129,12 @@ export function freeHeadlineSubtext(
   a: SourceAnalysis,
   plan: { headline: unknown; subtext: unknown; panel: unknown },
 ): { headline: boolean; subtext: boolean } {
-  const hTravels = a.headline ? travelsWithPixels(a, a.headline.bbox) : true;
-  const sTravels = a.subtext ? travelsWithPixels(a, a.subtext.bbox) : true;
+  const hTravels = a.headline ? travelsWithPixels(a, a.headline.bbox, a.headline.text) : true;
+  const sTravels = a.subtext ? travelsWithPixels(a, a.subtext.bbox, a.subtext.text) : true;
   return {
     headline: !!a.headline && (!hTravels || (!!plan.headline && !plan.panel)),
     subtext: !!a.subtext && (!sTravels || (!!plan.subtext && !plan.panel)),
   };
-}
-
-function centerIn(bbox: { x: number; y: number; w: number; h: number }, outer: { x: number; y: number; w: number; h: number }): boolean {
-  const cx = bbox.x + bbox.w / 2;
-  const cy = bbox.y + bbox.h / 2;
-  return cx >= outer.x && cx <= outer.x + outer.w && cy >= outer.y && cy <= outer.y + outer.h;
 }
 
 /** True when the inner box sits fully inside the outer box. */
@@ -196,11 +201,11 @@ export function planLayout(input: PlannerInput): LayoutPlan {
   const tall = H / W >= 1.5;
 
   // Texts printed ON an element travel with its pasted pixels and must never
-  // be re-rendered on top (it garbles). Panel: center-in (generous — the
-  // panel copy is exact). Product/logo: strict containment (a real headline
-  // over a photo spans wider than the product).
-  const headlineFree = !!source.headline && !travelsWithPixels(source, source.headline.bbox);
-  const subtextFree = !!source.subtext && !travelsWithPixels(source, source.subtext.bbox);
+  // be re-rendered on top (it garbles). Panel: the string must be panel copy
+  // or mostly inside the panel box. Product/logo: strict containment (a real
+  // headline over a photo spans wider than the product).
+  const headlineFree = !!source.headline && !travelsWithPixels(source, source.headline.bbox, source.headline.text);
+  const subtextFree = !!source.subtext && !travelsWithPixels(source, source.subtext.bbox, source.subtext.text);
   const freeOthers = freeOtherTexts(source);
   const droppedOthers = source.other_texts.length - freeOthers.length;
   if (droppedOthers > 0) notes.push(`${droppedOthers} other text(s) travel with pasted pixels`);
@@ -317,6 +322,17 @@ export function planLayout(input: PlannerInput): LayoutPlan {
     logo = clampInto(box(x, safe.y + lm, w, h), safe);
     logoScale = scale;
     notes.push(`logo: default top corner (${source.direction})`);
+  }
+  if (source.panel && !panel && !source.panel.opaque) {
+    // Transparent panel = a CTA button (e.g. an outlined "Order now"): keep
+    // it button-sized, never a full-width panel — the 90%-width aspect box
+    // reserved a quarter of the canvas and squeezed the products.
+    const ph = Math.max(48, Math.round(H * 0.1));
+    const aspect = source.panel.bbox.w / Math.max(1, source.panel.bbox.h);
+    let pw = Math.round(ph * aspect);
+    if (pw > Math.round(safe.w * 0.55)) pw = Math.round(safe.w * 0.55);
+    panel = clampInto(box(safe.x + (safe.w - pw) / 2, safe.y + safe.h - ph - margin, pw, ph), safe);
+    notes.push('panel: default bottom (cta button)');
   }
   if (source.panel && !panel) {
     const pw = Math.round(safe.w * 0.9);

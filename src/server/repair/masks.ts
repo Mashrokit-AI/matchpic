@@ -238,6 +238,76 @@ export function clipMaskToPaddedBox(mask: Uint8Array, W: number, H: number, box:
 }
 
 /**
+ * Clip a product mask to its Spark box + margin, expanding the bound when
+ * the mask is sliced by it. Spark boxes can end inside the product (seen
+ * live: שקט headphones, box ending mid-headband — the padded clip then cut
+ * the product with a straight vertical edge, a long opaque run sitting
+ * exactly on the bound). A long run on a bound edge means the bound, not
+ * the product, ends there: widen that side (capped, frame-clamped) and
+ * re-clip from the original mask until no side is sliced or the cap hits.
+ * Detached siblings never touch the bound, so they stay excluded; the
+ * caller's instance separation removes any detached sliver an expansion
+ * does reach. Returns a NEW mask (input untouched).
+ */
+export function clipProductMask(
+  mask: Uint8Array,
+  W: number,
+  H: number,
+  box: PixelBox,
+  margin: number,
+  blockers: PixelBox[] = [],
+): { mask: Uint8Array; kept: number; dropped: number; expanded: boolean } {
+  let bound = padBox({ ...box }, margin, W, H);
+  const maxExpandX = Math.round(box.w);
+  const maxExpandY = Math.round(box.h);
+  let expanded = false;
+  for (let iter = 0; iter < 5; iter++) {
+    // Count opaque pixels of the ORIGINAL mask sitting on each bound edge.
+    const onEdge = { l: 0, r: 0, t: 0, b: 0 };
+    for (let y = bound.y; y < bound.y + bound.h; y++) {
+      if (mask[y * W + bound.x]) onEdge.l++;
+      if (mask[y * W + bound.x + bound.w - 1]) onEdge.r++;
+    }
+    for (let x = bound.x; x < bound.x + bound.w; x++) {
+      if (mask[bound.y * W + x]) onEdge.t++;
+      if (mask[(bound.y + bound.h - 1) * W + x]) onEdge.b++;
+    }
+    const sliced = (n: number, span: number): boolean => n >= Math.max(8, Math.round(span * 0.08));
+    const growX = Math.max(margin, Math.round(box.w * 0.2));
+    const growY = Math.max(margin, Math.round(box.h * 0.2));
+    // Never expand into a sibling product's box: touching instances share
+    // one phrase mask, and expanding there merges the neighbour in (seen
+    // live: NORTHBEAN's rear can absorbing the front can).
+    const stripBlocked = (strip: PixelBox): boolean => blockers.some((b) => {
+      const ix = Math.max(0, Math.min(strip.x + strip.w, b.x + b.w) - Math.max(strip.x, b.x));
+      const iy = Math.max(0, Math.min(strip.y + strip.h, b.y + b.h) - Math.max(strip.y, b.y));
+      return ix * iy > 0.05 * Math.max(1, strip.w * strip.h);
+    });
+    const next = { ...bound };
+    if (sliced(onEdge.l, bound.h) && bound.x > 0 && box.x - bound.x < maxExpandX && !stripBlocked({ x: bound.x - growX, y: bound.y, w: growX, h: bound.h })) next.x = Math.max(0, bound.x - growX);
+    if (sliced(onEdge.r, bound.h) && bound.x + bound.w < W && bound.x + bound.w - (box.x + box.w) < maxExpandX && !stripBlocked({ x: bound.x + bound.w, y: bound.y, w: growX, h: bound.h })) next.w = Math.min(W, bound.x + bound.w + growX) - next.x;
+    if (sliced(onEdge.t, bound.w) && bound.y > 0 && box.y - bound.y < maxExpandY && !stripBlocked({ x: bound.x, y: bound.y - growY, w: bound.w, h: growY })) next.y = Math.max(0, bound.y - growY);
+    if (sliced(onEdge.b, bound.w) && bound.y + bound.h < H && bound.y + bound.h - (box.y + box.h) < maxExpandY && !stripBlocked({ x: bound.x, y: bound.y + bound.h, w: bound.w, h: growY })) next.h = Math.min(H, bound.y + bound.h + growY) - next.y;
+    if (next.x === bound.x && next.y === bound.y && next.w === bound.w && next.h === bound.h) break;
+    bound = next;
+    expanded = true;
+  }
+  const out = new Uint8Array(W * H);
+  let kept = 0;
+  let dropped = 0;
+  for (let y = 0; y < H; y++) {
+    for (let x = 0; x < W; x++) {
+      if (!mask[y * W + x]) continue;
+      if (x >= bound.x && x < bound.x + bound.w && y >= bound.y && y < bound.y + bound.h) {
+        out[y * W + x] = 1;
+        kept++;
+      } else dropped++;
+    }
+  }
+  return { mask: out, kept, dropped, expanded };
+}
+
+/**
  * Fill enclosed holes in a mask (mutates). Flood-fills the background from
  * the frame border; zero pixels NOT reached are interior holes and get filled.
  * Products are opaque solids, so interior holes are always segmentation
@@ -321,6 +391,7 @@ export function keepInstanceComponent(mask: Uint8Array, W: number, H: number, bo
     comps.push({ px: comp, overlap });
   }
   if (comps.length <= 1) return 0;
+  const totalPx = comps.reduce((s, c) => s + c.px.length, 0);
   const best = comps.reduce((a, b) => (b.overlap * 100000 + b.px.length > a.overlap * 100000 + a.px.length ? b : a));
   let dropped = 0;
   for (const c of comps) {
@@ -329,12 +400,64 @@ export function keepInstanceComponent(mask: Uint8Array, W: number, H: number, bo
     // box. A large component overlapping the box belongs to the product
     // itself (seen live: headphones whose thin headband split the mask —
     // the far earcup was deleted as a "neighbour").
-    const sliver = c.px.length < best.px.length * 0.35 && c.overlap < c.px.length * 0.25;
+    // A component carrying a large share of the whole mask is part of the
+    // product even when Spark's box barely overlaps it (the box itself was
+    // sliced: שקט's right earcup past the box edge, split off by the thin
+    // headband). Only genuine fragments — small against both the best
+    // component and the whole mask — are dropped.
+    const sliver = c.px.length < best.px.length * 0.35 && c.px.length < totalPx * 0.2 && c.overlap < c.px.length * 0.25;
     if (!sliver) continue;
     dropped += c.px.length;
     for (const i of c.px) mask[i] = 0;
   }
   return dropped;
+}
+
+/**
+ * Resolve pixels claimed by more than one product mask. Touching or
+ * occluding products share mask territory (the lying can's cut carried a
+ * full-height strip of the upright can in front of it, which pasted as a
+ * detached "AN" slice once the products were spaced apart). A contested
+ * pixel belongs to the product whose Spark box centre is nearer — the
+ * occluder's silhouette is centred on its own box, the occluded product's
+ * centre is away from the strip it lost. Mutates the masks; returns the
+ * removed pixel count per id.
+ */
+export function resolveMaskOverlaps(
+  masks: Map<string, Uint8Array>,
+  W: number,
+  H: number,
+  boxes: PixelBox[],
+): Record<string, number> {
+  const removed: Record<string, number> = {};
+  const ids = [...masks.keys()];
+  if (ids.length < 2) return removed;
+  const centers = ids.map((_, i) => {
+    const b = boxes[i] ?? { x: 0, y: 0, w: W, h: H };
+    return { cx: b.x + b.w / 2, cy: b.y + b.h / 2 };
+  });
+  for (let y = 0; y < H; y++) {
+    for (let x = 0; x < W; x++) {
+      const idx = y * W + x;
+      let owner = -1;
+      let ownerD = Infinity;
+      let claimants = 0;
+      for (let k = 0; k < ids.length; k++) {
+        if (!masks.get(ids[k] as string)?.[idx]) continue;
+        claimants++;
+        const c = centers[k] as { cx: number; cy: number };
+        const d = (x - c.cx) * (x - c.cx) + (y - c.cy) * (y - c.cy);
+        if (d < ownerD) { ownerD = d; owner = k; }
+      }
+      if (claimants < 2) continue;
+      for (let k = 0; k < ids.length; k++) {
+        if (k === owner) continue;
+        const m = masks.get(ids[k] as string) as Uint8Array;
+        if (m[idx]) { m[idx] = 0; removed[ids[k] as string] = (removed[ids[k] as string] ?? 0) + 1; }
+      }
+    }
+  }
+  return removed;
 }
 
 /** Fill ratio of a mask within its own bounding box (1 = solid). */
