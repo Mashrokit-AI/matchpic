@@ -49,7 +49,12 @@ export function renderHome(root: HTMLElement, lang: Lang, route: Route): void {
   root.append(
     el({
       tag: 'div', cls: 'hero-head', children: [
-        el({ tag: 'h1', text: t(lang, 'hero_title') }),
+        el({
+          tag: 'h1', children: [
+            el({ tag: 'span', text: t(lang, 'hero_title') }),
+            el({ tag: 'span', cls: 'hl', text: t(lang, 'hero_title_hl') }),
+          ],
+        }),
         el({ tag: 'p', cls: 'sub', text: t(lang, 'hero_sub') }),
       ],
     }),

@@ -16,9 +16,11 @@ const REPO_ROOT = findRepoRoot(import.meta.url);
 const OUT = join(REPO_ROOT, 'dist', 'web');
 
 const FONTS: Array<[string, string[]]> = [
-  ['rubik', [
-    'rubik-latin-400-normal.woff2', 'rubik-latin-500-normal.woff2', 'rubik-latin-600-normal.woff2', 'rubik-latin-700-normal.woff2',
-    'rubik-hebrew-400-normal.woff2', 'rubik-hebrew-500-normal.woff2', 'rubik-hebrew-600-normal.woff2', 'rubik-hebrew-700-normal.woff2',
+  ['heebo', [
+    'heebo-hebrew-300-normal.woff2', 'heebo-hebrew-500-normal.woff2', 'heebo-hebrew-600-normal.woff2',
+  ]],
+  ['plus-jakarta-sans', [
+    'plus-jakarta-sans-latin-300-normal.woff2', 'plus-jakarta-sans-latin-500-normal.woff2', 'plus-jakarta-sans-latin-600-normal.woff2',
   ]],
 ];
 

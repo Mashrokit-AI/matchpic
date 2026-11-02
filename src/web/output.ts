@@ -25,6 +25,11 @@ function chipsFor(lang: Lang, c: { protected: CheckState; text: CheckState; layo
   ];
 }
 
+/** Canvas colours come from the CSS tokens in styles.css. */
+function token(name: string): string {
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+}
+
 function loadImage(src: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const img = new Image();
@@ -164,7 +169,7 @@ export async function renderOutput(root: HTMLElement, lang: Lang, id: string): P
   const legend = el({
     tag: 'div', cls: 'xray-legend', attrs: { hidden: 'true' }, children: [
       el({ tag: 'span', html: `<span class="sw" style="background:var(--mask-green)"></span>${t(lang, 'xray_masks')}` }),
-      el({ tag: 'span', html: `<span class="sw" style="background:#e5488c"></span>${t(lang, 'toggle_placed')}` }),
+      el({ tag: 'span', html: `<span class="sw" style="background:var(--box-pink)"></span>${t(lang, 'toggle_placed')}` }),
       el({ tag: 'span', html: `<span class="sw" style="border:1px dashed var(--zone-dash)"></span>${t(lang, 'xray_zones')}` }),
     ],
   });
@@ -378,13 +383,15 @@ function xrayCanvas(
   }
   if (show.masks) {
     // Protected placement from the resolved manifest (what the proof verified).
-    ctx.fillStyle = 'rgba(33,195,170,0.45)';
+    ctx.fillStyle = token('--mask-green');
+    ctx.globalAlpha = 0.45;
     for (const e of manifest.elements) {
       if (e.kind === 'product' || e.kind === 'logo') ctx.fillRect(e.box.x, e.box.y, e.box.w, e.box.h);
     }
+    ctx.globalAlpha = 1;
   }
   if (show.zones && manifest.templateZones) {
-    ctx.strokeStyle = '#121e30';
+    ctx.strokeStyle = token('--zone-dash');
     ctx.lineWidth = Math.max(2, Math.round(W / 600));
     ctx.setLineDash([8, 6]);
     for (const z of Object.values(manifest.templateZones)) {
@@ -393,7 +400,7 @@ function xrayCanvas(
     ctx.setLineDash([]);
   }
   if (show.placed) {
-    ctx.strokeStyle = '#e5488c';
+    ctx.strokeStyle = token('--box-pink');
     ctx.lineWidth = Math.max(2, Math.round(W / 600));
     for (const e of manifest.elements) {
       if (e.kind === 'frame' || e.kind === 'shadow') continue;

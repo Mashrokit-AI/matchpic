@@ -16,7 +16,8 @@ const en = {
 
   home_title: 'Adapt a creative',
   home_sub: 'Upload a finished creative, pick a brand and sizes, get every placement back.',
-  hero_title: 'One approved ad. Every placement. Product and logo untouched.',
+  hero_title: 'One approved ad. Every placement. ',
+  hero_title_hl: 'Product and logo untouched.',
   hero_sub: 'Our studio resizes every approved creative into 6–8 formats by hand, every day, for 100+ brands.',
   try_title: 'Try it yourself',
   gen_need_image: 'Add an image',
@@ -296,7 +297,8 @@ const he: Record<MessageKey, string> = {
 
   home_title: 'התאמת קריאייטיב לכל הגדלים',
   home_sub: 'מעלים עיצוב מוכן, בוחרים מותג וגדלים — ומקבלים גרסה מוכנה לכל פלטפורמה.',
-  hero_title: 'מודעה אחת שאושרה. כל הגדלים. המוצר והלוגו לא נוגעים בהם.',
+  hero_title: 'מודעה אחת שאושרה. כל הגדלים. ',
+  hero_title_hl: 'המוצר והלוגו לא נוגעים בהם.',
   hero_sub: 'בסטודיו שלנו מתאימים כל קריאייטיב ל-6–8 גדלים ידנית, כל יום, ליותר מ-100 מותגים.',
   try_title: 'מנסים לבד',
   gen_need_image: 'מוסיפים תמונה',

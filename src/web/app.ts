@@ -27,7 +27,7 @@ export function parseHash(hash: string): Route {
 }
 
 function logoSvg(): string {
-  return `<svg width="26" height="26" viewBox="0 0 26 26" fill="none" aria-hidden="true"><rect x="1" y="1" width="24" height="24" rx="6" fill="#055a84" stroke="#20b0e9" stroke-width="1.5"/><path d="M7 13.5 11.5 18 19 9.5" stroke="#ffffff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+  return `<svg width="26" height="26" viewBox="0 0 26 26" fill="none" aria-hidden="true"><rect x="1" y="1" width="24" height="24" rx="6" fill="var(--sky)"/><path d="M7 13.5 11.5 18 19 9.5" stroke="var(--night)" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 }
 
 function switchLang(lang: Lang): void {
