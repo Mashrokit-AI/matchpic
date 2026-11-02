@@ -1,4 +1,4 @@
-import { mkdir, readFile, realpath } from 'node:fs/promises';
+import { mkdir, readFile, realpath, rm } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { extname, isAbsolute, join, relative, resolve } from 'node:path';
 import sharp from 'sharp';
@@ -8,12 +8,17 @@ import { Store } from '../store/db.js';
  * Media by record id: the client never sends a file path. Every resolved
  * path goes through a realpath containment check (fixtures/ or data/ under
  * the repo root) so `..`, encoded traversal and stray symlinks all 404.
- * Thumbnails are generated once and cached under artifacts/web-cache/.
+ * Thumbnails are WebP derivatives (≈600 px long side) generated once and
+ * cached under artifacts/web-cache/; strips, cards and the showcase use
+ * them, the full PNG only the detail page and downloads.
  */
 
-export type MediaKind = 'output' | 'thumb' | 'before' | 'source' | 'template' | 'logo' | 'frame';
+export type MediaKind = 'output' | 'thumb' | 'before' | 'source' | 'sourcethumb' | 'template' | 'examplethumb' | 'logo' | 'frame';
 
-export const MEDIA_KINDS: MediaKind[] = ['output', 'thumb', 'before', 'source', 'template', 'logo', 'frame'];
+export const MEDIA_KINDS: MediaKind[] = ['output', 'thumb', 'before', 'source', 'sourcethumb', 'template', 'examplethumb', 'logo', 'frame'];
+
+/** Long side of the WebP derivatives served to strips, cards and the showcase. */
+export const THUMB_LONG_SIDE = 600;
 
 export interface MediaDeps {
   repoRoot: string;
@@ -65,20 +70,26 @@ function contentTypeFor(path: string): string | null {
   return null;
 }
 
-async function cacheDir(repoRoot: string): Promise<string> {
-  const d = join(repoRoot, 'artifacts', 'web-cache');
-  await mkdir(d, { recursive: true });
-  return d;
+function thumbPath(repoRoot: string, key: string): string {
+  const safe = key.replace(/[^a-zA-Z0-9_-]+/g, '-');
+  return join(repoRoot, 'artifacts', 'web-cache', `thumb2-${safe}.webp`);
 }
 
 async function ensureThumb(repoRoot: string, key: string, srcFile: string): Promise<string> {
-  const dir = await cacheDir(repoRoot);
-  const safe = key.replace(/[^a-zA-Z0-9_-]+/g, '-');
-  const out = join(dir, `thumb-${safe}.png`);
+  const out = thumbPath(repoRoot, key);
   if (!existsSync(out)) {
-    await sharp(srcFile).resize({ width: 480, withoutEnlargement: true }).png().toFile(out);
+    await mkdir(join(repoRoot, 'artifacts', 'web-cache'), { recursive: true });
+    await sharp(srcFile)
+      .resize({ width: THUMB_LONG_SIDE, height: THUMB_LONG_SIDE, fit: 'inside', withoutEnlargement: true })
+      .webp({ quality: 80 })
+      .toFile(out);
   }
   return out;
+}
+
+/** Drop a cached derivative (output bytes change in place on repair). */
+export async function invalidateThumb(repoRoot: string, key: string): Promise<void> {
+  await rm(thumbPath(repoRoot, key), { force: true }).catch(() => undefined);
 }
 
 /** Numeric ids address outputs; string ids address sources/templates/brands. */
@@ -107,7 +118,7 @@ export async function resolveMedia(deps: MediaDeps, kind: MediaKind, idRaw: stri
       }
       try {
         const thumb = await ensureThumb(deps.repoRoot, `o${idRaw}`, file);
-        return { file: thumb, contentType: 'image/png' };
+        return { file: thumb, contentType: 'image/webp' };
       } catch {
         return null;
       }
@@ -115,9 +126,9 @@ export async function resolveMedia(deps: MediaDeps, kind: MediaKind, idRaw: stri
 
     if (!/^[A-Za-z0-9_-]+$/.test(idRaw)) return null;
     let rel: string | null = null;
-    if (kind === 'source') {
+    if (kind === 'source' || kind === 'sourcethumb') {
       rel = store.getSource(idRaw)?.image_path ?? null;
-    } else if (kind === 'template') {
+    } else if (kind === 'template' || kind === 'examplethumb') {
       rel = store.getTemplate(idRaw)?.image_path ?? null;
     } else if (kind === 'logo') {
       rel = store.getBrand(idRaw)?.logo_path ?? null;
@@ -127,6 +138,14 @@ export async function resolveMedia(deps: MediaDeps, kind: MediaKind, idRaw: stri
     if (!rel) return null;
     const file = await contained(deps.repoRoot, resolve(deps.repoRoot, rel));
     if (!file) return null;
+    if (kind === 'sourcethumb' || kind === 'examplethumb') {
+      try {
+        const thumb = await ensureThumb(deps.repoRoot, `${kind === 'sourcethumb' ? 's' : 'e'}${idRaw}`, file);
+        return { file: thumb, contentType: 'image/webp' };
+      } catch {
+        return null;
+      }
+    }
     const ct = contentTypeFor(file);
     return ct ? { file, contentType: ct } : null;
   } finally {

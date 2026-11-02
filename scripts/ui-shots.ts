@@ -107,6 +107,15 @@ async function main(): Promise<void> {
     examples: Array<{ jobId: string; brandName: string | null }>;
   };
   console.log(`ui-shots: ${examples.examples.length} examples`);
+  // A throwaway user brand for the new-brand empty state + delete confirm.
+  const shotBrand = (await (
+    await fetch(`${base}/api/brands`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ name: 'Shot Brand', colors: ['#0e6b45', '#e8a13d'] }),
+    })
+  ).json()) as { id: string };
+  console.log(`ui-shots: shot brand ${shotBrand.id}`);
 
   // Plain Playwright Chromium only: never system Chrome, never --single-process.
   const launchBrowser = (): Promise<Browser> => chromium.launch();
@@ -159,6 +168,38 @@ async function main(): Promise<void> {
             },
           },
           { name: 'brands', hash: '#/brands' },
+          {
+            name: 'brand-open',
+            hash: '#/brands/vela',
+            full: true,
+            setup: async (p) => {
+              await p.locator('.ex-cell img').first().waitFor({ timeout: 15000 });
+              await p.locator('.prompt-list').first().waitFor({ timeout: 15000 });
+              await p.waitForTimeout(800);
+            },
+          },
+          {
+            name: 'brand-new',
+            hash: `#/brands/${shotBrand.id}?new=1`,
+            full: true,
+            setup: async (p) => {
+              await p.locator('.steps .step').first().waitFor({ timeout: 15000 });
+              await p.waitForTimeout(500);
+            },
+          },
+          {
+            name: 'brand-delete',
+            hash: `#/brands/${shotBrand.id}`,
+            setup: async (p) => {
+              const del = p.getByRole('button', { name: /Delete brand|מחיקת מותג/ });
+              await del.waitFor({ timeout: 15000 });
+              await del.click();
+              const row = p.locator('.confirm-row').last();
+              await row.waitFor({ timeout: 15000 });
+              await row.scrollIntoViewIfNeeded();
+              await p.waitForTimeout(400);
+            },
+          },
           { name: 'about', hash: '#/about' },
           {
             name: 'home-full',

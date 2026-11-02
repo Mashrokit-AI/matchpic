@@ -22,6 +22,7 @@ import {
 import { storeCachedLayers } from './cache.js';
 import { decodeRgba, findSurfaceEdge, gapDrift, textContrastRatio } from '../repair/composite.js';
 import { artifactDigest, type ElementProof } from '../repair/proof.js';
+import { brandPromptTraceTag, brandPromptUseForSize, type StoredBrandPrompt } from '../../shared/brand-prompt.js';
 import { measureTextLines, rgbFromHex, type MeasuredText } from '../repair/render.js';
 import type { CostLedger } from '../models/costs.js';
 import {
@@ -80,6 +81,8 @@ export interface BatchOptions {
   source: PreparedSource;
   sizes: BatchSize[];
   brandName: string | null;
+  /** The brand's automatic prompt (null when the brand has none). */
+  brandPrompt?: { prompt: StoredBrandPrompt; text: string } | null;
   jobTag: string;
   ledger?: CostLedger | null;
   /** False when the daily Wonder cap is exceeded (code planner, no review). */
@@ -627,7 +630,7 @@ export async function planBatchWithWonder(
   input: { bytes: Buffer; mimeType: string; width: number; height: number },
   analysis: SourceAnalysis,
   sizes: BatchSize[],
-  opts: { ledger?: CostLedger | null; textMeasurer?: BatchOptions['textMeasurer'] } = {},
+  opts: { ledger?: CostLedger | null; textMeasurer?: BatchOptions['textMeasurer']; brandPrompt?: { prompt: StoredBrandPrompt; text: string } | null } = {},
 ): Promise<Preplanned> {
   const measureLines: Array<{ key: string; text: string; px: number; weight: 400 | 700 }> = [];
   if (analysis.headline) measureLines.push({ key: 'headline', text: analysis.headline.text, px: 60, weight: analysis.headline.bold ? 700 : 400 });
@@ -669,6 +672,7 @@ export async function planBatchWithWonder(
     freeOthers: freeOtherTexts(analysis).map((t) => t.text),
     sizes: planSizes,
     ledger: opts.ledger ?? null,
+    brandPrompt: opts.brandPrompt ?? null,
   });
   const plans = new Map<string, WonderSizePlan>();
   const briefs = new Map<string, string>();
@@ -684,7 +688,7 @@ export async function planBatchWithWonder(
     row: {
       step: 'adfit_wonder_plan',
       tool_or_model: `model:${models.wonderModel}`,
-      input_summary: `1 source x ${sizes.length} sizes`,
+      input_summary: `1 source x ${sizes.length} sizes${opts.brandPrompt ? ` brand-prompt=v${opts.brandPrompt.prompt.version}` : ''}`,
       output_summary: res.ok ? `families: ${(res.parsed?.sizes ?? []).map((s) => `${s.preset}=${s.family}`).join(' ')}` : res.reason,
       duration_ms: res.totalLatencyMs,
       evidence_ids: ['out:plan'],
@@ -722,7 +726,7 @@ export async function runProtectedBatch(opts: BatchOptions): Promise<BatchResult
       { bytes: opts.source.bytes, mimeType: opts.source.mimeType, width: opts.source.width, height: opts.source.height },
       opts.source.analysis,
       opts.sizes,
-      { ledger, textMeasurer: opts.textMeasurer },
+      { ledger, textMeasurer: opts.textMeasurer, brandPrompt: opts.brandPrompt ?? null },
     );
   } else {
     pre = skippedPreplanned(opts.models.wonderModel, opts.sizes.length, opts.skipReview ? 'skipped (skipReview)' : 'skipped (daily wonder cap) — code planner');
@@ -742,8 +746,10 @@ export async function runProtectedBatch(opts: BatchOptions): Promise<BatchResult
     logoOnBand?: boolean;
     brief: string | null;
   }
+  const useForSize = (presetId: string): { version: number; block: string } | null =>
+    opts.brandPrompt ? brandPromptUseForSize(opts.brandPrompt, presetId) : null;
   const planned: Planned[] = opts.sizes.map((size) => {
-    const req = { source: opts.source, preset: size.preset, mode: 'protected' as const, template: size.template, framePng: size.framePng, brandName: opts.brandName };
+    const req = { source: opts.source, preset: size.preset, mode: 'protected' as const, template: size.template, framePng: size.framePng, brandName: opts.brandName, brandPrompt: useForSize(size.preset.id) };
     const p = planForSize(req, wonderPlans.get(size.preset.id) ?? null);
     return { size, plan: p.plan, manifest: p.manifest, planner: p.planner, logoOnBand: p.logoOnBand, brief: wonderBriefs.get(size.preset.id) ?? null };
   });
@@ -761,14 +767,14 @@ export async function runProtectedBatch(opts: BatchOptions): Promise<BatchResult
       trace.emit({
         step: 'adfit_plan',
         tool_or_model: p.planner === 'wonder' ? `model:${opts.models.wonderModel}` : 'code:planLayout',
-        input_summary: `${p.size.preset.id} protected${p.size.template ? ` template=${p.size.template.id}` : ' no-template'} family=${p.manifest.family}`,
+        input_summary: `${p.size.preset.id} protected${p.size.template ? ` template=${p.size.template.id}` : ' no-template'} family=${p.manifest.family}${brandPromptTraceTag(useForSize(p.size.preset.id))}`,
         output_summary: `${p.plan.notes.join('; ')}${p.manifest.corrections.length > 0 ? ` | corrections: ${p.manifest.corrections.join('; ').slice(0, 300)}` : ''}`,
         duration_ms: 0,
         evidence_ids: ['out:plan'],
         next_state: 'adfit_generate',
         cached: false,
       });
-      const req = { source: opts.source, preset: p.size.preset, mode: 'protected' as const, template: p.size.template, framePng: p.size.framePng, brandName: opts.brandName };
+      const req = { source: opts.source, preset: p.size.preset, mode: 'protected' as const, template: p.size.template, framePng: p.size.framePng, brandName: opts.brandName, brandPrompt: useForSize(p.size.preset.id) };
       const plate = await generatePlate(opts.models, req, p.plan, p.manifest, { backgroundBrief: p.brief, logoOnBand: p.logoOnBand, ledger }, trace);
       imageCalls++;
       plates.set(p.size.preset.id, plate);
@@ -886,7 +892,7 @@ export async function runProtectedBatch(opts: BatchOptions): Promise<BatchResult
     for (const o of good) {
       if (!dirty.has(o.preset.id) || !o.plan || !o.manifest) continue;
       try {
-        const req = { source: opts.source, preset: o.preset, mode: 'protected' as const, template: opts.sizes.find((s) => s.preset.id === o.preset.id)?.template ?? null, framePng: opts.sizes.find((s) => s.preset.id === o.preset.id)?.framePng ?? null, brandName: opts.brandName };
+        const req = { source: opts.source, preset: o.preset, mode: 'protected' as const, template: opts.sizes.find((s) => s.preset.id === o.preset.id)?.template ?? null, framePng: opts.sizes.find((s) => s.preset.id === o.preset.id)?.framePng ?? null, brandName: opts.brandName, brandPrompt: useForSize(o.preset.id) };
         const dirtyReason = reasons.filter((r) => r.startsWith(o.preset.id)).join(' | ');
         // Grounding misses keep the table (repositioned), so they skip the
         // continuous-field override and get their own lead note; dirty plates
@@ -1016,7 +1022,7 @@ export async function runProtectedBatch(opts: BatchOptions): Promise<BatchResult
       }
       try {
         const size = opts.sizes.find((s) => s.preset.id === o.preset.id);
-        const req = { source: opts.source, preset: o.preset, mode: 'protected' as const, template: size?.template ?? null, framePng: size?.framePng ?? null, brandName: opts.brandName };
+        const req = { source: opts.source, preset: o.preset, mode: 'protected' as const, template: size?.template ?? null, framePng: size?.framePng ?? null, brandName: opts.brandName, brandPrompt: useForSize(o.preset.id) };
         let plate = plates.get(o.preset.id) as Buffer;
         if (result.needsPlate) {
           // The defect reasons ride along (a band the template style mandated
@@ -1303,6 +1309,8 @@ export interface BatchSourceOptions {
   input: SourceInput;
   sizes: BatchSize[];
   brandName: string | null;
+  /** The brand's automatic prompt (null when the brand has none). */
+  brandPrompt?: { prompt: StoredBrandPrompt; text: string } | null;
   jobTag: string;
   repoRoot?: string;
   ledger?: CostLedger | null;
@@ -1414,7 +1422,7 @@ export async function runBatchSource(
       return r;
     }),
     (wonderAllowed && !opts.skipReview
-      ? planBatchWithWonder(opts.models, opts.input, analyzed.analysis, opts.sizes, { ledger: opts.ledger, textMeasurer: opts.textMeasurer })
+      ? planBatchWithWonder(opts.models, opts.input, analyzed.analysis, opts.sizes, { ledger: opts.ledger, textMeasurer: opts.textMeasurer, brandPrompt: opts.brandPrompt ?? null })
       : Promise.resolve(skippedPreplanned(opts.models.wonderModel, opts.sizes.length, opts.skipReview ? 'skipped (skipReview)' : 'skipped (daily wonder cap) — code planner'))
     ).then((r) => {
       stage('plan', 'done', Date.now() - tPlan, `${opts.sizes.length} layouts`);
@@ -1438,6 +1446,7 @@ export async function runBatchSource(
     source,
     sizes: opts.sizes,
     brandName: opts.brandName,
+    brandPrompt: opts.brandPrompt ?? null,
     jobTag: opts.jobTag,
     ledger: opts.ledger,
     wonderAllowed: opts.wonderAllowed,

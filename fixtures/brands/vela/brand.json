@@ -2,10 +2,22 @@
   "id": "vela",
   "name": "VELA",
   "colors": [
-    "#0e4d5c",
-    "#e86a4a",
-    "#f3ece1",
-    "#2a7d8c"
+    {
+      "hex": "#0e4d5c",
+      "role": "primary"
+    },
+    {
+      "hex": "#2a7d8c",
+      "role": "secondary"
+    },
+    {
+      "hex": "#e86a4a",
+      "role": "accent"
+    },
+    {
+      "hex": "#f3ece1",
+      "role": "background"
+    }
   ],
   "fonts": [],
   "logo": "logo.png",
@@ -28,5 +40,13 @@
       "image": "tpl-9x16.png",
       "spec": "spec-9x16.json"
     }
-  ]
+  ],
+  "examples": [
+    {
+      "id": "ex-vela-general",
+      "scope": "general",
+      "image": "source-en.png"
+    }
+  ],
+  "prompt": "prompt.json"
 }

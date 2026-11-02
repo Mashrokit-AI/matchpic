@@ -1,0 +1,69 @@
+{
+  "general": [
+    "Only when the source shows the dark plum #4a1f33 background with a large #c98aa0 product circle, keep that background and circle as the flexible area that absorbs extra canvas space; otherwise keep the source structure.",
+    "Only when the source shows the cream TODA logo at the top-right, keep it at the top-right at approximately 18% of canvas width with its right edge approximately 6% from the right edge; otherwise keep the source structure.",
+    "Only when the source shows a cream #f7ede0 rounded-rectangle price panel at the bottom, keep it at approximately 50% of canvas width and 21% of canvas height with dark #4a1f33 text centred inside; otherwise keep the source structure.",
+    "Only when the source shows the product centred inside the pink circle, keep the product centred in that circle at approximately 55% of the circle diameter and clear of the text and price panel; otherwise keep the source structure.",
+    "Only when the source shows thin concentric rings around the pink circle, keep them as thin #7a3c55 outlines extending slightly beyond the circle and clipped only where they already overflow the canvas; otherwise keep the source structure.",
+    "Only when the source shows Hebrew headline and subtext on the dark background, keep them in cream #f7ede0 on the dark area clear of the circle and price panel; otherwise keep the source structure."
+  ],
+  "perPreset": {
+    "ig-feed-11": [
+      "Only when adapting to 1:1 and the source shows the stacked layout, keep the headline and subtext in the top 30% of the canvas, the product circle centred-left in the middle, and the price panel centred at the bottom; otherwise keep the source structure.",
+      "Only when adapting to 1:1, keep the price panel at approximately 54% of canvas width and 19% of canvas height centred horizontally near the bottom edge; otherwise keep the source structure."
+    ],
+    "fb-link": [
+      "Only when adapting to fb-link and the source shows the wide layout, keep the pink product circle at the left extending close to the top and bottom edges and the headline and subtext block at the right above the price panel; otherwise keep the source structure.",
+      "Only when adapting to fb-link, keep the price panel at approximately 54% of canvas width and 27% of canvas height at the bottom centre-right overlapping the lower-right edge of the circle; otherwise keep the source structure."
+    ]
+  },
+  "never": [
+    "Never add extra logos, wordmarks, bands, tabs, buttons, badges, or frames beyond the single logo and single cream price panel already visible.",
+    "Never add additional prices, CTA buttons, or text blocks outside the existing cream price panel.",
+    "Never add a white header, footer band, border, or enclosing frame around the canvas.",
+    "Never add extra product circles, icons, or decorative shapes beyond the concentric rings already visible around the pink circle."
+  ],
+  "proportions": [
+    {
+      "element": "logo",
+      "dimension": "width",
+      "pct": 18
+    },
+    {
+      "element": "price panel",
+      "dimension": "width",
+      "pct": 50
+    },
+    {
+      "element": "price panel",
+      "dimension": "height",
+      "pct": 21
+    },
+    {
+      "element": "product circle",
+      "dimension": "width",
+      "pct": 48
+    },
+    {
+      "element": "logo right margin",
+      "dimension": "width",
+      "pct": 6
+    }
+  ],
+  "text": [
+    "Hebrew headline is large, bold, cream #f7ede0 and RTL right-aligned in wide layouts, with the smaller lighter Hebrew subtext directly below it at approximately 40% of the headline size.",
+    "The English TODA wordmark appears only within the top-right logo in cream uppercase and never as separate body text.",
+    "Inside the cream price panel, the price is large, bold, dark #4a1f33 and centred, followed below by a smaller underlined Hebrew CTA line and then the smallest centred Hebrew supporting line."
+  ],
+  "version": 1,
+  "generatedBy": "muse-wonder-1.0",
+  "generatedAt": "2026-11-02T13:05:30.299Z",
+  "editedByUser": false,
+  "colors": [
+    "#4a1f33",
+    "#7a3c55",
+    "#c98aa0",
+    "#f7ede0"
+  ],
+  "fonts": []
+}

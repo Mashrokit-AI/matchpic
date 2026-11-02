@@ -1,0 +1,92 @@
+{
+  "general": [
+    "Only when the source shows a flat cream #f5efe4 background with a central illustration or photo, keep that background flat and assign all extra canvas area to the background or photo, otherwise keep the source structure.",
+    "Only when the source shows the NOA logo as a circular cup icon plus NOA wordmark, preserve its aspect ratio and use the dark #4a2f22 version on cream or the cream version on dark brown at the same relative size, otherwise keep the source structure.",
+    "Only when the source shows a dark brown #4a2f22 or orange #d97b3f promo panel, keep that panel colour, its rounded corners, and its fixed proportional size while the surrounding cream or photo area flexes, otherwise keep the source structure.",
+    "Only when the source shows a central mug illustration or product photo, keep it centred horizontally and proportionally scaled with extra space absorbed around it, otherwise keep the source structure.",
+    "Only when the source shows brand colour accents, use only #4a2f22 for primary text and dark panels, #d97b3f for the orange promo panel, #e8b04b for the smaller promo subline, and #f5efe4 for light backgrounds and light text, otherwise keep the source structure.",
+    "Only when the source shows a headline with a smaller subline, keep the headline at least twice the subline height and keep the subline directly beneath it with the same alignment, otherwise keep the source structure."
+  ],
+  "perPreset": {
+    "ig-feed-11": [
+      "Only when adapting the 1:1 layout that shows the logo without a top band, place the dark logo at the top-right at approximately 19% of canvas width with approximately 7% right margin and 5% top margin, otherwise keep the source structure.",
+      "Only when adapting the 1:1 layout that shows a bottom promo panel, keep the dark brown #4a2f22 rounded panel inset approximately 8% on each side at approximately 84% width and 18% height with approximately 6% bottom margin, otherwise keep the source structure.",
+      "Only when adapting the 1:1 layout that shows the central mug, keep the mug centred at approximately 27% of canvas width in the middle of the cream field above the bottom panel, otherwise keep the source structure."
+    ],
+    "ig-story-916": [
+      "Only when adapting the 9:16 layout that shows a top band, keep the dark brown #4a2f22 band full-bleed at approximately 15% of canvas height with the light logo centred inside it at approximately 25% of canvas width, otherwise keep the source structure.",
+      "Only when adapting the 9:16 layout that shows a bottom promo panel, keep the orange #d97b3f rounded panel centred at approximately 76% width and 11% height with approximately 6% bottom margin, otherwise keep the source structure.",
+      "Only when adapting the 9:16 layout, assign all extra vertical height to the cream space between the central mug at approximately 28% width and the bottom orange panel, otherwise keep the source structure."
+    ]
+  },
+  "never": [
+    "Never add an extra top band, bottom band, tab, side panel, or frame that is not visible in the source creative.",
+    "Never add a second logo, badge, sticker, button, CTA, or icon beyond the logo and central element visible in the source creative.",
+    "Never add borders, outlines, shadows, or decorative shapes around the logo, illustration, photo, or promo panel when the source shows none.",
+    "Never invent additional Hebrew or English text, prices, dates, or promotional claims beyond what is visible in the source creative."
+  ],
+  "proportions": [
+    {
+      "element": "logo on cream (ig-feed-11)",
+      "dimension": "width",
+      "pct": 19
+    },
+    {
+      "element": "bottom dark promo panel (ig-feed-11)",
+      "dimension": "width",
+      "pct": 84
+    },
+    {
+      "element": "bottom dark promo panel (ig-feed-11)",
+      "dimension": "height",
+      "pct": 18
+    },
+    {
+      "element": "top dark band (ig-story-916)",
+      "dimension": "height",
+      "pct": 15
+    },
+    {
+      "element": "logo on dark band (ig-story-916)",
+      "dimension": "width",
+      "pct": 25
+    },
+    {
+      "element": "bottom orange promo panel (ig-story-916)",
+      "dimension": "width",
+      "pct": 76
+    },
+    {
+      "element": "bottom orange promo panel (ig-story-916)",
+      "dimension": "height",
+      "pct": 11
+    },
+    {
+      "element": "top cream text panel above photo (general photo layout)",
+      "dimension": "height",
+      "pct": 27
+    },
+    {
+      "element": "central mug illustration",
+      "dimension": "width",
+      "pct": 28
+    }
+  ],
+  "text": [
+    "Hebrew text is set right-to-left with the headline larger and bolder than the subline directly beneath it when both are visible.",
+    "When the logo tagline is visible on cream, it is small, brown, and right-aligned beneath the top-right logo.",
+    "When headline and subline are centred on cream or on a promo panel, keep both centre-aligned with the subline in a smaller size and, on the dark panel, in #e8b04b beneath cream headline text.",
+    "When a subline contains details separated by a middle dot, keep the dot separator and keep numerals and dates in the smaller subline size, never in the headline."
+  ],
+  "version": 1,
+  "generatedBy": "muse-wonder-1.0",
+  "generatedAt": "2026-11-02T13:03:15.619Z",
+  "editedByUser": false,
+  "colors": [
+    "#4a2f22",
+    "#d97b3f",
+    "#e8b04b",
+    "#f5efe4"
+  ],
+  "fonts": []
+}

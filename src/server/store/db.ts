@@ -1,6 +1,7 @@
 import { mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
 import Database from 'better-sqlite3';
+import type { BrandColor } from '../../shared/brand-prompt.js';
 
 const SCHEMA = `
 CREATE TABLE IF NOT EXISTS brand (
@@ -11,7 +12,9 @@ CREATE TABLE IF NOT EXISTS brand (
   logo_path TEXT,
   is_demo INTEGER NOT NULL,
   created_at TEXT NOT NULL,
-  expires_at TEXT
+  expires_at TEXT,
+  prompt_json TEXT,
+  prompt_text TEXT
 );
 CREATE TABLE IF NOT EXISTS template (
   id TEXT PRIMARY KEY,
@@ -101,6 +104,8 @@ export interface BrandRow {
   is_demo: number;
   created_at: string;
   expires_at: string | null;
+  prompt_json: string | null;
+  prompt_text: string | null;
 }
 
 export interface TemplateRow {
@@ -186,6 +191,8 @@ export class Store {
       'ALTER TABLE output ADD COLUMN checks_json TEXT',
       'ALTER TABLE job ADD COLUMN lang TEXT',
       'ALTER TABLE job ADD COLUMN native_preset TEXT',
+      'ALTER TABLE brand ADD COLUMN prompt_json TEXT',
+      'ALTER TABLE brand ADD COLUMN prompt_text TEXT',
     ]) {
       try {
         db.exec(ddl);
@@ -202,7 +209,7 @@ export class Store {
 
   // --- brands ---
 
-  insertBrand(b: { id: string; name: string; colors: string[]; fonts: string[]; logoPath: string | null; isDemo: boolean; expiresAt: string | null }): void {
+  insertBrand(b: { id: string; name: string; colors: Array<string | BrandColor>; fonts: string[]; logoPath: string | null; isDemo: boolean; expiresAt: string | null }): void {
     this.db
       .prepare('INSERT INTO brand (id, name, colors_json, fonts_json, logo_path, is_demo, created_at, expires_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
       .run(b.id, b.name, JSON.stringify(b.colors), JSON.stringify(b.fonts), b.logoPath, b.isDemo ? 1 : 0, now(), b.expiresAt);
@@ -221,17 +228,27 @@ export class Store {
     this.db.prepare('DELETE FROM brand WHERE id=?').run(id);
   }
 
-  updateBrand(id: string, patch: { name?: string; colors?: string[]; fonts?: string[] }): void {
+  updateBrand(id: string, patch: { name?: string; colors?: Array<string | BrandColor>; fonts?: string[] }): void {
     const row = this.getBrand(id);
     if (!row) return;
     const name = patch.name ?? row.name;
-    const colors = patch.colors ?? (JSON.parse(row.colors_json) as string[]);
+    const colors = patch.colors ?? (JSON.parse(row.colors_json) as Array<string | BrandColor>);
     const fonts = patch.fonts ?? (JSON.parse(row.fonts_json) as string[]);
     this.db.prepare('UPDATE brand SET name = ?, colors_json = ?, fonts_json = ? WHERE id = ?').run(name, JSON.stringify(colors), JSON.stringify(fonts), id);
   }
 
   setBrandLogo(id: string, logoPath: string): void {
     this.db.prepare('UPDATE brand SET logo_path=? WHERE id=?').run(logoPath, id);
+  }
+
+  /** Store a generated brand prompt (structured JSON + readable text). */
+  setBrandPrompt(id: string, promptJson: string, promptText: string): void {
+    this.db.prepare('UPDATE brand SET prompt_json=?, prompt_text=? WHERE id=?').run(promptJson, promptText, id);
+  }
+
+  /** Save a user edit of the readable text (marks editedByUser in the JSON). */
+  setBrandPromptText(id: string, promptJson: string, promptText: string): void {
+    this.db.prepare('UPDATE brand SET prompt_json=?, prompt_text=? WHERE id=?').run(promptJson, promptText, id);
   }
 
   // --- templates ---
@@ -256,6 +273,19 @@ export class Store {
 
   setTemplateFailed(id: string, error: string): void {
     this.db.prepare('UPDATE template SET status=?, error=? WHERE id=?').run('failed', error, id);
+  }
+
+  /**
+   * A general style example is ready without zones (the brand prompt, not a
+   * zone spec, carries it; templateForSize skips NULL-spec rows by design).
+   */
+  setTemplateReadyWithoutSpec(id: string): void {
+    this.db.prepare('UPDATE template SET status=?, error=NULL WHERE id=?').run('ready', id);
+  }
+
+  /** Re-queue a zone parse (an example switched back to a per-size scope). */
+  resetTemplateParse(id: string): void {
+    this.db.prepare('UPDATE template SET status=?, error=NULL WHERE id=?').run('pending', id);
   }
 
   updateTemplateSpec(id: string, specJson: string): void {

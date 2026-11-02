@@ -1,0 +1,93 @@
+{
+  "general": [
+    "Only when the source shows the logo in the top-right on the pale background, keep it right-aligned at about 20% of canvas width with about 6% top and right margins; otherwise keep the source structure.",
+    "Only when the source shows a single centred product bottle on the pale mint #e8fbf7 background, keep the bottle centred at about 19% of canvas width and let extra canvas go to the background, not to enlarging fixed elements; otherwise keep the source structure.",
+    "Only when the source shows the coral #ff5a3c rounded-rectangle promo banner, keep it at about 84% of canvas width and 14% of canvas height with white text inside and no added border or shadow; otherwise keep the source structure.",
+    "Only when the source shows the small dark-teal #0f4c5c Hebrew descriptor under the top-right logo, keep it right-aligned to the logo's right edge directly below the logo; otherwise keep the source structure.",
+    "Only when the source uses the brand palette, keep dark-teal #0f4c5c for the logo and descriptor, mint #7fd3c4 only in the logo wave, coral #ff5a3c only for the promo banner, and pale #e8fbf7 for the background; otherwise keep the source colours."
+  ],
+  "perPreset": {
+    "ig-feed-11": [
+      "Only when the source is the 1:1 layout, keep the bottle at about 51% of canvas height centred above the orange banner and keep the banner inset about 8% from each side near the bottom; otherwise keep the source structure.",
+      "Only when the source is the 1:1 layout, do not add the dark-teal bottom band and keep the logo only in the top-right; otherwise keep the source structure."
+    ],
+    "ig-feed-45": [
+      "Only when the source is the 4:5 layout, keep the same top-right logo, centred bottle and bottom orange banner as the 1:1 and assign the extra height to the pale background gap between the bottle and the banner; otherwise keep the source structure.",
+      "Only when the source is the 4:5 layout, keep the bottle at about 46% of canvas height and the banner at about 14% of canvas height pinned near the bottom; otherwise keep the source structure."
+    ],
+    "ig-story-916": [
+      "Only when the source is the 9:16 layout, keep the Hebrew descriptor and the large dark-teal discount headline centred at the top above the bottle and omit the top-right logo; otherwise keep the source structure.",
+      "Only when the source is the 9:16 layout, keep the bottle at about 35% of canvas height, the orange banner below it at about 80% width and 10% height, and the full-width dark-teal bottom band at about 24% of canvas height; otherwise keep the source structure.",
+      "Only when the source shows the light logo centred inside the dark-teal bottom band, keep that logo at about 30% of canvas width centred vertically in the band; otherwise keep the source structure."
+    ],
+    "fb-link": [
+      "Only when the source is the wide link layout, keep the bottle on the left at about 13% of canvas width and about 57% of canvas height and place the logo, descriptor and banner in the right-hand area; otherwise keep the source structure.",
+      "Only when the source is the wide link layout, keep the orange banner at about 51% of canvas width on the right with its headline and subtext on one line and keep the descriptor right-aligned above it; otherwise keep the source structure."
+    ]
+  },
+  "never": [
+    "Never add extra logos, bottom bands, tabs, panels, buttons, badges, frames or CTA elements beyond those visible in the source.",
+    "Never add a dark-teal bottom band to the 1:1, 4:5 or wide layouts when the source does not show it.",
+    "Never duplicate the logo in both the top-right and a bottom band within the same creative unless the source already shows both.",
+    "Never add extra text blocks, prices, stars or decorative shapes that are not visible in the source."
+  ],
+  "proportions": [
+    {
+      "element": "top-right logo",
+      "dimension": "width",
+      "pct": 20
+    },
+    {
+      "element": "product bottle",
+      "dimension": "width",
+      "pct": 19
+    },
+    {
+      "element": "product bottle",
+      "dimension": "height",
+      "pct": 50
+    },
+    {
+      "element": "orange promo banner",
+      "dimension": "width",
+      "pct": 84
+    },
+    {
+      "element": "orange promo banner",
+      "dimension": "height",
+      "pct": 14
+    },
+    {
+      "element": "dark-teal bottom band",
+      "dimension": "height",
+      "pct": 24
+    },
+    {
+      "element": "bottom-band logo",
+      "dimension": "width",
+      "pct": 30
+    },
+    {
+      "element": "fb-link orange promo banner",
+      "dimension": "width",
+      "pct": 51
+    }
+  ],
+  "text": [
+    "Hebrew text is RTL, with the small dark-teal descriptor in regular weight below the top-right logo and right-aligned to its edge in the square and portrait layouts.",
+    "The white Hebrew headline inside the coral banner is bold and about twice the size of the smaller white subtext placed directly below it and centred in the square and portrait layouts.",
+    "Latin GALI lettering appears uppercase in the logo, dark-teal on the pale background and pale on the dark-teal bottom band.",
+    "Numerals and percentages use Latin digits embedded in the Hebrew RTL lines, with the percentage shown as the largest element of the promo headline."
+  ],
+  "version": 1,
+  "generatedBy": "muse-wonder-1.0",
+  "generatedAt": "2026-11-02T13:02:30.358Z",
+  "editedByUser": false,
+  "colors": [
+    "#0f4c5c",
+    "#7fd3c4",
+    "#ff5a3c",
+    "#e8fbf7"
+  ],
+  "fonts": []
+}

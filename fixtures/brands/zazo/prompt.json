@@ -1,0 +1,91 @@
+{
+  "general": [
+    "Only when the source shows the ZAZO logo on the cream #f4ecdd background, keep one logo at about 18% of canvas width in its source position and let extra canvas go to the cream background, otherwise keep the source structure.",
+    "Only when the source shows an orange #e8a13d circle with thin #c96f2e concentric rings behind the sunglasses, keep the circle at about 52% of canvas width behind the product and cropped only as in the source, otherwise keep the source structure.",
+    "Only when the source shows dark #17323d sunglasses, keep them as a single horizontal silhouette overlapping the orange circle without recolouring or adding products, otherwise keep the source structure.",
+    "Only when the source shows a dark #17323d rounded CTA panel, keep the panel at about 24% of canvas height with cream centred text inside and do not stretch it to fill extra space, otherwise keep the source structure.",
+    "Only when the source shows headline and subtext on cream, keep the headline bold #17323d above the smaller regular subtext and let extra height or width expand the cream and product area, otherwise keep the source structure.",
+    "Only when the source shows the cream #f4ecdd field as the full background, keep it flat and full-bleed with no added band or frame, otherwise keep the source structure."
+  ],
+  "perPreset": {
+    "ig-feed-11": [
+      "Only when adapting to 1:1 and the source shows a stacked layout, centre the headline and subtext on one line each below a top-left logo at about 18% of canvas width, otherwise keep the source structure.",
+      "Only when adapting to 1:1 and the source shows sunglasses over a right-side orange circle, keep the sunglasses at about 68% of canvas width centred over the circle cropped at the right edge, otherwise keep the source structure.",
+      "Only when adapting to 1:1 and the source shows a dark CTA panel, keep the panel centred at the bottom at about 72% of canvas width and 23% of canvas height, otherwise keep the source structure."
+    ],
+    "ig-feed-45": [
+      "Only when adapting to 4:5 and the source shows a stacked layout, keep the headline on one line across the upper area with the subtext centred below it and a top-left logo at about 19% of canvas width, otherwise keep the source structure.",
+      "Only when adapting to 4:5 and the source shows sunglasses over a right-side orange circle, keep the sunglasses at about 69% of canvas width centred over the circle, otherwise keep the source structure.",
+      "Only when adapting to 4:5 and the source shows a dark CTA panel, keep the panel at about 84% of canvas width and 21% of canvas height at the bottom and give extra height to the cream and product area above it, otherwise keep the source structure."
+    ],
+    "ig-story-916": [
+      "Only when adapting to 9:16 and the source shows a stacked layout, centre the logo in the upper area at about 27% of canvas width with the headline and subtext centred below it, otherwise keep the source structure.",
+      "Only when adapting to 9:16 and the source shows sunglasses over an orange circle, keep the sunglasses at about 84% of canvas width centred with the circle cropped at the right edge, otherwise keep the source structure.",
+      "Only when adapting to 9:16 and the source shows a dark CTA panel, keep the panel at about 85% of canvas width and 17% of canvas height and leave about 23% of canvas height as empty cream below it, otherwise keep the source structure."
+    ],
+    "yt-thumb": [
+      "Only when adapting to 1280x720 and the source shows a split layout, keep the headline and subtext left-aligned on one line each with a top-left logo at about 20% of canvas width, otherwise keep the source structure.",
+      "Only when adapting to 1280x720 and the source shows an orange circle on the right, keep the circle at about 45% of canvas width with the sunglasses at about 39% of canvas width inside it, otherwise keep the source structure.",
+      "Only when adapting to 1280x720 and the source shows a dark CTA panel, keep the panel at the bottom left at about 46% of canvas width and 31% of canvas height, otherwise keep the source structure."
+    ]
+  },
+  "never": [
+    "Never add a second logo, extra brand mark, or watermark.",
+    "Never add extra bands, tabs, buttons, badges, or frames beyond the single dark CTA panel shown in the source.",
+    "Never add extra products, sunglasses styles, prices, or promotional text not visible in the source.",
+    "Never add gradients, photos, or background colours outside #17323d, #c96f2e, #e8a13d, and #f4ecdd."
+  ],
+  "proportions": [
+    {
+      "element": "logo",
+      "dimension": "width",
+      "pct": 18
+    },
+    {
+      "element": "orange sun circle",
+      "dimension": "width",
+      "pct": 52
+    },
+    {
+      "element": "sunglasses product in stacked layouts",
+      "dimension": "width",
+      "pct": 69
+    },
+    {
+      "element": "sunglasses product in landscape layouts",
+      "dimension": "width",
+      "pct": 41
+    },
+    {
+      "element": "dark CTA panel in stacked layouts",
+      "dimension": "width",
+      "pct": 80
+    },
+    {
+      "element": "dark CTA panel in landscape layouts",
+      "dimension": "width",
+      "pct": 45
+    },
+    {
+      "element": "dark CTA panel",
+      "dimension": "height",
+      "pct": 24
+    }
+  ],
+  "text": [
+    "English Latin script is left-to-right with the headline in bold dark #17323d and larger than the regular smaller subtext directly below it.",
+    "Only when text is inside the dark panel, keep it cream and centre-aligned with the price largest, the underlined CTA line second, and the shipping and returns line smallest, otherwise keep the source structure.",
+    "Only when the layout is landscape and split, keep the headline and subtext left-aligned, otherwise keep centred alignment in stacked layouts as shown in the source."
+  ],
+  "version": 1,
+  "generatedBy": "muse-wonder-1.0",
+  "generatedAt": "2026-11-02T13:04:59.684Z",
+  "editedByUser": false,
+  "colors": [
+    "#17323d",
+    "#c96f2e",
+    "#e8a13d",
+    "#f4ecdd"
+  ],
+  "fonts": []
+}

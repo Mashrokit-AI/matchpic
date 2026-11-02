@@ -1,0 +1,80 @@
+{
+  "general": [
+    "Only when the source shows the logo in the top-right over the photo, keep one logo there at about 18% of canvas width in #5c1e3a with about 7% right margin and about 4% top margin; otherwise keep the source structure.",
+    "Only when the source shows a full-bleed warm olive-branch photo, keep it edge-to-edge as the flexible background and give all extra width or height to the photo, never stretching the logo, products, text, or price panel; otherwise keep the source structure.",
+    "Only when the source shows a headline with a smaller subline below the logo, keep both right-aligned to the logo right edge in #5c1e3a and #8a4a5e with the headline about 2.2 times the subline size; otherwise keep the source structure.",
+    "Only when the source shows the burgundy bottle and cream jar together, keep the bottle on the left at about 15% of canvas width and the jar on the right at about 22% of canvas width on the same baseline; otherwise keep the source product arrangement.",
+    "Only when the source shows the dark #5c1e3a rounded price panel, keep its internal stack centred with the large cream price first, the underlined cream call-to-action below it, and the smallest cream delivery line last, never splitting it into separate elements; otherwise keep the source structure.",
+    "Only when the source shows text over the photo, keep it directly on the photo with no panel, card, or backing shape behind the logo, headline, or subline; otherwise keep the source structure."
+  ],
+  "perPreset": {
+    "ig-feed-11": [
+      "Only when adapting to 1:1, keep the bottom price panel centred at about 85% of canvas width and about 18% of canvas height with its bottom edge about 5% from the canvas bottom; otherwise keep the source structure.",
+      "Only when adapting to 1:1, keep the products centred above the panel with the bottle about 37% of canvas height and clear photo space between the jar baseline and the panel; otherwise keep the source structure."
+    ],
+    "fb-link": [
+      "Only when adapting to 1200x628, keep the price panel on the bottom-right at about 46% of canvas width and about 29% of canvas height, right-aligned under the headline block; otherwise keep the source structure.",
+      "Only when adapting to 1200x628, place the bottle-and-jar group on the left about 28% of canvas width with the jar overlapping in front of the bottle lower right; otherwise keep the source structure.",
+      "Only when adapting to 1200x628, keep the logo, headline, and subline in the top-right half and leave the centre as open photo; otherwise keep the source structure."
+    ],
+    "ig-story-916": [
+      "Only when adapting to 9:16, keep the logo, headline, subline, and products in the top 48% of canvas height and the price panel at about 65% to 76% of canvas height at about 85% width and about 12% height; otherwise keep the source structure.",
+      "Only when adapting to 9:16, give all extra height to the photo below the price panel, about 24% of canvas height, and between the products and panel, never enlarging the panel or products to fill it; otherwise keep the source structure."
+    ]
+  },
+  "never": [
+    "Never add a second logo, extra brand mark, badge, sticker, or promotional seal.",
+    "Never add extra bands, tabs, buttons, frames, borders, or white panels behind the logo, headline, or products.",
+    "Never add a separate call-to-action button outside the burgundy price panel.",
+    "Never invent additional products, prices, claims, or text lines beyond what the source shows."
+  ],
+  "proportions": [
+    {
+      "element": "logo",
+      "dimension": "width",
+      "pct": 18
+    },
+    {
+      "element": "bottom price panel",
+      "dimension": "width",
+      "pct": 85
+    },
+    {
+      "element": "bottom price panel",
+      "dimension": "height",
+      "pct": 18
+    },
+    {
+      "element": "bottle",
+      "dimension": "width",
+      "pct": 15
+    },
+    {
+      "element": "cream jar",
+      "dimension": "width",
+      "pct": 22
+    },
+    {
+      "element": "headline block",
+      "dimension": "width",
+      "pct": 50
+    }
+  ],
+  "text": [
+    "Hebrew text is right-to-left and right-aligned for the logo, headline, and subline at the top-right.",
+    "Headline is large, bold, and dark #5c1e3a, with the subline directly below it smaller, regular, and muted #8a4a5e.",
+    "Inside the burgundy panel, text is centred cream #f6efe3 with the price largest and bold, the underlined call-to-action second, and the delivery and returns line smallest.",
+    "Product labels show only the brand name דפנה centred on the bottle and jar."
+  ],
+  "version": 1,
+  "generatedBy": "muse-wonder-1.0",
+  "generatedAt": "2026-11-02T13:04:12.890Z",
+  "editedByUser": false,
+  "colors": [
+    "#5c1e3a",
+    "#8a4a5e",
+    "#c9963c",
+    "#f6efe3"
+  ],
+  "fonts": []
+}

@@ -198,7 +198,7 @@ export async function renderOutput(root: HTMLElement, lang: Lang, id: string): P
   const srcCard = el({ tag: 'div', cls: 'card' });
   srcCard.append(el({ tag: 'h3', text: t(lang, 'detail_before') }));
   const srcRow = el({ tag: 'div', cls: 'src-mini' });
-  srcRow.append(el({ tag: 'img', attrs: { src: d.sourceImage, alt: '' } }) as HTMLImageElement);
+  srcRow.append(el({ tag: 'img', attrs: { src: d.sourceThumb, alt: '' } }) as HTMLImageElement);
   srcRow.append(el({ tag: 'span', cls: 'small muted', text: dims(d.sourceWidth, d.sourceHeight) }));
   srcCard.append(srcRow);
   rail.append(srcCard);

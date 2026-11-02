@@ -1,5 +1,6 @@
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
+import { parseBrandColors, renderBrandPromptText, storedBrandPromptSchema } from '../../shared/brand-prompt.js';
 import { Store } from '../store/db.js';
 
 interface FixtureTemplate {
@@ -10,13 +11,24 @@ interface FixtureTemplate {
   frame?: string;
 }
 
+interface FixtureExample {
+  id: string;
+  /** `general` or a preset id. */
+  scope: string;
+  image: string;
+}
+
 interface FixtureBrand {
   id: string;
   name: string;
-  colors: string[];
+  colors: Array<string | { hex: string; role: string }>;
   fonts: string[];
   logo: string | null;
   templates: FixtureTemplate[];
+  /** Extra style examples without zone specs (e.g. a source as `general`). */
+  examples?: FixtureExample[];
+  /** Committed generated brand prompt (no spend on fresh DBs). */
+  prompt?: string;
 }
 
 interface DemoOutput {
@@ -99,12 +111,27 @@ export function ensureSeeded(repoRoot: string, dbPath: string): void {
         store.insertBrand({
           id: manifest.id,
           name: manifest.name,
-          colors: manifest.colors,
+          colors: parseBrandColors(manifest.colors),
           fonts: manifest.fonts ?? [],
           logoPath: manifest.logo ? `fixtures/brands/${dir}/${manifest.logo}` : null,
           isDemo: true,
           expiresAt: null,
         });
+      }
+      // Committed generated prompt (idempotent: existing rows keep theirs).
+      if (typeof manifest.prompt === 'string') {
+        const row = store.getBrand(manifest.id);
+        if (row && !row.prompt_json) {
+          const promptPath = join(brandsDir, dir, manifest.prompt);
+          if (existsSync(promptPath)) {
+            try {
+              const parsed = storedBrandPromptSchema.parse(JSON.parse(readFileSync(promptPath, 'utf8')));
+              store.setBrandPrompt(manifest.id, JSON.stringify(parsed), renderBrandPromptText(parsed));
+            } catch {
+              // A bad fixture prompt never breaks seeding; the brand still loads.
+            }
+          }
+        }
       }
       for (const t of manifest.templates) {
         if (store.getTemplate(t.id)) continue;
@@ -123,6 +150,19 @@ export function ensureSeeded(repoRoot: string, dbPath: string): void {
         });
         if (specJson) store.setTemplateReady(t.id, specJson);
         else store.setTemplateFailed(t.id, 'fixture spec missing');
+      }
+      // Extra style examples (ready, no zone specs — prompt-only).
+      for (const e of manifest.examples ?? []) {
+        if (store.getTemplate(e.id)) continue;
+        store.insertTemplate({
+          id: e.id,
+          brandId: manifest.id,
+          preset: e.scope === 'general' ? null : e.scope,
+          imagePath: `fixtures/brands/${dir}/${e.image}`,
+          framePath: null,
+          expiresAt: null,
+        });
+        store.setTemplateReadyWithoutSpec(e.id);
       }
     }
 

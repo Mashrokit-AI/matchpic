@@ -1,0 +1,90 @@
+{
+  "general": [
+    "Only when the source shows the VELA logo at top-left over the photo background, keep it at top-left inset ≈5% of canvas width from the left edge and ≈19% of canvas width wide; otherwise keep the source structure.",
+    "Only when the source shows a full-bleed soft photo background, let the photo/background absorb all extra width or height as the flexible element while logo, text block and CTA panel keep their proportional sizes; otherwise keep the source structure.",
+    "Only when the source shows headline and subtext left-aligned below the logo, keep their shared left edge at ≈5% of canvas width, headline in #0e4d5c and subtext in #2a7d8c; otherwise keep the source structure.",
+    "Only when the source shows a cream #f3ece1 rounded-corner CTA panel, keep that single panel with its centred price, underlined Shop now and shipping line stacked inside it and do not stretch it to fill extra canvas; otherwise keep the source structure.",
+    "Only when the source shows the teal bottle and cream jar products over the photo, keep the bottle ≈16% of canvas width and the jar ≈24% of canvas width in square format with the same relative scale at other sizes; otherwise keep the source structure."
+  ],
+  "perPreset": {
+    "ig-feed-11": [
+      "Only when the source is the 1:1 square layout, keep the bottle left and jar right side-by-side centred between the headline block and the CTA panel; otherwise keep the source structure.",
+      "Only when the source is the 1:1 square layout, keep the CTA panel centred at ≈84% of canvas width and ≈17% of canvas height with ≈7% of canvas height below it; otherwise keep the source structure.",
+      "Only when the source is the 1:1 square layout, keep the headline on one line at ≈85% of canvas width below the logo; otherwise keep the source structure."
+    ],
+    "fb-link": [
+      "Only when the source is the 1200x628 wide layout, keep the logo, headline, subtext and CTA panel in the left column and the products on the right half; otherwise keep the source structure.",
+      "Only when the source is the 1200x628 wide layout, keep the headline wrapped to two lines within the left ≈44% of canvas width and the CTA panel bottom-left at ≈43% of canvas width and ≈29% of canvas height; otherwise keep the source structure.",
+      "Only when the source is the 1200x628 wide layout, keep the bottle behind and to the left of the jar with the jar overlapping its lower right at the right edge; otherwise keep the source structure."
+    ],
+    "ig-story-916": [
+      "Only when the source is the 9:16 vertical layout, keep logo, headline, subtext and products in the top ≈48% of canvas height and let the photo background fill the added height; otherwise keep the source structure.",
+      "Only when the source is the 9:16 vertical layout, keep the CTA panel at ≈84% of canvas width and ≈13% of canvas height positioned at ≈64-77% of canvas height, not flush with the bottom; otherwise keep the source structure.",
+      "Only when the source is the 9:16 vertical layout, keep the headline on one line and the bottle left and jar right centred below it; otherwise keep the source structure."
+    ]
+  },
+  "never": [
+    "Never add extra logos, bands, tabs, badges, frames or borders beyond the single logo and single cream CTA panel visible in the source.",
+    "Never add a separate button or pill CTA; the only CTA is the underlined Shop now text inside the cream panel when visible in the source.",
+    "Never add extra products, prices, claims or text blocks not visible in the source.",
+    "Never add #e86a4a panels or accents when they are not visible in the source."
+  ],
+  "proportions": [
+    {
+      "element": "logo",
+      "dimension": "width",
+      "pct": 19
+    },
+    {
+      "element": "logo left inset",
+      "dimension": "width",
+      "pct": 5
+    },
+    {
+      "element": "CTA panel in ig-feed-11 and ig-story-916",
+      "dimension": "width",
+      "pct": 84
+    },
+    {
+      "element": "CTA panel in ig-feed-11",
+      "dimension": "height",
+      "pct": 17
+    },
+    {
+      "element": "CTA panel in ig-story-916",
+      "dimension": "height",
+      "pct": 13
+    },
+    {
+      "element": "CTA panel in fb-link",
+      "dimension": "width",
+      "pct": 43
+    },
+    {
+      "element": "bottle product in ig-feed-11",
+      "dimension": "width",
+      "pct": 16
+    },
+    {
+      "element": "jar product in ig-feed-11",
+      "dimension": "width",
+      "pct": 24
+    }
+  ],
+  "text": [
+    "When text is visible, use English Latin script with headline, subtext and logo left-aligned to the same ≈5% left edge in square and story layouts.",
+    "When text is visible, keep the headline bold and largest in #0e4d5c, the subtext regular at ≈45% of headline size in #2a7d8c, and no other headline hierarchy.",
+    "When the CTA panel text is visible, centre-align the stack with the price bold and largest, Shop now bold and underlined below it, and the shipping/returns line regular and smallest."
+  ],
+  "version": 1,
+  "generatedBy": "muse-wonder-1.0",
+  "generatedAt": "2026-11-02T13:01:31.003Z",
+  "editedByUser": false,
+  "colors": [
+    "#0e4d5c",
+    "#2a7d8c",
+    "#e86a4a",
+    "#f3ece1"
+  ],
+  "fonts": []
+}

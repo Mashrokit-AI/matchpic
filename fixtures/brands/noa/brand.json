@@ -1,11 +1,46 @@
 {
-  "id": "noa",
-  "name": "NOA",
-  "colors": ["#4a2f22", "#d97b3f", "#f5efe4", "#e8b04b"],
   "fonts": [],
+  "id": "noa",
   "logo": "logo.png",
+  "name": "NOA",
+  "prompt": "prompt.json",
+  "colors": [
+    {
+      "hex": "#4a2f22",
+      "role": "primary"
+    },
+    {
+      "hex": "#d97b3f",
+      "role": "secondary"
+    },
+    {
+      "hex": "#e8b04b",
+      "role": "accent"
+    },
+    {
+      "hex": "#f5efe4",
+      "role": "background"
+    }
+  ],
+  "examples": [
+    {
+      "id": "ex-noa-general",
+      "image": "source.png",
+      "scope": "general"
+    }
+  ],
   "templates": [
-    { "id": "tpl-noa-ig-11", "preset": "ig-feed-11", "image": "tpl-1x1.png", "spec": "spec-1x1.json" },
-    { "id": "tpl-noa-story", "preset": "ig-story-916", "image": "tpl-9x16.png", "spec": "spec-9x16.json" }
+    {
+      "id": "tpl-noa-ig-11",
+      "image": "tpl-1x1.png",
+      "preset": "ig-feed-11",
+      "spec": "spec-1x1.json"
+    },
+    {
+      "id": "tpl-noa-story",
+      "image": "tpl-9x16.png",
+      "preset": "ig-story-916",
+      "spec": "spec-9x16.json"
+    }
   ]
 }

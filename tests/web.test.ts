@@ -183,11 +183,32 @@ describe('media', () => {
     const img = await app.request(`/media/output/${oid}`);
     expect(img.status).toBe(200);
     expect(img.headers.get('content-type')).toBe('image/png');
-    expect((await app.request(`/media/thumb/${oid}`)).status).toBe(200);
+    const thumb = await app.request(`/media/thumb/${oid}`);
+    expect(thumb.status).toBe(200);
+    expect(thumb.headers.get('content-type')).toBe('image/webp');
     expect((await app.request('/media/source/s1')).status).toBe(200);
+    const sthumb = await app.request('/media/sourcethumb/s1');
+    expect(sthumb.status).toBe(200);
+    expect(sthumb.headers.get('content-type')).toBe('image/webp');
     expect((await app.request('/media/mask/s1/product-0')).status).toBe(200);
     expect((await app.request('/media/mask/s1/nope')).status).toBe(404);
     expect((await app.request('/media/mask/s1/..')).status).toBe(404);
+  });
+
+  it('serves example thumbs and 404s unknown thumb records', async () => {
+    const root = repoRoot();
+    const { app, dbPath } = testApp(root);
+    const img = await png(64, 96);
+    writeRel(root, 'data/t.png', img);
+    seedBrand(dbPath);
+    const res = await app.request('/media/examplethumb/t1');
+    expect(res.status).toBe(200);
+    expect(res.headers.get('content-type')).toBe('image/webp');
+    const meta = await sharp(Buffer.from(await res.arrayBuffer())).metadata();
+    expect(Math.max(meta.width ?? 0, meta.height ?? 0)).toBeLessThanOrEqual(600);
+    expect((await app.request('/media/examplethumb/nope')).status).toBe(404);
+    expect((await app.request('/media/sourcethumb/nope')).status).toBe(404);
+    expect((await app.request('/media/thumb/9999')).status).toBe(404);
   });
 
   it('blocks path traversal and escaping symlinks', async () => {
@@ -293,6 +314,137 @@ describe('brands', () => {
     expect((await app.request('/api/templates/demo-t', { method: 'PATCH', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ preset: 'fb-feed' }) })).status).toBe(400);
     // Visitor templates still patch fine.
     expect((await app.request('/api/templates/t1', { method: 'PATCH', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ spec }) })).status).toBe(200);
+  });
+});
+
+describe('style examples + brand prompt', () => {
+  const PROMPT_JSON = JSON.stringify({
+    general: ['Keep the source structure.'],
+    perPreset: {},
+    never: ['Never add extra bands.'],
+    proportions: [],
+    text: [],
+  });
+
+  async function exampleForm(w: number, h: number, scope?: string): Promise<FormData> {
+    const fd = new FormData();
+    fd.append('image', new File([part(await png(w, h))], 'ex.png', { type: 'image/png' }));
+    if (scope !== undefined) fd.append('scope', scope);
+    return fd;
+  }
+
+  it('example lifecycle: upload, scope guess, rescope, delete', async () => {
+    const root = repoRoot();
+    const { app, dbPath } = testApp(root);
+    seedBrand(dbPath);
+    // General: ready immediately, no zones.
+    const gen = await app.request('/api/brands/b1/examples', { method: 'POST', body: await exampleForm(100, 300, 'general') });
+    expect(gen.status).toBe(202);
+    expect(await gen.json()).toMatchObject({ scope: 'general', status: 'ready' });
+    // No scope: guessed from the aspect ratio (square → feed).
+    const guessed = await app.request('/api/brands/b1/examples', { method: 'POST', body: await exampleForm(200, 200) });
+    expect(guessed.status).toBe(202);
+    expect(await guessed.json()).toMatchObject({ scope: 'ig-feed-11', status: 'pending' });
+    const perSizeRes = await app.request('/api/brands/b1/examples', { method: 'POST', body: await exampleForm(108, 192, 'ig-story-916') });
+    const { id: perSizeId } = (await perSizeRes.json()) as { id: string };
+    // Rescope to general and back.
+    expect((await app.request(`/api/examples/${perSizeId}`, { method: 'PATCH', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ scope: 'general' }) })).status).toBe(200);
+    expect((await app.request(`/api/examples/${perSizeId}`, { method: 'PATCH', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ scope: 'nope' }) })).status).toBe(400);
+    expect((await app.request(`/api/examples/${perSizeId}`, { method: 'PATCH', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ scope: 'ig-story-916' }) })).status).toBe(200);
+    // Delete.
+    expect((await app.request(`/api/examples/${perSizeId}`, { method: 'DELETE' })).status).toBe(200);
+    expect((await app.request(`/api/examples/${perSizeId}`, { method: 'DELETE' })).status).toBe(404);
+    // Demo brands stay read-only.
+    seedBrand(dbPath, true);
+    expect((await app.request('/api/brands/demo-b/examples', { method: 'POST', body: await exampleForm(64, 64, 'general') })).status).toBe(400);
+    expect((await app.request('/api/examples/demo-t', { method: 'PATCH', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ scope: 'general' }) })).status).toBe(400);
+    expect((await app.request('/api/examples/demo-t', { method: 'DELETE' })).status).toBe(400);
+  });
+
+  it('generates a prompt in the background, serves it, takes user edits', async () => {
+    const root = repoRoot();
+    const { app, dbPath } = testApp(root, { client: mockClient(PROMPT_JSON) });
+    writeRel(root, 'data/t.png', await png(200, 200));
+    seedBrand(dbPath);
+    expect(await (await app.request('/api/brands/b1/prompt')).json()).toMatchObject({ status: 'none' });
+    const gen = await app.request('/api/brands/b1/prompt/generate', { method: 'POST' });
+    expect(gen.status).toBe(202);
+    let prompt: { status: string; prompt?: { version: number; general: string[]; readable: string; editedByUser: boolean } } = { status: 'none' };
+    for (let i = 0; i < 100; i++) {
+      prompt = (await (await app.request('/api/brands/b1/prompt')).json()) as typeof prompt;
+      if (prompt.status === 'ready') break;
+      expect(prompt.status).not.toBe('failed');
+      await new Promise((r) => setTimeout(r, 30));
+    }
+    expect(prompt.status).toBe('ready');
+    expect(prompt.prompt?.version).toBe(1);
+    expect(prompt.prompt?.general).toEqual(['Keep the source structure.']);
+    expect(prompt.prompt?.readable).toContain('General:');
+    expect(prompt.prompt?.editedByUser).toBe(false);
+    // The brand DTO carries the same prompt.
+    const dto = (await (await app.request('/api/brands/b1')).json()) as { prompt: { version: number } | null; examples: unknown[] };
+    expect(dto.prompt?.version).toBe(1);
+    expect(dto.examples.length).toBeGreaterThan(0);
+    // User edit wins.
+    expect((await app.request('/api/brands/b1/prompt', { method: 'PATCH', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ text: 'My rules.' }) })).status).toBe(200);
+    const edited = (await (await app.request('/api/brands/b1/prompt')).json()) as { prompt: { readable: string; editedByUser: boolean } };
+    expect(edited.prompt.readable).toBe('My rules.');
+    expect(edited.prompt.editedByUser).toBe(true);
+  });
+
+  it('refuses prompt work without examples, on demos, and over the spend cap', async () => {
+    const root = repoRoot();
+    const { app, dbPath } = testApp(root, { client: mockClient(PROMPT_JSON) });
+    const store = Store.open(dbPath);
+    try {
+      store.insertBrand({ id: 'empty', name: 'Empty', colors: [], fonts: [], logoPath: null, isDemo: false, expiresAt: null });
+    } finally {
+      store.close();
+    }
+    const noEx = await app.request('/api/brands/empty/prompt/generate', { method: 'POST' });
+    expect(noEx.status).toBe(400);
+    expect(await noEx.json()).toEqual({ error: 'err_no_examples' });
+    expect((await app.request('/api/brands/empty/prompt', { method: 'PATCH', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ text: 'x' }) })).status).toBe(400);
+
+    seedBrand(dbPath, true);
+    expect((await app.request('/api/brands/demo-b/prompt/generate', { method: 'POST' })).status).toBe(400);
+    expect((await app.request('/api/brands/demo-b/prompt', { method: 'PATCH', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ text: 'x' }) })).status).toBe(400);
+
+    // Spend cap: Wonder over budget → 429 with a clear key, nothing breaks.
+    seedBrand(dbPath);
+    const capped = Store.open(dbPath);
+    try {
+      capped.recordSpend({ model: 'wonder', modelId: 'muse-wonder-1.0', costUsd: 99 });
+    } finally {
+      capped.close();
+    }
+    const res = await app.request('/api/brands/b1/prompt/generate', { method: 'POST' });
+    expect(res.status).toBe(429);
+    expect(await res.json()).toEqual({ error: 'err_spendcap' });
+    expect(await (await app.request('/api/brands/b1/prompt')).json()).toMatchObject({ status: 'capped' });
+  });
+
+  it('duplicates a brand with its examples and prompt', async () => {
+    const root = repoRoot();
+    const { app, dbPath } = testApp(root);
+    seedBrand(dbPath);
+    const store = Store.open(dbPath);
+    try {
+      store.setBrandPrompt('b1', JSON.stringify({
+        general: ['g'], perPreset: {}, never: ['n'], proportions: [], text: [],
+        version: 2, generatedBy: 'muse-wonder-1.0', generatedAt: '2026-11-02T00:00:00Z',
+        editedByUser: false, colors: [], fonts: [],
+      }), 'readable rules');
+    } finally {
+      store.close();
+    }
+    const dup = await app.request('/api/brands/b1/duplicate', { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}' });
+    expect(dup.status).toBe(201);
+    const { id } = (await dup.json()) as { id: string };
+    const dto = (await (await app.request(`/api/brands/${id}`)).json()) as { prompt: { version: number; readable: string } | null; examples: unknown[] };
+    expect(dto.prompt?.version).toBe(2);
+    expect(dto.prompt?.readable).toBe('readable rules');
+    expect(dto.examples.length).toBe(1);
   });
 });
 

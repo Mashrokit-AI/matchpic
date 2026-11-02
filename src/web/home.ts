@@ -446,8 +446,8 @@ export function renderHome(root: HTMLElement, lang: Lang, route: Route): void {
     });
     showcaseHost.append(head);
     const srcLink = el({ tag: 'a', cls: 'imglink', attrs: { href: `#/run/${selected.jobId}` } });
-    const srcImg = el({ tag: 'img', cls: 'showcase-src', attrs: { src: selected.sourceImage, alt: selected.brandName ?? '' } }) as HTMLImageElement;
-    srcImg.loading = 'lazy';
+    const srcImg = el({ tag: 'img', cls: 'showcase-src', attrs: { src: selected.sourceThumb, alt: selected.brandName ?? '', fetchpriority: 'high' } }) as HTMLImageElement;
+    srcImg.loading = 'eager';
     srcLink.append(srcImg);
     showcaseHost.append(srcLink);
     showcaseHost.append(el({
@@ -477,19 +477,37 @@ export function renderHome(root: HTMLElement, lang: Lang, route: Route): void {
     if (stamp) showcaseHost.append(el({ tag: 'div', cls: 'imglabel', text: stamp }));
   };
 
+  /** Preload the selected example's pixels so the showcase paints at once. */
+  const preloadExample = (ex: ExampleDto, job: JobDto | null): void => {
+    const urls = [ex.sourceThumb];
+    if (job) {
+      for (const o of contrasting(job.outputs.filter((o) => isOkStatus(o.status))).slice(0, 4)) {
+        urls.push(`${o.thumb}?v=${o.retries}`);
+      }
+    }
+    for (const href of urls) {
+      if (document.querySelector(`link[rel="preload"][href="${href}"]`)) continue;
+      document.head.append(el({ tag: 'link', attrs: { rel: 'preload', as: 'image', href } }));
+    }
+  };
+
   const loadExample = async (ex: ExampleDto): Promise<void> => {
     selected = ex;
     exampleJob = null;
     for (const btn of stripHost.querySelectorAll('button.strip-item')) {
       (btn as HTMLButtonElement).setAttribute('aria-pressed', String((btn as HTMLButtonElement).dataset.job === ex.jobId));
     }
+    preloadExample(ex, null);
     renderShowcase();
     try {
       exampleJob = await api<JobDto>(`api/runs/${ex.jobId}`);
     } catch {
       exampleJob = null;
     }
-    if (selected === ex) renderShowcase();
+    if (selected === ex) {
+      preloadExample(ex, exampleJob);
+      renderShowcase();
+    }
   };
 
   const renderStrip = (): void => {
@@ -504,7 +522,7 @@ export function renderHome(root: HTMLElement, lang: Lang, route: Route): void {
       const btn = el({
         tag: 'button', cls: 'strip-item', attrs: { type: 'button', 'aria-pressed': String(selected?.jobId === ex.jobId) },
         children: [
-          el({ tag: 'img', attrs: { src: ex.sourceImage, alt: ex.brandName ?? '', loading: 'lazy' } }),
+          el({ tag: 'img', attrs: { src: ex.sourceThumb, alt: ex.brandName ?? '', loading: 'lazy' } }),
           el({ tag: 'span', cls: 'lab', text: ex.nativePreset ? nativeName(lang, ex.nativePreset) : '' }),
         ],
       }) as HTMLButtonElement;
@@ -609,7 +627,7 @@ export function renderHome(root: HTMLElement, lang: Lang, route: Route): void {
       if (dims) frame.setAttribute('style', `aspect-ratio:${dims.w}/${dims.h}`);
       if (row) {
         const link = el({ tag: 'a', cls: 'imglink', attrs: { href: `#/output/${row.outputId}` } });
-        const img = el({ tag: 'img', attrs: { src: `media/output/${row.outputId}?v=${row.outputId}`, alt: presetLabel(preset), loading: 'lazy' } }) as HTMLImageElement;
+        const img = el({ tag: 'img', attrs: { src: `media/thumb/${row.outputId}?v=${row.retries}`, alt: presetLabel(preset), loading: 'lazy' } }) as HTMLImageElement;
         link.append(img);
         frame.append(link);
         tile.append(frame);
@@ -995,7 +1013,7 @@ function showcaseCell(lang: Lang, o: OutputCardDto): HTMLElement {
   const link = el({ tag: 'a', cls: 'imglink', attrs: { href: `#/output/${o.id}` } });
   const frame = el({ tag: 'div', cls: 'frame' });
   if (dims) frame.setAttribute('style', `aspect-ratio:${dims.w}/${dims.h}`);
-  const img = el({ tag: 'img', attrs: { src: o.image, alt: presetLabel(o.preset), loading: 'lazy' } }) as HTMLImageElement;
+  const img = el({ tag: 'img', attrs: { src: `${o.thumb}?v=${o.retries}`, alt: presetLabel(o.preset), loading: 'lazy' } }) as HTMLImageElement;
   frame.append(img);
   link.append(frame);
   cell.append(link);

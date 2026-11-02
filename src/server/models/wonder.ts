@@ -1,5 +1,6 @@
 import type OpenAI from 'openai';
 import { z } from 'zod';
+import { formatBrandPromptForPlan, type StoredBrandPrompt } from '../../shared/brand-prompt.js';
 import type { Preset } from '../../shared/presets.js';
 import type { SourceAnalysis, TemplateSpec } from '../../shared/schemas.js';
 import { structuredCall, type StructuredAttempt } from './spark.js';
@@ -110,6 +111,8 @@ export interface WonderPlanInput {
   /** Free other-text strings in binding order (boxes.others[i] renders freeOthers[i]). */
   freeOthers: string[];
   sizes: WonderPlanSizeInput[];
+  /** The brand's automatic prompt (general for every size, perPreset per size). */
+  brandPrompt?: { prompt: StoredBrandPrompt; text: string } | null;
 }
 
 export function buildWonderPlanPrompt(input: WonderPlanInput): string {
@@ -138,6 +141,9 @@ export function buildWonderPlanPrompt(input: WonderPlanInput): string {
       ? `TEMPLATE ZONES (binding): ${JSON.stringify(templateZonesSummary(s.template.spec))}`
       : 'NO TEMPLATE: use default composition rules for this aspect.';
     lines.push(`SIZE ${s.preset.id} ${s.preset.width}x${s.preset.height} (${safe}). ${zones}`);
+  }
+  if (input.brandPrompt) {
+    lines.push(...formatBrandPromptForPlan(input.brandPrompt, input.sizes.map((s) => s.preset.id)));
   }
   lines.push('Reply with a single JSON object.');
   return lines.join('\n');

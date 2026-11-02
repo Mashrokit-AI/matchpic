@@ -2,12 +2,42 @@
   "id": "toda",
   "name": "TODA",
   "colors": [
-    "#4a1f33",
-    "#c98aa0",
-    "#f7ede0",
-    "#7a3c55"
+    {
+      "hex": "#4a1f33",
+      "role": "primary"
+    },
+    {
+      "hex": "#7a3c55",
+      "role": "secondary"
+    },
+    {
+      "hex": "#c98aa0",
+      "role": "accent"
+    },
+    {
+      "hex": "#f7ede0",
+      "role": "background"
+    }
   ],
   "fonts": [],
   "logo": "logo.png",
-  "templates": []
+  "templates": [],
+  "examples": [
+    {
+      "id": "ex-toda-general",
+      "scope": "general",
+      "image": "source-he.png"
+    },
+    {
+      "id": "ex-toda-ig-11",
+      "scope": "ig-feed-11",
+      "image": "demo/ig-feed-11.png"
+    },
+    {
+      "id": "ex-toda-fb-link",
+      "scope": "fb-link",
+      "image": "demo/fb-link.png"
+    }
+  ],
+  "prompt": "prompt.json"
 }

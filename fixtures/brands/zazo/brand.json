@@ -2,12 +2,52 @@
   "id": "zazo",
   "name": "ZAZO",
   "colors": [
-    "#17323d",
-    "#e8a13d",
-    "#f4ecdd",
-    "#c96f2e"
+    {
+      "hex": "#17323d",
+      "role": "primary"
+    },
+    {
+      "hex": "#c96f2e",
+      "role": "secondary"
+    },
+    {
+      "hex": "#e8a13d",
+      "role": "accent"
+    },
+    {
+      "hex": "#f4ecdd",
+      "role": "background"
+    }
   ],
   "fonts": [],
   "logo": "logo.png",
-  "templates": []
+  "templates": [],
+  "examples": [
+    {
+      "id": "ex-zazo-general",
+      "scope": "general",
+      "image": "source-en.png"
+    },
+    {
+      "id": "ex-zazo-ig-11",
+      "scope": "ig-feed-11",
+      "image": "demo/ig-feed-11.png"
+    },
+    {
+      "id": "ex-zazo-ig-45",
+      "scope": "ig-feed-45",
+      "image": "demo/ig-feed-45.png"
+    },
+    {
+      "id": "ex-zazo-story",
+      "scope": "ig-story-916",
+      "image": "demo/ig-story-916.png"
+    },
+    {
+      "id": "ex-zazo-yt",
+      "scope": "yt-thumb",
+      "image": "demo/yt-thumb.png"
+    }
+  ],
+  "prompt": "prompt.json"
 }

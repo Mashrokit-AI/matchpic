@@ -6,6 +6,10 @@ import type OpenAI from 'openai';
 import sharp from 'sharp';
 import { z } from 'zod';
 import { BRAND_SLUG } from '../../shared/brand.js';
+import {
+  GENERAL_SCOPE, brandPromptUseForSize, guessScopeFromAspect, isGeneralScope, parseBrandColors,
+  parseStoredBrandPrompt, renderBrandPromptText, storedBrandPromptSchema, validateBrandPromptContent,
+} from '../../shared/brand-prompt.js';
 import { loadModelConfig } from '../../shared/config.js';
 import { PRESETS, presetById } from '../../shared/presets.js';
 import { templateSpecSchema } from '../../shared/schemas.js';
@@ -14,6 +18,7 @@ import { prepareSource, runAnalysisStage, runOutput, runPool, type FitMode, type
 import { rowStatusFromChecks, runBatchSource, type TextOverrides } from '../adfit/batch.js';
 import { CostLedger } from '../models/costs.js';
 import { matchBrand } from '../models/brand-match.js';
+import { generateBrandPrompt, type BrandPromptExample } from '../models/brand-prompt.js';
 import { createModelClient } from '../models/client.js';
 import { readTemplate, specBoxesNormalized } from '../models/template-read.js';
 import type { ImageGenConfig } from '../models/muse-image.js';
@@ -23,7 +28,7 @@ import { TraceCollector } from '../workflow/trace.js';
 import { loadHttpConfig, type HttpConfig } from './config.js';
 import { buildBrand, buildBrands, buildExamples, buildJob, buildOutput, traceSummaryOf } from './dto.js';
 import { JobManager, RateLimiter, sseResponse, summarize, type JobRow } from './jobs.js';
-import { MEDIA_KINDS, readContainedFile, resolveMask, resolveMedia, type MediaKind } from './media.js';
+import { MEDIA_KINDS, invalidateThumb, readContainedFile, resolveMask, resolveMedia, type MediaKind } from './media.js';
 import { UploadError, validateAndStoreUpload, validateImageBytes } from './uploads.js';
 import { buildZip, sha256Hex } from './zip.js';
 
@@ -90,8 +95,9 @@ async function sendFile(c: Context, abs: string, contentType: string, cache: str
 }
 
 const hexColor = z.string().regex(/^#[0-9a-fA-F]{6}$/);
+const brandColorInput = z.union([hexColor, z.object({ hex: hexColor, role: z.enum(['primary', 'secondary', 'accent', 'text', 'background']) }).strict()]);
 
-const brandBodySchema = z.object({ name: z.string().trim().min(1).max(60), colors: z.array(hexColor).max(8).default([]), fonts: z.array(z.string().trim().min(1).max(60)).max(8).default([]) }).strict();
+const brandBodySchema = z.object({ name: z.string().trim().min(1).max(60), colors: z.array(brandColorInput).max(8).default([]), fonts: z.array(z.string().trim().min(1).max(60)).max(8).default([]) }).strict();
 
 const templatePatchSchema = z.object({ preset: z.string().max(40).nullable().optional(), spec: z.unknown().optional() }).strict();
 
@@ -267,6 +273,103 @@ export function createApp(deps: AppDeps): Hono {
     })();
   };
 
+  // Brand-prompt generations in flight (the ready state lives in the DB row).
+  const promptRuns = new Map<string, { status: 'generating' | 'failed' | 'capped'; error: string | null; at: string }>();
+
+  /** Background Wonder call: examples + logo + colours in, rules out. Never throws. */
+  const runBrandPromptGeneration = (brandId: string): void => {
+    promptRuns.set(brandId, { status: 'generating', error: null, at: new Date().toISOString() });
+    void (async () => {
+      const fail = (error: string, status: 'failed' | 'capped' = 'failed'): void => {
+        promptRuns.set(brandId, { status, error: error.slice(0, 300), at: new Date().toISOString() });
+      };
+      try {
+        const brand = withStore((s) => s.getBrand(brandId));
+        if (!brand || brand.is_demo === 1) {
+          fail('brand not found');
+          return;
+        }
+        const rows = withStore((s) => s.templatesForBrand(brandId));
+        if (rows.length === 0) {
+          fail('no style examples');
+          return;
+        }
+        const examples: BrandPromptExample[] = [];
+        for (const row of rows) {
+          const bytes = await readContainedFile(repoRoot, row.image_path);
+          if (!bytes) continue;
+          let width = 0;
+          let height = 0;
+          try {
+            const meta = await sharp(bytes).metadata();
+            width = meta.width ?? 0;
+            height = meta.height ?? 0;
+          } catch {
+            continue;
+          }
+          examples.push({ imageBytes: bytes, mimeType: 'image/png', scope: row.preset ?? GENERAL_SCOPE, width, height });
+        }
+        if (examples.length === 0) {
+          fail('style example images are missing');
+          return;
+        }
+        let colors: string[] = [];
+        let fonts: string[] = [];
+        try {
+          colors = parseBrandColors(JSON.parse(brand.colors_json) as unknown).map((c) => c.hex);
+          fonts = JSON.parse(brand.fonts_json) as string[];
+        } catch {
+          // Brand basics stay best-effort context, never a failure.
+        }
+        const logoBytes = brand.logo_path ? await readContainedFile(repoRoot, brand.logo_path) : null;
+        const ledger = new CostLedger(Number.POSITIVE_INFINITY);
+        const res = await generateBrandPrompt(makeClient(), {
+          model: wonderModel,
+          brandName: brand.name,
+          colors,
+          fonts,
+          logo: logoBytes ? { imageBytes: logoBytes, mimeType: 'image/png' } : null,
+          examples,
+          ledger,
+        });
+        withStore((s) => s.recordUsage('model', res.attempts.length));
+        for (const entry of ledger.all()) {
+          withStore((st) => st.recordSpend({ model: entry.model, modelId: entry.modelId, costUsd: entry.costUsd, inputTokens: entry.inputTokens, outputTokens: entry.outputTokens, images: entry.images }));
+        }
+        if (!res.ok || !res.content) {
+          fail(res.reason);
+          return;
+        }
+        const withExamples = new Set(examples.map((e) => e.scope).filter((s) => s !== GENERAL_SCOPE));
+        const errors = validateBrandPromptContent(res.content, withExamples);
+        if (errors.length > 0) {
+          fail(`invalid brand prompt: ${errors.join('; ')}`);
+          return;
+        }
+        let version = 1;
+        try {
+          const prev = brand.prompt_json ? storedBrandPromptSchema.parse(JSON.parse(brand.prompt_json)) : null;
+          if (prev) version = prev.version + 1;
+        } catch {
+          version = 1;
+        }
+        const stored = {
+          ...res.content,
+          version,
+          generatedBy: wonderModel,
+          generatedAt: new Date().toISOString(),
+          editedByUser: false,
+          colors,
+          fonts,
+        };
+        withStore((s) => s.setBrandPrompt(brandId, JSON.stringify(stored), renderBrandPromptText(stored)));
+        promptRuns.delete(brandId);
+      } catch (e) {
+        fail(e instanceof Error ? e.message : String(e));
+      }
+    })();
+  };
+
   interface CellDef {
     source: PreparedSource;
     sourceIndex: number;
@@ -320,6 +423,14 @@ export function createApp(deps: AppDeps): Hono {
     });
   };
 
+  /** The brand's automatic prompt for this job (null when the brand has none). */
+  const loadBrandPrompt = (brandId: string | null): { prompt: import('../../shared/brand-prompt.js').StoredBrandPrompt; text: string } | null => {
+    if (!brandId) return null;
+    const row = withStore((s) => s.getBrand(brandId));
+    if (!row) return null;
+    return parseStoredBrandPrompt(row.prompt_json, row.prompt_text);
+  };
+
   /** Execute one fast job: prepared sources, cells in a worker pool. */
   const executeJob = async (
     storeJobId: string,
@@ -331,6 +442,7 @@ export function createApp(deps: AppDeps): Hono {
     onRow: (row: JobRow) => void,
   ): Promise<{ jobId: string }> => {
     const perSize = await resolvePerSize(brandId, cells.map((c) => c.presetId));
+    const brandPrompt = loadBrandPrompt(brandId);
     const models = { client: makeClient(), extractModel, samModel, wonderModel, image: makeImageConfig() };
     let jobModels = 0;
     let jobImages = 0;
@@ -346,7 +458,7 @@ export function createApp(deps: AppDeps): Hono {
       const start = Date.now();
       try {
         const { template, framePng } = perSize.get(cell.presetId) ?? { template: null, framePng: null };
-        const outcome = await runOutput(models, { source: cell.source, preset, mode, template, framePng, brandName }, `${storeJobId}/${cell.sourceIndex}/${preset.id}`, trace);
+        const outcome = await runOutput(models, { source: cell.source, preset, mode, template, framePng, brandName, brandPrompt: brandPrompt ? brandPromptUseForSize(brandPrompt, preset.id) : null }, `${storeJobId}/${cell.sourceIndex}/${preset.id}`, trace);
         await mkdir(outDir, { recursive: true });
         const fileName = `${cell.sourceIndex}-${preset.id}.png`;
         await writeFile(join(outDir, fileName), outcome.png);
@@ -418,6 +530,7 @@ export function createApp(deps: AppDeps): Hono {
   ): Promise<{ jobId: string }> => {
     const perSize = await resolvePerSize(brandId, sizes);
     const models = { client: makeClient(), extractModel, samModel, wonderModel, image: makeImageConfig() };
+    const brandPrompt = loadBrandPrompt(brandId);
     const ledger = new CostLedger(Number.POSITIVE_INFINITY);
     const wonderAllowed = !spendCaps().wonderOver;
     let jobModels = 0;
@@ -438,6 +551,7 @@ export function createApp(deps: AppDeps): Hono {
           input: { id: raw.id, bytes: raw.bytes, mimeType: 'image/png', width: raw.width, height: raw.height },
           sizes: batchSizes,
           brandName,
+          brandPrompt,
           jobTag: storeJobId,
           repoRoot,
           ledger,
@@ -500,6 +614,8 @@ export function createApp(deps: AppDeps): Hono {
         }
         const fileName = `${sourceIndex}-${o.preset.id}.png`;
         await writeFile(join(outDir, fileName), o.png);
+        // Finals overwrite the preview bytes in place: drop the cached thumb.
+        await invalidateThumb(repoRoot, `o${outputId}`);
         if (o.repaired) {
           await writeFile(join(outDir, `before-${sourceIndex}-${o.preset.id}.png`), o.repaired.beforePng);
           if (o.checks.repaired) o.checks.repaired.before = `data/outputs/${storeJobId}/before-${sourceIndex}-${o.preset.id}.png`;
@@ -659,7 +775,7 @@ export function createApp(deps: AppDeps): Hono {
     const parsed = brandBodySchema.safeParse(body);
     if (!parsed.success) return err(c, 400, 'err_bad_request');
     const id = newId('brand');
-    withStore((s) => s.insertBrand({ id, name: parsed.data.name, colors: parsed.data.colors, fonts: parsed.data.fonts, logoPath: null, isDemo: false, expiresAt: dayFromNow() }));
+    withStore((s) => s.insertBrand({ id, name: parsed.data.name, colors: parseBrandColors(parsed.data.colors), fonts: parsed.data.fonts, logoPath: null, isDemo: false, expiresAt: dayFromNow() }));
     return c.json({ id }, 201);
   });
   inner.delete('/api/brands/:id', async (c) => {
@@ -669,6 +785,7 @@ export function createApp(deps: AppDeps): Hono {
     if (row.is_demo === 1) return err(c, 400, 'err_bad_request');
     const templates = withStore((s) => s.templatesForBrand(id));
     await unlinkData([row.logo_path, ...templates.flatMap((t) => [t.image_path, t.frame_path])]);
+    for (const t of templates) await invalidateThumb(repoRoot, `e${t.id}`);
     withStore((s) => s.deleteBrand(id));
     return c.json({ ok: true });
   });
@@ -761,7 +878,132 @@ export function createApp(deps: AppDeps): Hono {
     const brand = withStore((s) => s.getBrand(row.brand_id));
     if (brand?.is_demo === 1) return err(c, 400, 'err_bad_request');
     await unlinkData([row.image_path, row.frame_path]);
+    await invalidateThumb(repoRoot, `e${row.id}`);
     withStore((s) => s.deleteTemplate(row.id));
+    return c.json({ ok: true });
+  });
+
+  // --- style examples (finished ads with a scope; same rows as templates) ---
+  inner.post('/api/brands/:id/examples', async (c) => {
+    const row = withStore((s) => s.getBrand(c.req.param('id')));
+    if (!row) return err(c, 404, 'err_not_found');
+    if (row.is_demo === 1) return err(c, 400, 'err_bad_request');
+    const len = c.req.header('content-length');
+    if (len && Number(len) > cfg.uploadMaxBytes + 65536) return err(c, 413, 'err_too_large');
+    let parsed: Record<string, unknown>;
+    try {
+      parsed = (await c.req.parseBody()) as Record<string, unknown>;
+    } catch {
+      return err(c, 400, 'err_bad_request');
+    }
+    const files = collectFiles(parsed);
+    if (files.length !== 1) return err(c, 400, 'err_bad_request');
+    const scopeRaw = typeof parsed.scope === 'string' ? parsed.scope : '';
+    try {
+      const stored = await validateAndStoreUpload(repoRoot, Buffer.from(await (files[0] as UploadedFile).arrayBuffer()), cfg.uploadMaxBytes, cfg.uploadMaxPixels, 'templates', 'example.png');
+      const scope = scopeRaw === GENERAL_SCOPE || scopeRaw === ''
+        ? (scopeRaw === '' ? guessScopeFromAspect(stored.width, stored.height) : GENERAL_SCOPE)
+        : scopeRaw;
+      if (!isGeneralScope(scope) && !presetById(scope)) return err(c, 400, 'err_bad_request');
+      if (!isGeneralScope(scope) && !cfg.live) return err(c, 503, 'err_live_off');
+      const id = newId('tpl');
+      withStore((s) => s.insertTemplate({ id, brandId: row.id, preset: isGeneralScope(scope) ? null : scope, imagePath: stored.relPath, framePath: null, expiresAt: dayFromNow() }));
+      if (isGeneralScope(scope)) {
+        withStore((s) => s.setTemplateReadyWithoutSpec(id));
+      } else {
+        parseTemplate(id);
+      }
+      return c.json({ id, scope, status: isGeneralScope(scope) ? 'ready' : 'pending' }, 202);
+    } catch (e) {
+      if (e instanceof UploadError) return err(c, e.key === 'err_too_large' ? 413 : 400, e.key);
+      throw e;
+    }
+  });
+  inner.patch('/api/examples/:id', async (c) => {
+    const row = withStore((s) => s.getTemplate(c.req.param('id')));
+    if (!row) return err(c, 404, 'err_not_found');
+    const owner = withStore((s) => s.getBrand(row.brand_id));
+    if (owner?.is_demo === 1) return err(c, 400, 'err_bad_request');
+    let body: unknown;
+    try {
+      body = await c.req.json();
+    } catch {
+      return err(c, 400, 'err_bad_request');
+    }
+    const parsed = z.object({ scope: z.string().min(1).max(40) }).strict().safeParse(body);
+    if (!parsed.success) return err(c, 400, 'err_bad_request');
+    const scope = parsed.data.scope;
+    if (!isGeneralScope(scope) && !presetById(scope)) return err(c, 400, 'err_bad_request');
+    withStore((s) => s.setTemplatePreset(row.id, isGeneralScope(scope) ? null : scope));
+    if (!isGeneralScope(scope) && !row.spec_json) {
+      if (!cfg.live) return err(c, 503, 'err_live_off');
+      withStore((s) => s.resetTemplateParse(row.id));
+      parseTemplate(row.id);
+    }
+    return c.json({ ok: true, scope });
+  });
+  inner.delete('/api/examples/:id', async (c) => {
+    const row = withStore((s) => s.getTemplate(c.req.param('id')));
+    if (!row) return err(c, 404, 'err_not_found');
+    const brand = withStore((s) => s.getBrand(row.brand_id));
+    if (brand?.is_demo === 1) return err(c, 400, 'err_bad_request');
+    await unlinkData([row.image_path, row.frame_path]);
+    await invalidateThumb(repoRoot, `e${row.id}`);
+    withStore((s) => s.deleteTemplate(row.id));
+    return c.json({ ok: true });
+  });
+
+  // --- the automatic brand prompt (one Wonder call per generate) ---
+  inner.get('/api/brands/:id/prompt', (c) => {
+    const row = withStore((s) => s.getBrand(c.req.param('id')));
+    if (!row) return err(c, 404, 'err_not_found');
+    const run = promptRuns.get(row.id);
+    if (run?.status === 'generating') return c.json({ status: 'generating' });
+    if (row.prompt_json) {
+      try {
+        const parsed = storedBrandPromptSchema.parse(JSON.parse(row.prompt_json));
+        return c.json({ status: 'ready', prompt: { ...parsed, readable: row.prompt_text ?? renderBrandPromptText(parsed) } });
+      } catch {
+        // A corrupt prompt row reads as missing, never crashes the API.
+      }
+    }
+    if (run) return c.json({ status: run.status, error: run.error });
+    return c.json({ status: 'none' });
+  });
+  inner.post('/api/brands/:id/prompt/generate', async (c) => {
+    const row = withStore((s) => s.getBrand(c.req.param('id')));
+    if (!row) return err(c, 404, 'err_not_found');
+    if (row.is_demo === 1) return err(c, 400, 'err_bad_request');
+    if (promptRuns.get(row.id)?.status === 'generating') return c.json({ status: 'generating' }, 202);
+    const examples = withStore((s) => s.templatesForBrand(row.id));
+    if (examples.length === 0) return err(c, 400, 'err_no_examples');
+    if (!cfg.live) return err(c, 503, 'err_live_off');
+    if (spendCaps().wonderOver) {
+      promptRuns.set(row.id, { status: 'capped', error: 'daily Wonder budget spent', at: new Date().toISOString() });
+      return err(c, 429, 'err_spendcap');
+    }
+    runBrandPromptGeneration(row.id);
+    return c.json({ status: 'generating' }, 202);
+  });
+  inner.patch('/api/brands/:id/prompt', async (c) => {
+    const row = withStore((s) => s.getBrand(c.req.param('id')));
+    if (!row) return err(c, 404, 'err_not_found');
+    if (row.is_demo === 1) return err(c, 400, 'err_bad_request');
+    if (!row.prompt_json) return err(c, 400, 'err_bad_request');
+    let body: unknown;
+    try {
+      body = await c.req.json();
+    } catch {
+      return err(c, 400, 'err_bad_request');
+    }
+    const parsed = z.object({ text: z.string().trim().min(1).max(20000) }).strict().safeParse(body);
+    if (!parsed.success) return err(c, 400, 'err_bad_request');
+    try {
+      const prev = storedBrandPromptSchema.parse(JSON.parse(row.prompt_json));
+      withStore((s) => s.setBrandPromptText(row.id, JSON.stringify({ ...prev, editedByUser: true }), parsed.data.text));
+    } catch {
+      return err(c, 400, 'err_bad_request');
+    }
     return c.json({ ok: true });
   });
 
@@ -792,7 +1034,7 @@ export function createApp(deps: AppDeps): Hono {
     for (const b of brands) {
       let colors: string[] = [];
       try {
-        colors = JSON.parse(b.colors_json) as string[];
+        colors = parseBrandColors(JSON.parse(b.colors_json) as unknown).map((e) => e.hex);
       } catch {
         colors = [];
       }
@@ -867,10 +1109,10 @@ export function createApp(deps: AppDeps): Hono {
     } catch {
       return err(c, 400, 'err_bad_request');
     }
-    const patch: { name?: string; colors?: string[]; fonts?: string[] } = {};
+    const patch: { name?: string; colors?: Array<string | { hex: string; role: 'primary' | 'secondary' | 'accent' | 'text' | 'background' }>; fonts?: string[] } = {};
     if (typeof body.name === 'string' && body.name.trim().length > 0) patch.name = body.name.trim().slice(0, 60);
     if (Array.isArray(body.colors)) {
-      const colors = body.colors.filter((x): x is string => typeof x === 'string' && /^#[0-9a-fA-F]{6}$/.test(x)).slice(0, 6);
+      const colors = parseBrandColors(body.colors);
       if (colors.length > 0) patch.colors = colors;
     }
     if (Array.isArray(body.fonts)) {
@@ -896,12 +1138,15 @@ export function createApp(deps: AppDeps): Hono {
     const id = newId('brand');
     const templates = withStore((s) => s.templatesForBrand(row.id));
     withStore((s) => {
-      s.insertBrand({ id, name, colors: JSON.parse(row.colors_json) as string[], fonts: JSON.parse(row.fonts_json) as string[], logoPath: row.logo_path, isDemo: false, expiresAt: dayFromNow() });
+      s.insertBrand({ id, name, colors: parseBrandColors(JSON.parse(row.colors_json) as unknown), fonts: JSON.parse(row.fonts_json) as string[], logoPath: row.logo_path, isDemo: false, expiresAt: dayFromNow() });
       for (const t of templates) {
         const tid = newId('tpl');
         s.insertTemplate({ id: tid, brandId: id, preset: t.preset, imagePath: t.image_path, framePath: t.frame_path, expiresAt: dayFromNow() });
         if (t.spec_json) s.setTemplateReady(tid, t.spec_json);
+        else if (t.status === 'ready') s.setTemplateReadyWithoutSpec(tid);
       }
+      // The duplicate keeps the generated prompt (editable copy, same version).
+      if (row.prompt_json && row.prompt_text) s.setBrandPrompt(id, row.prompt_json, row.prompt_text);
     });
     return c.json({ id }, 201);
   });

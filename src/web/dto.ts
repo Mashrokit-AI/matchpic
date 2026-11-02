@@ -11,6 +11,7 @@ export interface TemplateDto {
   id: string;
   preset: string | null;
   image: string;
+  thumb: string;
   status: string;
   error: string | null;
   spec: TemplateSpecDto | null;
@@ -36,14 +37,45 @@ export interface TemplateSpecDto {
   direction: string;
 }
 
+export interface BrandColorDto {
+  hex: string;
+  role: string;
+}
+
+export interface BrandExampleDto {
+  id: string;
+  scope: string;
+  image: string;
+  thumb: string;
+  status: string;
+}
+
+export interface BrandPromptDto {
+  version: number;
+  generatedBy: string;
+  generatedAt: string;
+  editedByUser: boolean;
+  general: string[];
+  perPreset: Record<string, string[]>;
+  never: string[];
+  proportions: Array<{ element: string; dimension: string; pct: number }>;
+  text: string[];
+  colors: string[];
+  fonts: string[];
+  /** Readable text (the user's edit when editedByUser). */
+  readable: string;
+}
+
 export interface BrandDto {
   id: string;
   name: string;
-  colors: string[];
+  colors: BrandColorDto[];
   fonts: string[];
   logo: string | null;
   demo: boolean;
   templates: TemplateDto[];
+  examples: BrandExampleDto[];
+  prompt: BrandPromptDto | null;
 }
 
 export interface CardChecksDto {
@@ -61,6 +93,7 @@ export interface OutputCardDto {
   mode: string;
   status: string;
   image: string;
+  thumb: string;
   qaPass: boolean | null;
   retries: number;
   proofDiff: number | null;
@@ -96,6 +129,7 @@ export interface ExampleDto {
   nativePreset: string | null;
   sourceId: string;
   sourceImage: string;
+  sourceThumb: string;
   sourceWidth: number;
   sourceHeight: number;
   outputCount: number;
@@ -213,6 +247,7 @@ export interface OutputDetailDto extends Omit<OutputCardDto, 'checks'> {
   error: string | null;
   latencyMs: number;
   sourceImage: string;
+  sourceThumb: string;
   sourceWidth: number;
   sourceHeight: number;
   templateImage: string | null;

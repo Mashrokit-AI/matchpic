@@ -1,4 +1,5 @@
 import type OpenAI from 'openai';
+import { brandPromptTraceTag, type BrandPromptUse } from '../../shared/brand-prompt.js';
 import { presetSafeRect, type Preset } from '../../shared/presets.js';
 import type { LayoutPlan, PlanBox, QAverdict, SourceAnalysis, TemplateSpec } from '../../shared/schemas.js';
 import { analyzeSource } from '../models/analyze.js';
@@ -88,6 +89,8 @@ export interface OutputRequest {
   /** Transparent PNG placed exactly, last. Must match the preset size. */
   framePng: Buffer | null;
   brandName: string | null;
+  /** Resolved brand-prompt block for this size (general + perPreset[size] + never). */
+  brandPrompt?: BrandPromptUse | null;
 }
 
 export interface OutputOutcome {
@@ -492,6 +495,7 @@ export function buildFastPrompt(req: OutputRequest, plan: LayoutPlan, qaNotes: s
   ];
   if (req.template) lines.push('Follow the layout of the second reference image (the brand template for this size): same zone arrangement, same panel position, same background style.');
   else lines.push(`Layout: ${plan.notes.join('; ')}.`);
+  if (req.brandPrompt) lines.push(`Brand style rules (v${req.brandPrompt.version}, follow for this size):\n${req.brandPrompt.block}`);
   for (const n of qaNotes) lines.push(`Fix from QA review: ${n}`);
   return lines.join('\n');
 }
@@ -514,6 +518,7 @@ export function buildPlatePrompt(req: OutputRequest, plan: LayoutPlan, qaNotes: 
     `Style to match: ${a.background.description} (type: ${a.background.type}; colors: ${a.background.colors.join(', ') || 'match the reference'}). One continuous field: if the reference background is split (flat-color region plus photo), blend it into a single seamless background with NO straight seams, horizon splits, bands, or blocks.`,
   ];
   if (extra.backgroundBrief) lines.push(`Art direction: ${extra.backgroundBrief}`);
+  if (req.brandPrompt) lines.push(`Brand style rules (v${req.brandPrompt.version}, follow for this size):\n${req.brandPrompt.block}`);
   if (extra.forceContinuous) {
     // Regen after a background defect (seen live: a template-mandated header
     // band surviving regen, and a re-seamed landscape): the defect overrules
@@ -579,6 +584,7 @@ export function buildPlatePromptTextOnly(
       : 'CONTINUOUS BACKGROUND ONLY: one seamless field edge to edge — NO bands, headers, footers, blocks, panels, or straight seams/splits of any kind.',
   ];
   if (extra.backgroundBrief) lines.push(`Art direction: ${extra.backgroundBrief}`);
+  if (req.brandPrompt) lines.push(`Brand style rules (v${req.brandPrompt.version}, follow for this size):\n${req.brandPrompt.block}`);
   if (req.template) lines.push(`Brand layout style for this size (background feel only, never bands): ${req.template.spec.background_style}.`);
   const guide = layoutGuideForPlate(extra.manifest ?? null);
   if (guide) lines.push(`Layout guide — keep these regions clean and low-detail (percent of canvas): ${guide}.`);
@@ -1331,7 +1337,7 @@ export async function runOutput(
   trace.emit({
     step: 'adfit_plan',
     tool_or_model: planned.planner === 'wonder' ? `model:${models.wonderModel}` : 'code:planLayout',
-    input_summary: `${req.preset.id} ${req.mode}${req.template ? ` template=${req.template.id}` : ' no-template'} family=${manifest.family}`,
+    input_summary: `${req.preset.id} ${req.mode}${req.template ? ` template=${req.template.id}` : ' no-template'} family=${manifest.family}${brandPromptTraceTag(req.brandPrompt)}`,
     output_summary: `${plan.notes.join('; ')}${manifest.corrections.length > 0 ? ` | corrections: ${manifest.corrections.join('; ').slice(0, 300)}` : ''}`,
     duration_ms: Date.now() - planStart,
     evidence_ids: ['out:plan'],

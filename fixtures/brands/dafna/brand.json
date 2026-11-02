@@ -2,10 +2,22 @@
   "id": "dafna",
   "name": "דפנה",
   "colors": [
-    "#5c1e3a",
-    "#c9963c",
-    "#f6efe3",
-    "#8a4a5e"
+    {
+      "hex": "#5c1e3a",
+      "role": "primary"
+    },
+    {
+      "hex": "#8a4a5e",
+      "role": "secondary"
+    },
+    {
+      "hex": "#c9963c",
+      "role": "accent"
+    },
+    {
+      "hex": "#f6efe3",
+      "role": "background"
+    }
   ],
   "fonts": [],
   "logo": "logo.png",
@@ -28,5 +40,13 @@
       "image": "tpl-9x16.png",
       "spec": "spec-9x16.json"
     }
-  ]
+  ],
+  "examples": [
+    {
+      "id": "ex-dafna-general",
+      "scope": "general",
+      "image": "source-he.png"
+    }
+  ],
+  "prompt": "prompt.json"
 }
