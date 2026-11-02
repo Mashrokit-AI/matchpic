@@ -1,0 +1,2009 @@
+{
+  "brand": "luma",
+  "mode": "protected",
+  "finishedAt": "2026-11-02T12:42:13.471Z",
+  "modelCalls": 21,
+  "imageCalls": 9,
+  "firstPreviewMs": 177758,
+  "totalMs": 739082,
+  "outputs": [
+    {
+      "source": "demo-src-luma",
+      "sourceLabel": "source-en.png",
+      "preset": "ig-feed-45",
+      "mode": "protected",
+      "status": "needs_review",
+      "image": "ig-feed-45.png",
+      "before": "before-ig-feed-45.png",
+      "plan": {
+        "preset": "ig-feed-45",
+        "width": 1080,
+        "height": 1350,
+        "from_template": false,
+        "template_id": null,
+        "safe": {
+          "x": 43,
+          "y": 54,
+          "w": 994,
+          "h": 1215
+        },
+        "logo": {
+          "x": 90,
+          "y": 81,
+          "w": 208,
+          "h": 61
+        },
+        "products": [
+          {
+            "x": 269,
+            "y": 475,
+            "w": 168,
+            "h": 495
+          },
+          {
+            "x": 523,
+            "y": 667,
+            "w": 278,
+            "h": 312
+          }
+        ],
+        "headline": {
+          "x": 86,
+          "y": 176,
+          "w": 907,
+          "h": 257
+        },
+        "subtext": {
+          "x": 86,
+          "y": 1127,
+          "w": 907,
+          "h": 61
+        },
+        "panel": {
+          "x": 86,
+          "y": 1013,
+          "w": 540,
+          "h": 81
+        },
+        "other_texts": [
+          {
+            "x": 860,
+            "y": 891,
+            "w": 130,
+            "h": 47
+          }
+        ],
+        "product_scales": [
+          1.5,
+          1.4647887323943662
+        ],
+        "logo_scale": 1.6486486486486487,
+        "notes": [
+          "wonder: portrait_stack",
+          "wonder rationale: Portrait stack uses even 0.025 gaps from logo through headline, centered products, panel and subtext on a shared left edge."
+        ],
+        "manifest": {
+          "preset": "ig-feed-45",
+          "width": 1080,
+          "height": 1350,
+          "family": "portrait_stack",
+          "planner": "wonder",
+          "safe": {
+            "x": 43,
+            "y": 54,
+            "w": 994,
+            "h": 1215
+          },
+          "elements": [
+            {
+              "id": "product-0",
+              "kind": "product",
+              "box": {
+                "x": 269,
+                "y": 475,
+                "w": 168,
+                "h": 495
+              },
+              "group": "products",
+              "z": 20,
+              "align": null,
+              "scale": 1.5,
+              "source": "default",
+              "srcBox": {
+                "x": 556,
+                "y": 281,
+                "w": 122,
+                "h": 316
+              }
+            },
+            {
+              "id": "product-1",
+              "kind": "product",
+              "box": {
+                "x": 523,
+                "y": 667,
+                "w": 278,
+                "h": 312
+              },
+              "group": "products",
+              "z": 21,
+              "align": null,
+              "scale": 1.4647887323943662,
+              "source": "default",
+              "srcBox": {
+                "x": 697,
+                "y": 447,
+                "w": 205,
+                "h": 192
+              }
+            },
+            {
+              "id": "panel",
+              "kind": "panel",
+              "box": {
+                "x": 86,
+                "y": 1013,
+                "w": 540,
+                "h": 81
+              },
+              "group": "offer",
+              "z": 10,
+              "align": "left",
+              "scale": null,
+              "source": "default",
+              "srcBox": null
+            },
+            {
+              "id": "headline",
+              "kind": "headline",
+              "box": {
+                "x": 86,
+                "y": 176,
+                "w": 907,
+                "h": 257
+              },
+              "group": "text",
+              "z": 30,
+              "align": "left",
+              "scale": null,
+              "source": "corrected",
+              "srcBox": null
+            },
+            {
+              "id": "subtext",
+              "kind": "subtext",
+              "box": {
+                "x": 86,
+                "y": 1168,
+                "w": 907,
+                "h": 61
+              },
+              "group": "text",
+              "z": 31,
+              "align": "left",
+              "scale": null,
+              "source": "corrected",
+              "srcBox": null
+            },
+            {
+              "id": "other-0",
+              "kind": "other_text",
+              "box": {
+                "x": 86,
+                "y": 932,
+                "w": 130,
+                "h": 47
+              },
+              "group": "text",
+              "z": 32,
+              "align": "left",
+              "scale": null,
+              "source": "corrected",
+              "srcBox": null
+            },
+            {
+              "id": "logo",
+              "kind": "logo",
+              "box": {
+                "x": 116,
+                "y": 89,
+                "w": 156,
+                "h": 46
+              },
+              "group": "logo",
+              "z": 40,
+              "align": null,
+              "scale": 1.2364864864864866,
+              "source": "corrected",
+              "srcBox": {
+                "x": 112,
+                "y": 112,
+                "w": 125,
+                "h": 35
+              }
+            }
+          ],
+          "templateZones": null,
+          "corrections": [
+            "text group: 3 boxes share the left edge",
+            "text group: 3 boxes share the left edge",
+            "text group: 3 boxes share the left edge",
+            "text group: 3 boxes share the left edge",
+            "text group: 3 boxes share the left edge",
+            "repair reverted for headline (would touch product-0) (separation < 16px)",
+            "text group: 3 boxes share the left edge",
+            "text group: 3 boxes share the left edge"
+          ],
+          "rationale": "Portrait stack uses even 0.025 gaps from logo through headline, centered products, panel and subtext on a shared left edge."
+        }
+      },
+      "proof": {
+        "product-0": {
+          "scale": 1.5,
+          "core_differ": 0,
+          "core_total": 63776,
+          "feather_total": 2644,
+          "coverage": 0.9601927130382415,
+          "pass": true
+        },
+        "product-1": {
+          "scale": 1.4647887323943662,
+          "core_differ": 0,
+          "core_total": 75232,
+          "feather_total": 2364,
+          "coverage": 0.9695345120882519,
+          "pass": true
+        },
+        "logo": {
+          "scale": 1.2364864864864866,
+          "core_differ": 0,
+          "core_total": 4830,
+          "feather_total": 1022,
+          "coverage": 0.8253588516746412,
+          "pass": true
+        }
+      },
+      "qa": null,
+      "retries": 0,
+      "modelCalls": 0,
+      "imageCalls": 3,
+      "latencyMs": 23554,
+      "trace": [
+        {
+          "step": "adfit_analyze",
+          "tool_or_model": "model:muse-spark-1.3",
+          "input_summary": "source 1080x1080",
+          "output_summary": "lang=en products=2 logo=yes headline=\"Glow\\nthat lasts\\nall day\" panel=opaque bg=other coords=pixels",
+          "duration_ms": 42622,
+          "evidence_ids": [
+            "src:analysis"
+          ],
+          "next_state": "adfit_masks",
+          "cached": true,
+          "seq": 1
+        },
+        {
+          "step": "adfit_masks",
+          "tool_or_model": "model:sam-3.1",
+          "input_summary": "product-0[dropper bottle] product-1[cream jar] logo[logo]",
+          "output_summary": "ok: product-0,product-1,logo coverage: products 2/2",
+          "duration_ms": 61654,
+          "evidence_ids": [
+            "src:product-0",
+            "src:product-1",
+            "src:logo"
+          ],
+          "next_state": "adfit_plan",
+          "cached": true,
+          "seq": 2
+        },
+        {
+          "step": "adfit_plan",
+          "tool_or_model": "model:muse-wonder-1.0",
+          "input_summary": "ig-feed-45 protected no-template family=portrait_stack",
+          "output_summary": "wonder: portrait_stack; wonder rationale: Portrait stack uses even 0.025 gaps from logo through headline, centered products, panel and subtext on a shared left edge. | corrections: text group: 3 boxes share the left edge",
+          "duration_ms": 0,
+          "evidence_ids": [
+            "out:plan"
+          ],
+          "next_state": "adfit_generate",
+          "cached": false,
+          "seq": 3
+        },
+        {
+          "step": "adfit_generate",
+          "tool_or_model": "model:muse-image-1.0",
+          "input_summary": "protected plate 1080x1350",
+          "output_summary": "wire bytes=2631864",
+          "duration_ms": 21378,
+          "evidence_ids": [
+            "out:plate"
+          ],
+          "next_state": "adfit_composite",
+          "cached": false,
+          "seq": 4
+        },
+        {
+          "step": "adfit_generate",
+          "tool_or_model": "code:deband",
+          "input_summary": "plate 1080x1350",
+          "output_summary": "debanded 94 edge rows into the field",
+          "duration_ms": 0,
+          "evidence_ids": [],
+          "next_state": "adfit_composite",
+          "cached": false,
+          "seq": 5
+        },
+        {
+          "step": "adfit_composite",
+          "tool_or_model": "code:composite+chromium",
+          "input_summary": "plate + product-0@1.500x product-1@1.465x logo@1.649x + text(panel,headline,subtext,other-0) panel:rebuilt",
+          "output_summary": "1080x1350 product-0: contact shadow at support y=969; product-1: contact shadow at support y=977; panel rebuilt in code (rounded_rect, fill #fbf6ee sampled)",
+          "duration_ms": 1600,
+          "evidence_ids": [
+            "out:product-0",
+            "out:product-1",
+            "out:logo"
+          ],
+          "next_state": "adfit_proof",
+          "cached": false,
+          "seq": 6
+        },
+        {
+          "step": "adfit_proof",
+          "tool_or_model": "code:elementProof",
+          "input_summary": "3 pasted elements",
+          "output_summary": "product-0:0/63776 (96% compared) product-1:0/75232 (97% compared) logo:0/8994 (87% compared) feather outside core only",
+          "duration_ms": 122,
+          "evidence_ids": [
+            "out:product-0",
+            "out:product-1",
+            "out:logo"
+          ],
+          "next_state": "adfit_review",
+          "cached": false,
+          "seq": 7
+        },
+        {
+          "step": "adfit_generate",
+          "tool_or_model": "model:muse-image-1.0",
+          "input_summary": "protected plate 1080x1350 (retry) text-only",
+          "output_summary": "wire bytes=2084266",
+          "duration_ms": 35831,
+          "evidence_ids": [
+            "out:plate"
+          ],
+          "next_state": "adfit_composite",
+          "cached": false,
+          "seq": 8
+        },
+        {
+          "step": "adfit_generate",
+          "tool_or_model": "code:deband",
+          "input_summary": "plate 1080x1350",
+          "output_summary": "debanded 1130 edge rows into the field",
+          "duration_ms": 0,
+          "evidence_ids": [],
+          "next_state": "adfit_composite",
+          "cached": false,
+          "seq": 9
+        },
+        {
+          "step": "adfit_composite",
+          "tool_or_model": "code:composite+chromium",
+          "input_summary": "plate + product-0@1.500x product-1@1.465x logo@1.649x + text(panel,headline,subtext,other-0) panel:rebuilt",
+          "output_summary": "1080x1350 product-0: contact shadow at support y=969; product-1: contact shadow at support y=977; panel rebuilt in code (rounded_rect, fill #fbf6ee sampled)",
+          "duration_ms": 798,
+          "evidence_ids": [
+            "out:product-0",
+            "out:product-1",
+            "out:logo"
+          ],
+          "next_state": "adfit_proof",
+          "cached": false,
+          "seq": 10
+        },
+        {
+          "step": "adfit_proof",
+          "tool_or_model": "code:elementProof",
+          "input_summary": "3 pasted elements",
+          "output_summary": "product-0:0/63776 (96% compared) product-1:0/75232 (97% compared) logo:0/8994 (87% compared) feather outside core only",
+          "duration_ms": 56,
+          "evidence_ids": [
+            "out:product-0",
+            "out:product-1",
+            "out:logo"
+          ],
+          "next_state": "adfit_review",
+          "cached": false,
+          "seq": 11
+        },
+        {
+          "step": "adfit_repair",
+          "tool_or_model": "model:muse-image-1.0",
+          "input_summary": "flag:panel, regenerate_plate:background, move:other-0, move:headline, move:subtext",
+          "output_summary": "applied: plate: regenerate (Two sharp horizontal seams stripe the canvas into three beige bands behind the headline and products, a defective plate ); other-0: move (22,0); headline: move (22,0); subtext: move (22,0)",
+          "duration_ms": 0,
+          "evidence_ids": [
+            "out:repair"
+          ],
+          "next_state": "done",
+          "cached": false,
+          "seq": 12
+        },
+        {
+          "step": "adfit_generate",
+          "tool_or_model": "model:muse-image-1.0",
+          "input_summary": "protected plate 1080x1350 (retry) text-only",
+          "output_summary": "wire bytes=2004564",
+          "duration_ms": 26691,
+          "evidence_ids": [
+            "out:plate"
+          ],
+          "next_state": "adfit_composite",
+          "cached": false,
+          "seq": 13
+        },
+        {
+          "step": "adfit_generate",
+          "tool_or_model": "code:deband",
+          "input_summary": "plate 1080x1350",
+          "output_summary": "debanded 1136 edge rows into the field",
+          "duration_ms": 0,
+          "evidence_ids": [],
+          "next_state": "adfit_composite",
+          "cached": false,
+          "seq": 14
+        },
+        {
+          "step": "adfit_composite",
+          "tool_or_model": "code:composite+chromium",
+          "input_summary": "plate + product-0@1.500x product-1@1.465x logo@1.649x + text(panel,headline,subtext,other-0) panel:rebuilt",
+          "output_summary": "1080x1350 product-0: contact shadow at support y=969; product-1: contact shadow at support y=977; panel rebuilt in code (rounded_rect, fill #fbf6ee sampled)",
+          "duration_ms": 11243,
+          "evidence_ids": [
+            "out:product-0",
+            "out:product-1",
+            "out:logo"
+          ],
+          "next_state": "adfit_proof",
+          "cached": false,
+          "seq": 15
+        },
+        {
+          "step": "adfit_proof",
+          "tool_or_model": "code:elementProof",
+          "input_summary": "3 pasted elements",
+          "output_summary": "product-0:0/63776 (96% compared) product-1:0/75232 (97% compared) logo:0/8994 (87% compared) feather outside core only",
+          "duration_ms": 588,
+          "evidence_ids": [
+            "out:product-0",
+            "out:product-1",
+            "out:logo"
+          ],
+          "next_state": "adfit_review",
+          "cached": false,
+          "seq": 16
+        },
+        {
+          "step": "adfit_repair",
+          "tool_or_model": "code:recompose",
+          "input_summary": "retry: flag:panel, move:other-0, move:headline, move:subtext, scale:logo",
+          "output_summary": "applied: other-0: move (0,41); subtext: move (0,41); logo: scale x0.75",
+          "duration_ms": 0,
+          "evidence_ids": [
+            "out:repair"
+          ],
+          "next_state": "done",
+          "cached": false,
+          "seq": 17
+        },
+        {
+          "step": "adfit_composite",
+          "tool_or_model": "code:composite+chromium",
+          "input_summary": "plate + product-0@1.500x product-1@1.465x logo@1.236x + text(panel,headline,subtext,other-0) panel:rebuilt",
+          "output_summary": "1080x1350 product-0: contact shadow at support y=969; product-1: contact shadow at support y=977; panel rebuilt in code (rounded_rect, fill #fbf6ee sampled)",
+          "duration_ms": 8244,
+          "evidence_ids": [
+            "out:product-0",
+            "out:product-1",
+            "out:logo"
+          ],
+          "next_state": "adfit_proof",
+          "cached": false,
+          "seq": 18
+        },
+        {
+          "step": "adfit_proof",
+          "tool_or_model": "code:elementProof",
+          "input_summary": "3 pasted elements",
+          "output_summary": "product-0:0/63776 (96% compared) product-1:0/75232 (97% compared) logo:0/4830 (83% compared) feather outside core only",
+          "duration_ms": 833,
+          "evidence_ids": [
+            "out:product-0",
+            "out:product-1",
+            "out:logo"
+          ],
+          "next_state": "adfit_review",
+          "cached": false,
+          "seq": 19
+        },
+        {
+          "step": "adfit_wonder_plan",
+          "tool_or_model": "model:muse-wonder-1.0",
+          "input_summary": "1 source x 3 sizes",
+          "output_summary": "families: ig-story-916=portrait_stack fb-link=landscape_split ig-feed-45=portrait_stack",
+          "duration_ms": 113138,
+          "evidence_ids": [
+            "out:plan"
+          ],
+          "next_state": "adfit_generate",
+          "cached": true,
+          "seq": 20
+        },
+        {
+          "step": "adfit_plate_check",
+          "tool_or_model": "model:muse-spark-1.3",
+          "input_summary": "3 plates",
+          "output_summary": "dirty (regenerate once): ig-story-916: straight horizontal horizon seams where wall meets stone ledge and foreground surface divide the frame into bands, not one continuous field | fb-link: straight horizon split dividing wall from stone tabletop across full width with bottom edge strip, not one continuous field | ig-feed-45: horizon seam between wall and thick stone slab divides frame plus faint horizontal band at top, n",
+          "duration_ms": 22849,
+          "evidence_ids": [
+            "out:plate"
+          ],
+          "next_state": "adfit_review",
+          "cached": true,
+          "seq": 21
+        },
+        {
+          "step": "adfit_text_check",
+          "tool_or_model": "model:muse-spark-1.3",
+          "input_summary": "3 outputs with re-rendered text",
+          "output_summary": "all exact",
+          "duration_ms": 35974,
+          "evidence_ids": [
+            "out:text"
+          ],
+          "next_state": "adfit_review",
+          "cached": true,
+          "seq": 22
+        },
+        {
+          "step": "adfit_review",
+          "tool_or_model": "model:muse-wonder-1.0",
+          "input_summary": "source + 3 outputs + deterministic findings",
+          "output_summary": "10 defects: ig-story-916/panel, ig-story-916/background, ig-story-916/panel, fb-link/panel, fb-link/other-0, fb-link/product-1, ig-feed-45/panel, ig-feed-45/background, ig-feed-45/other-0, ig-feed-45/subtext",
+          "duration_ms": 79517,
+          "evidence_ids": [
+            "out:review"
+          ],
+          "next_state": "adfit_repair",
+          "cached": true,
+          "seq": 23
+        },
+        {
+          "step": "adfit_plate_recheck",
+          "tool_or_model": "model:muse-spark-1.3",
+          "input_summary": "2 regened plates",
+          "output_summary": "still dirty: ig-story-916: Two straight horizontal seams divide the frame into three tonal bands/blocks, not one continuous field. | ig-feed-45: Two straight horizontal seams divide the frame into three tonal bands/blocks, not one continuous field.",
+          "duration_ms": 14192,
+          "evidence_ids": [
+            "out:plate"
+          ],
+          "next_state": "done",
+          "cached": true,
+          "seq": 24
+        },
+        {
+          "step": "adfit_repair",
+          "tool_or_model": "code:recompose",
+          "input_summary": "3 sizes with defects",
+          "output_summary": "3 recomposed from cached layers (before kept)",
+          "duration_ms": 0,
+          "evidence_ids": [
+            "out:repair"
+          ],
+          "next_state": "done",
+          "cached": true,
+          "seq": 25
+        },
+        {
+          "step": "adfit_review_retry",
+          "tool_or_model": "model:muse-wonder-1.0",
+          "input_summary": "second chance for 2 reverted size(s)",
+          "output_summary": "11 re-proposed defects: ig-story-916/panel, ig-story-916/subtext, ig-story-916/other-0, fb-link/panel, fb-link/product-1, fb-link/logo, fb-link/other-0, fb-link/plate, ig-feed-45/panel, ig-feed-45/other-0, ig-feed-45/logo",
+          "duration_ms": 112081,
+          "evidence_ids": [
+            "out:review"
+          ],
+          "next_state": "adfit_repair",
+          "cached": true,
+          "seq": 26
+        },
+        {
+          "step": "adfit_plate_recheck",
+          "tool_or_model": "model:muse-spark-1.3",
+          "input_summary": "1 retry-regened plates",
+          "output_summary": "all clean after retry regen",
+          "duration_ms": 13601,
+          "evidence_ids": [
+            "out:plate"
+          ],
+          "next_state": "done",
+          "cached": true,
+          "seq": 27
+        }
+      ],
+      "error": null,
+      "checks": {
+        "protected_pixels": {
+          "status": "passed",
+          "detail": "Protected core matches the resized source (83% compared)"
+        },
+        "text": {
+          "status": "fixed",
+          "detail": "re-rendered text verified exact after repair"
+        },
+        "layout_review": {
+          "status": "needs_review",
+          "detail": "CTA 'Shop now' is white text on an off-white panel and is unreadable; the gold CTA fill from the source is lost"
+        },
+        "repaired": {
+          "before": "fixtures/brands/luma/demo/before-ig-feed-45.png",
+          "patches": [
+            "plate: regenerate (Two sharp horizontal seams stripe the canvas into three beige bands behind the headline and products, a defective plate )",
+            "other-0: move (22,0)",
+            "headline: move (22,0)",
+            "subtext: move (22,0)",
+            "other-0: move (0,41)",
+            "subtext: move (0,41)",
+            "logo: scale x0.75"
+          ]
+        }
+      }
+    },
+    {
+      "source": "demo-src-luma",
+      "sourceLabel": "source-en.png",
+      "preset": "ig-story-916",
+      "mode": "protected",
+      "status": "needs_review",
+      "image": "ig-story-916.png",
+      "before": "before-ig-story-916.png",
+      "plan": {
+        "preset": "ig-story-916",
+        "width": 1080,
+        "height": 1920,
+        "from_template": false,
+        "template_id": null,
+        "safe": {
+          "x": 54,
+          "y": 269,
+          "w": 972,
+          "h": 1267
+        },
+        "logo": {
+          "x": 92,
+          "y": 284,
+          "w": 208,
+          "h": 61
+        },
+        "products": [
+          {
+            "x": 202,
+            "y": 726,
+            "w": 168,
+            "h": 495
+          },
+          {
+            "x": 505,
+            "y": 934,
+            "w": 285,
+            "h": 320
+          }
+        ],
+        "headline": {
+          "x": 86,
+          "y": 372,
+          "w": 907,
+          "h": 259
+        },
+        "subtext": {
+          "x": 86,
+          "y": 1430,
+          "w": 907,
+          "h": 63
+        },
+        "panel": {
+          "x": 86,
+          "y": 1315,
+          "w": 594,
+          "h": 86
+        },
+        "other_texts": [
+          {
+            "x": 875,
+            "y": 1181,
+            "w": 130,
+            "h": 61
+          }
+        ],
+        "product_scales": [
+          1.5,
+          1.5
+        ],
+        "logo_scale": 1.6486486486486487,
+        "notes": [
+          "wonder: portrait_stack",
+          "wonder rationale: Portrait stack fills the safe height with dominant headline, tall centered products, then panel and subtext on a shared left edge."
+        ],
+        "manifest": {
+          "preset": "ig-story-916",
+          "width": 1080,
+          "height": 1920,
+          "family": "portrait_stack",
+          "planner": "wonder",
+          "safe": {
+            "x": 54,
+            "y": 269,
+            "w": 972,
+            "h": 1267
+          },
+          "elements": [
+            {
+              "id": "product-0",
+              "kind": "product",
+              "box": {
+                "x": 190,
+                "y": 689,
+                "w": 193,
+                "h": 570
+              },
+              "group": "products",
+              "z": 20,
+              "align": null,
+              "scale": 1.7232142857142858,
+              "source": "corrected",
+              "srcBox": {
+                "x": 556,
+                "y": 281,
+                "w": 122,
+                "h": 316
+              }
+            },
+            {
+              "id": "product-1",
+              "kind": "product",
+              "box": {
+                "x": 462,
+                "y": 886,
+                "w": 371,
+                "h": 416
+              },
+              "group": "products",
+              "z": 21,
+              "align": null,
+              "scale": 1.9526315789473685,
+              "source": "corrected",
+              "srcBox": {
+                "x": 697,
+                "y": 447,
+                "w": 205,
+                "h": 192
+              }
+            },
+            {
+              "id": "panel",
+              "kind": "panel",
+              "box": {
+                "x": 86,
+                "y": 1315,
+                "w": 594,
+                "h": 86
+              },
+              "group": "offer",
+              "z": 10,
+              "align": "left",
+              "scale": null,
+              "source": "default",
+              "srcBox": null
+            },
+            {
+              "id": "headline",
+              "kind": "headline",
+              "box": {
+                "x": 86,
+                "y": 372,
+                "w": 907,
+                "h": 259
+              },
+              "group": "text",
+              "z": 30,
+              "align": "left",
+              "scale": null,
+              "source": "default",
+              "srcBox": null
+            },
+            {
+              "id": "subtext",
+              "kind": "subtext",
+              "box": {
+                "x": 86,
+                "y": 1417,
+                "w": 907,
+                "h": 63
+              },
+              "group": "text",
+              "z": 31,
+              "align": "left",
+              "scale": null,
+              "source": "corrected",
+              "srcBox": null
+            },
+            {
+              "id": "other-0",
+              "kind": "other_text",
+              "box": {
+                "x": 86,
+                "y": 1417,
+                "w": 130,
+                "h": 61
+              },
+              "group": "text",
+              "z": 32,
+              "align": "left",
+              "scale": null,
+              "source": "corrected",
+              "srcBox": null
+            },
+            {
+              "id": "logo",
+              "kind": "logo",
+              "box": {
+                "x": 92,
+                "y": 284,
+                "w": 208,
+                "h": 61
+              },
+              "group": "logo",
+              "z": 40,
+              "align": null,
+              "scale": 1.6486486486486487,
+              "source": "default",
+              "srcBox": {
+                "x": 112,
+                "y": 112,
+                "w": 125,
+                "h": 35
+              }
+            }
+          ],
+          "templateZones": null,
+          "corrections": [
+            "product-0: grew toward 45% safe-height floor (193x570)",
+            "product-1: grew toward 45% safe-height floor (371x416)",
+            "text group: 3 boxes share the left edge",
+            "other-0: pushed clear of product-0",
+            "other-0: pushed clear of panel",
+            "subtext: pushed clear of other-0",
+            "subtext: pushed clear of panel",
+            "other-0: pushed clear of subtext",
+            "other-0: pushed clear of panel",
+            "other-0: pushed clear of subtext",
+            "other-0: pushed clear of panel",
+            "text overlaps persist after pushing — needs review",
+            "product-1: below size floor but blocked from growing — needs review",
+            "repair reverted for panel (would touch subtext) (separation < 16px)",
+            "text group: 3 boxes share the left edge",
+            "subtext: pushed clear of other-0",
+            "subtext: pushed clear of panel",
+            "other-0: pushed clear of subtext",
+            "other-0: pushed clear of panel",
+            "other-0: pushed clear of subtext",
+            "other-0: pushed clear of panel",
+            "other-0: pushed clear of subtext",
+            "other-0: pushed clear of panel",
+            "text overlaps persist after pushing — needs review",
+            "product-1: below size floor but blocked from growing — needs review",
+            "repair reverted for headline (would touch product-0) (separation < 16px)",
+            "text group: 3 boxes share the left edge",
+            "other-0: pushed clear of subtext",
+            "other-0: pushed clear of panel",
+            "other-0: pushed clear of subtext",
+            "other-0: pushed clear of panel",
+            "other-0: pushed clear of subtext",
+            "other-0: pushed clear of panel",
+            "other-0: pushed clear of subtext",
+            "other-0: pushed clear of panel",
+            "text overlaps persist after pushing — needs review",
+            "product-1: below size floor but blocked from growing — needs review"
+          ],
+          "rationale": "Portrait stack fills the safe height with dominant headline, tall centered products, then panel and subtext on a shared left edge."
+        }
+      },
+      "proof": {
+        "product-0": {
+          "scale": 1.7232142857142858,
+          "core_differ": 0,
+          "core_total": 84606,
+          "feather_total": 3044,
+          "coverage": 0.9652709640616086,
+          "pass": true
+        },
+        "product-1": {
+          "scale": 1.9526315789473685,
+          "core_differ": 0,
+          "core_total": 135001,
+          "feather_total": 3160,
+          "coverage": 0.9771281331200556,
+          "pass": true
+        },
+        "logo": {
+          "scale": 1.6486486486486487,
+          "core_differ": 0,
+          "core_total": 8994,
+          "feather_total": 1389,
+          "coverage": 0.8662236347876336,
+          "pass": true
+        }
+      },
+      "qa": null,
+      "retries": 0,
+      "modelCalls": 0,
+      "imageCalls": 3,
+      "latencyMs": 27241,
+      "trace": [
+        {
+          "step": "adfit_analyze",
+          "tool_or_model": "model:muse-spark-1.3",
+          "input_summary": "source 1080x1080",
+          "output_summary": "lang=en products=2 logo=yes headline=\"Glow\\nthat lasts\\nall day\" panel=opaque bg=other coords=pixels",
+          "duration_ms": 42622,
+          "evidence_ids": [
+            "src:analysis"
+          ],
+          "next_state": "adfit_masks",
+          "cached": true,
+          "seq": 1
+        },
+        {
+          "step": "adfit_masks",
+          "tool_or_model": "model:sam-3.1",
+          "input_summary": "product-0[dropper bottle] product-1[cream jar] logo[logo]",
+          "output_summary": "ok: product-0,product-1,logo coverage: products 2/2",
+          "duration_ms": 61654,
+          "evidence_ids": [
+            "src:product-0",
+            "src:product-1",
+            "src:logo"
+          ],
+          "next_state": "adfit_plan",
+          "cached": true,
+          "seq": 2
+        },
+        {
+          "step": "adfit_plan",
+          "tool_or_model": "model:muse-wonder-1.0",
+          "input_summary": "ig-story-916 protected no-template family=portrait_stack",
+          "output_summary": "wonder: portrait_stack; wonder rationale: Portrait stack fills the safe height with dominant headline, tall centered products, then panel and subtext on a shared left edge. | corrections: product-0: grew toward 45% safe-height floor (193x570); product-1: grew toward 45% safe-height floor (371x416); text group: 3 boxes share the left edge; other-0: pushed clear of product-0; other-0: pushed clear of panel; subtext: pushed clear of other-0; subtext: pushed clear of panel; other-0: push",
+          "duration_ms": 0,
+          "evidence_ids": [
+            "out:plan"
+          ],
+          "next_state": "adfit_generate",
+          "cached": false,
+          "seq": 3
+        },
+        {
+          "step": "adfit_generate",
+          "tool_or_model": "model:muse-image-1.0",
+          "input_summary": "protected plate 1080x1920",
+          "output_summary": "wire bytes=2538644",
+          "duration_ms": 25227,
+          "evidence_ids": [
+            "out:plate"
+          ],
+          "next_state": "adfit_composite",
+          "cached": false,
+          "seq": 4
+        },
+        {
+          "step": "adfit_composite",
+          "tool_or_model": "code:composite+chromium",
+          "input_summary": "plate + product-0@1.723x product-1@1.953x logo@1.649x + text(panel,headline,subtext,other-0) panel:rebuilt",
+          "output_summary": "1080x1920 product-0: contact shadow at support y=1258; product-1: contact shadow at support y=1299; panel rebuilt in code (rounded_rect, fill #fbf6ee sampled)",
+          "duration_ms": 1441,
+          "evidence_ids": [
+            "out:product-0",
+            "out:product-1",
+            "out:logo"
+          ],
+          "next_state": "adfit_proof",
+          "cached": false,
+          "seq": 5
+        },
+        {
+          "step": "adfit_proof",
+          "tool_or_model": "code:elementProof",
+          "input_summary": "3 pasted elements",
+          "output_summary": "product-0:0/84606 (97% compared) product-1:0/135001 (98% compared) logo:0/8994 (87% compared) feather outside core only",
+          "duration_ms": 126,
+          "evidence_ids": [
+            "out:product-0",
+            "out:product-1",
+            "out:logo"
+          ],
+          "next_state": "adfit_review",
+          "cached": false,
+          "seq": 6
+        },
+        {
+          "step": "adfit_generate",
+          "tool_or_model": "model:muse-image-1.0",
+          "input_summary": "protected plate 1080x1920 (retry) text-only",
+          "output_summary": "wire bytes=2565121",
+          "duration_ms": 26681,
+          "evidence_ids": [
+            "out:plate"
+          ],
+          "next_state": "adfit_composite",
+          "cached": false,
+          "seq": 7
+        },
+        {
+          "step": "adfit_generate",
+          "tool_or_model": "code:deband",
+          "input_summary": "plate 1080x1920",
+          "output_summary": "debanded 1588 edge rows into the field",
+          "duration_ms": 0,
+          "evidence_ids": [],
+          "next_state": "adfit_composite",
+          "cached": false,
+          "seq": 8
+        },
+        {
+          "step": "adfit_composite",
+          "tool_or_model": "code:composite+chromium",
+          "input_summary": "plate + product-0@1.723x product-1@1.953x logo@1.649x + text(panel,headline,subtext,other-0) panel:rebuilt",
+          "output_summary": "1080x1920 product-0: contact shadow at support y=1258; product-1: contact shadow at support y=1299; panel rebuilt in code (rounded_rect, fill #fbf6ee sampled)",
+          "duration_ms": 832,
+          "evidence_ids": [
+            "out:product-0",
+            "out:product-1",
+            "out:logo"
+          ],
+          "next_state": "adfit_proof",
+          "cached": false,
+          "seq": 9
+        },
+        {
+          "step": "adfit_proof",
+          "tool_or_model": "code:elementProof",
+          "input_summary": "3 pasted elements",
+          "output_summary": "product-0:0/84606 (97% compared) product-1:0/135001 (98% compared) logo:0/8994 (87% compared) feather outside core only",
+          "duration_ms": 92,
+          "evidence_ids": [
+            "out:product-0",
+            "out:product-1",
+            "out:logo"
+          ],
+          "next_state": "adfit_review",
+          "cached": false,
+          "seq": 10
+        },
+        {
+          "step": "adfit_repair",
+          "tool_or_model": "model:muse-image-1.0",
+          "input_summary": "flag:panel, regenerate_plate:background, move:panel",
+          "output_summary": "applied: plate: regenerate (Visible horizontal seam across the mid-canvas behind the products with mottled banding above and below, breaking the cle)",
+          "duration_ms": 0,
+          "evidence_ids": [
+            "out:repair"
+          ],
+          "next_state": "done",
+          "cached": false,
+          "seq": 11
+        },
+        {
+          "step": "adfit_generate",
+          "tool_or_model": "model:muse-image-1.0",
+          "input_summary": "protected plate 1080x1920 (retry) text-only",
+          "output_summary": "wire bytes=1796260",
+          "duration_ms": 52436,
+          "evidence_ids": [
+            "out:plate"
+          ],
+          "next_state": "adfit_composite",
+          "cached": false,
+          "seq": 12
+        },
+        {
+          "step": "adfit_generate",
+          "tool_or_model": "code:deband",
+          "input_summary": "plate 1080x1920",
+          "output_summary": "debanded 1571 edge rows into the field",
+          "duration_ms": 0,
+          "evidence_ids": [],
+          "next_state": "adfit_composite",
+          "cached": false,
+          "seq": 13
+        },
+        {
+          "step": "adfit_composite",
+          "tool_or_model": "code:composite+chromium",
+          "input_summary": "plate + product-0@1.723x product-1@1.953x logo@1.649x + text(panel,headline,subtext,other-0) panel:rebuilt",
+          "output_summary": "1080x1920 product-0: contact shadow at support y=1258; product-1: contact shadow at support y=1299; panel rebuilt in code (rounded_rect, fill #fbf6ee sampled)",
+          "duration_ms": 7321,
+          "evidence_ids": [
+            "out:product-0",
+            "out:product-1",
+            "out:logo"
+          ],
+          "next_state": "adfit_proof",
+          "cached": false,
+          "seq": 14
+        },
+        {
+          "step": "adfit_proof",
+          "tool_or_model": "code:elementProof",
+          "input_summary": "3 pasted elements",
+          "output_summary": "product-0:0/84606 (97% compared) product-1:0/135001 (98% compared) logo:0/8994 (87% compared) feather outside core only",
+          "duration_ms": 6830,
+          "evidence_ids": [
+            "out:product-0",
+            "out:product-1",
+            "out:logo"
+          ],
+          "next_state": "adfit_review",
+          "cached": false,
+          "seq": 15
+        },
+        {
+          "step": "adfit_repair",
+          "tool_or_model": "code:recompose",
+          "input_summary": "retry: flag:panel, move:subtext, move:headline, move:other-0, flag:other-0",
+          "output_summary": "applied: subtext: move (0,58); other-0: move (0,58)",
+          "duration_ms": 0,
+          "evidence_ids": [
+            "out:repair"
+          ],
+          "next_state": "done",
+          "cached": false,
+          "seq": 16
+        },
+        {
+          "step": "adfit_composite",
+          "tool_or_model": "code:composite+chromium",
+          "input_summary": "plate + product-0@1.723x product-1@1.953x logo@1.649x + text(panel,headline,subtext,other-0) panel:rebuilt",
+          "output_summary": "1080x1920 product-0: contact shadow at support y=1258; product-1: contact shadow at support y=1299; panel rebuilt in code (rounded_rect, fill #fbf6ee sampled)",
+          "duration_ms": 3227,
+          "evidence_ids": [
+            "out:product-0",
+            "out:product-1",
+            "out:logo"
+          ],
+          "next_state": "adfit_proof",
+          "cached": false,
+          "seq": 17
+        },
+        {
+          "step": "adfit_proof",
+          "tool_or_model": "code:elementProof",
+          "input_summary": "3 pasted elements",
+          "output_summary": "product-0:0/84606 (97% compared) product-1:0/135001 (98% compared) logo:0/8994 (87% compared) feather outside core only",
+          "duration_ms": 446,
+          "evidence_ids": [
+            "out:product-0",
+            "out:product-1",
+            "out:logo"
+          ],
+          "next_state": "adfit_review",
+          "cached": false,
+          "seq": 18
+        },
+        {
+          "step": "adfit_wonder_plan",
+          "tool_or_model": "model:muse-wonder-1.0",
+          "input_summary": "1 source x 3 sizes",
+          "output_summary": "families: ig-story-916=portrait_stack fb-link=landscape_split ig-feed-45=portrait_stack",
+          "duration_ms": 113138,
+          "evidence_ids": [
+            "out:plan"
+          ],
+          "next_state": "adfit_generate",
+          "cached": false,
+          "seq": 19
+        },
+        {
+          "step": "adfit_plate_check",
+          "tool_or_model": "model:muse-spark-1.3",
+          "input_summary": "3 plates",
+          "output_summary": "dirty (regenerate once): ig-story-916: straight horizontal horizon seams where wall meets stone ledge and foreground surface divide the frame into bands, not one continuous field | fb-link: straight horizon split dividing wall from stone tabletop across full width with bottom edge strip, not one continuous field | ig-feed-45: horizon seam between wall and thick stone slab divides frame plus faint horizontal band at top, n",
+          "duration_ms": 22849,
+          "evidence_ids": [
+            "out:plate"
+          ],
+          "next_state": "adfit_review",
+          "cached": false,
+          "seq": 20
+        },
+        {
+          "step": "adfit_text_check",
+          "tool_or_model": "model:muse-spark-1.3",
+          "input_summary": "3 outputs with re-rendered text",
+          "output_summary": "all exact",
+          "duration_ms": 35974,
+          "evidence_ids": [
+            "out:text"
+          ],
+          "next_state": "adfit_review",
+          "cached": false,
+          "seq": 21
+        },
+        {
+          "step": "adfit_review",
+          "tool_or_model": "model:muse-wonder-1.0",
+          "input_summary": "source + 3 outputs + deterministic findings",
+          "output_summary": "10 defects: ig-story-916/panel, ig-story-916/background, ig-story-916/panel, fb-link/panel, fb-link/other-0, fb-link/product-1, ig-feed-45/panel, ig-feed-45/background, ig-feed-45/other-0, ig-feed-45/subtext",
+          "duration_ms": 79517,
+          "evidence_ids": [
+            "out:review"
+          ],
+          "next_state": "adfit_repair",
+          "cached": false,
+          "seq": 22
+        },
+        {
+          "step": "adfit_plate_recheck",
+          "tool_or_model": "model:muse-spark-1.3",
+          "input_summary": "2 regened plates",
+          "output_summary": "still dirty: ig-story-916: Two straight horizontal seams divide the frame into three tonal bands/blocks, not one continuous field. | ig-feed-45: Two straight horizontal seams divide the frame into three tonal bands/blocks, not one continuous field.",
+          "duration_ms": 14192,
+          "evidence_ids": [
+            "out:plate"
+          ],
+          "next_state": "done",
+          "cached": false,
+          "seq": 23
+        },
+        {
+          "step": "adfit_repair",
+          "tool_or_model": "code:recompose",
+          "input_summary": "3 sizes with defects",
+          "output_summary": "3 recomposed from cached layers (before kept)",
+          "duration_ms": 0,
+          "evidence_ids": [
+            "out:repair"
+          ],
+          "next_state": "done",
+          "cached": false,
+          "seq": 24
+        },
+        {
+          "step": "adfit_review_retry",
+          "tool_or_model": "model:muse-wonder-1.0",
+          "input_summary": "second chance for 2 reverted size(s)",
+          "output_summary": "11 re-proposed defects: ig-story-916/panel, ig-story-916/subtext, ig-story-916/other-0, fb-link/panel, fb-link/product-1, fb-link/logo, fb-link/other-0, fb-link/plate, ig-feed-45/panel, ig-feed-45/other-0, ig-feed-45/logo",
+          "duration_ms": 112081,
+          "evidence_ids": [
+            "out:review"
+          ],
+          "next_state": "adfit_repair",
+          "cached": false,
+          "seq": 25
+        },
+        {
+          "step": "adfit_plate_recheck",
+          "tool_or_model": "model:muse-spark-1.3",
+          "input_summary": "1 retry-regened plates",
+          "output_summary": "all clean after retry regen",
+          "duration_ms": 13601,
+          "evidence_ids": [
+            "out:plate"
+          ],
+          "next_state": "done",
+          "cached": false,
+          "seq": 26
+        }
+      ],
+      "error": null,
+      "checks": {
+        "protected_pixels": {
+          "status": "passed",
+          "detail": "Protected core matches the resized source (87% compared)"
+        },
+        "text": {
+          "status": "fixed",
+          "detail": "re-rendered text verified exact after repair"
+        },
+        "layout_review": {
+          "status": "needs_review",
+          "detail": "deterministic: overlap"
+        },
+        "repaired": {
+          "before": "fixtures/brands/luma/demo/before-ig-story-916.png",
+          "patches": [
+            "plate: regenerate (Visible horizontal seam across the mid-canvas behind the products with mottled banding above and below, breaking the cle)",
+            "subtext: move (0,58)",
+            "other-0: move (0,58)"
+          ]
+        }
+      }
+    },
+    {
+      "source": "demo-src-luma",
+      "sourceLabel": "source-en.png",
+      "preset": "fb-link",
+      "mode": "protected",
+      "status": "needs_review",
+      "image": "fb-link.png",
+      "before": "before-fb-link.png",
+      "plan": {
+        "preset": "fb-link",
+        "width": 1200,
+        "height": 628,
+        "from_template": false,
+        "template_id": null,
+        "safe": {
+          "x": 48,
+          "y": 25,
+          "w": 1104,
+          "h": 578
+        },
+        "logo": {
+          "x": 77,
+          "y": 57,
+          "w": 194,
+          "h": 57
+        },
+        "products": [
+          {
+            "x": 635,
+            "y": 94,
+            "w": 153,
+            "h": 452
+          },
+          {
+            "x": 853,
+            "y": 272,
+            "w": 244,
+            "h": 274
+          }
+        ],
+        "headline": {
+          "x": 72,
+          "y": 129,
+          "w": 504,
+          "h": 201
+        },
+        "subtext": {
+          "x": 72,
+          "y": 349,
+          "w": 504,
+          "h": 50
+        },
+        "panel": {
+          "x": 72,
+          "y": 418,
+          "w": 384,
+          "h": 72
+        },
+        "other_texts": [
+          {
+            "x": 960,
+            "y": 47,
+            "w": 168,
+            "h": 35
+          }
+        ],
+        "product_scales": [
+          1.3696969696969696,
+          1.2863849765258215
+        ],
+        "logo_scale": 1.5405405405405406,
+        "notes": [
+          "wonder: landscape_split",
+          "wonder rationale: Landscape split places the left-aligned text group opposite tall products at 72% of canvas height with the price tag clear above the products."
+        ],
+        "manifest": {
+          "preset": "fb-link",
+          "width": 1200,
+          "height": 628,
+          "family": "landscape_split",
+          "planner": "wonder",
+          "safe": {
+            "x": 48,
+            "y": 25,
+            "w": 1104,
+            "h": 578
+          },
+          "elements": [
+            {
+              "id": "product-0",
+              "kind": "product",
+              "box": {
+                "x": 638,
+                "y": 101,
+                "w": 150,
+                "h": 440
+              },
+              "group": "products",
+              "z": 20,
+              "align": null,
+              "scale": 1.3428401663695781,
+              "source": "corrected",
+              "srcBox": {
+                "x": 556,
+                "y": 281,
+                "w": 122,
+                "h": 316
+              }
+            },
+            {
+              "id": "product-1",
+              "kind": "product",
+              "box": {
+                "x": 809,
+                "y": 211,
+                "w": 334,
+                "h": 374
+              },
+              "group": "products",
+              "z": 21,
+              "align": null,
+              "scale": 1.7608712383591165,
+              "source": "corrected",
+              "srcBox": {
+                "x": 697,
+                "y": 447,
+                "w": 205,
+                "h": 192
+              }
+            },
+            {
+              "id": "panel",
+              "kind": "panel",
+              "box": {
+                "x": 72,
+                "y": 418,
+                "w": 384,
+                "h": 72
+              },
+              "group": "offer",
+              "z": 10,
+              "align": "left",
+              "scale": null,
+              "source": "default",
+              "srcBox": null
+            },
+            {
+              "id": "headline",
+              "kind": "headline",
+              "box": {
+                "x": 72,
+                "y": 208,
+                "w": 504,
+                "h": 201
+              },
+              "group": "text",
+              "z": 30,
+              "align": "left",
+              "scale": null,
+              "source": "corrected",
+              "srcBox": null
+            },
+            {
+              "id": "subtext",
+              "kind": "subtext",
+              "box": {
+                "x": 72,
+                "y": 540,
+                "w": 504,
+                "h": 50
+              },
+              "group": "text",
+              "z": 31,
+              "align": "left",
+              "scale": null,
+              "source": "corrected",
+              "srcBox": null
+            },
+            {
+              "id": "other-0",
+              "kind": "other_text",
+              "box": {
+                "x": 72,
+                "y": 496,
+                "w": 168,
+                "h": 35
+              },
+              "group": "text",
+              "z": 32,
+              "align": "left",
+              "scale": null,
+              "source": "corrected",
+              "srcBox": null
+            },
+            {
+              "id": "logo",
+              "kind": "logo",
+              "box": {
+                "x": 106,
+                "y": 100,
+                "w": 136,
+                "h": 40
+              },
+              "group": "logo",
+              "z": 40,
+              "align": null,
+              "scale": 1.079966564502647,
+              "source": "corrected",
+              "srcBox": {
+                "x": 112,
+                "y": 112,
+                "w": 125,
+                "h": 35
+              }
+            }
+          ],
+          "templateZones": null,
+          "corrections": [
+            "product-1: grew toward 70% canvas-height floor (343x385)",
+            "text group: 3 boxes share the left edge",
+            "logo: pushed clear of other-0",
+            "headline: pushed clear of logo",
+            "subtext: pushed clear of headline",
+            "product-1: below size floor but blocked from growing — needs review",
+            "product-1: below size floor but blocked from growing — needs review",
+            "text group: 3 boxes share the left edge",
+            "other-0: pushed clear of logo",
+            "other-0: pushed clear of headline",
+            "other-0: pushed clear of subtext",
+            "other-0: pushed clear of panel",
+            "product-1: below size floor but blocked from growing — needs review",
+            "product-1: below size floor but blocked from growing — needs review",
+            "text group: 3 boxes share the left edge",
+            "headline: pushed clear of panel",
+            "subtext: pushed clear of headline",
+            "subtext: pushed clear of panel",
+            "other-0: pushed clear of subtext",
+            "product-1: below size floor but blocked from growing — needs review",
+            "subtext: clamped into safe area + 6% margin",
+            "product-1: below size floor but blocked from growing — needs review",
+            "text group: 3 boxes share the left edge",
+            "other-0: pushed clear of subtext",
+            "product-1: below size floor but blocked from growing — needs review",
+            "repair reverted for product-1 (would touch product-0) (separation < 9px)",
+            "product-0: grew toward 70% canvas-height floor (149x440)",
+            "product-1: below size floor but blocked from growing — needs review",
+            "text group: 3 boxes share the left edge",
+            "product-1: below size floor but blocked from growing — needs review",
+            "product-1: grew toward 70% canvas-height floor (334x374)",
+            "text group: 3 boxes share the left edge",
+            "product-1: below size floor but blocked from growing — needs review",
+            "product-0: grew toward 70% canvas-height floor (150x440)",
+            "product-1: below size floor but blocked from growing — needs review",
+            "text group: 3 boxes share the left edge",
+            "product-1: below size floor but blocked from growing — needs review",
+            "product-1: below size floor but blocked from growing — needs review",
+            "text group: 3 boxes share the left edge",
+            "product-1: below size floor but blocked from growing — needs review"
+          ],
+          "rationale": "Landscape split places the left-aligned text group opposite tall products at 72% of canvas height with the price tag clear above the products."
+        }
+      },
+      "proof": {
+        "product-0": {
+          "scale": 1.3428401663695781,
+          "core_differ": 0,
+          "core_total": 50895,
+          "feather_total": 2360,
+          "coverage": 0.9556849122148156,
+          "pass": true
+        },
+        "product-1": {
+          "scale": 1.7608712383591165,
+          "core_differ": 0,
+          "core_total": 109293,
+          "feather_total": 2856,
+          "coverage": 0.9745338790359254,
+          "pass": true
+        },
+        "logo": {
+          "scale": 1.079966564502647,
+          "core_differ": 0,
+          "core_total": 3519,
+          "feather_total": 883,
+          "coverage": 0.799409359382099,
+          "pass": true
+        }
+      },
+      "qa": null,
+      "retries": 0,
+      "modelCalls": 0,
+      "imageCalls": 3,
+      "latencyMs": 21514,
+      "trace": [
+        {
+          "step": "adfit_analyze",
+          "tool_or_model": "model:muse-spark-1.3",
+          "input_summary": "source 1080x1080",
+          "output_summary": "lang=en products=2 logo=yes headline=\"Glow\\nthat lasts\\nall day\" panel=opaque bg=other coords=pixels",
+          "duration_ms": 42622,
+          "evidence_ids": [
+            "src:analysis"
+          ],
+          "next_state": "adfit_masks",
+          "cached": true,
+          "seq": 1
+        },
+        {
+          "step": "adfit_masks",
+          "tool_or_model": "model:sam-3.1",
+          "input_summary": "product-0[dropper bottle] product-1[cream jar] logo[logo]",
+          "output_summary": "ok: product-0,product-1,logo coverage: products 2/2",
+          "duration_ms": 61654,
+          "evidence_ids": [
+            "src:product-0",
+            "src:product-1",
+            "src:logo"
+          ],
+          "next_state": "adfit_plan",
+          "cached": true,
+          "seq": 2
+        },
+        {
+          "step": "adfit_plan",
+          "tool_or_model": "model:muse-wonder-1.0",
+          "input_summary": "fb-link protected no-template family=landscape_split",
+          "output_summary": "wonder: landscape_split; wonder rationale: Landscape split places the left-aligned text group opposite tall products at 72% of canvas height with the price tag clear above the products. | corrections: product-1: grew toward 70% canvas-height floor (343x385); text group: 3 boxes share the left edge; logo: pushed clear of other-0; headline: pushed clear of logo; subtext: pushed clear of headline; product-1: below size floor but blocked from growing — needs review",
+          "duration_ms": 0,
+          "evidence_ids": [
+            "out:plan"
+          ],
+          "next_state": "adfit_generate",
+          "cached": false,
+          "seq": 3
+        },
+        {
+          "step": "adfit_generate",
+          "tool_or_model": "model:muse-image-1.0",
+          "input_summary": "protected plate 1200x628",
+          "output_summary": "wire bytes=2213055",
+          "duration_ms": 19325,
+          "evidence_ids": [
+            "out:plate"
+          ],
+          "next_state": "adfit_composite",
+          "cached": false,
+          "seq": 4
+        },
+        {
+          "step": "adfit_generate",
+          "tool_or_model": "code:deband",
+          "input_summary": "plate 1200x628",
+          "output_summary": "debanded 13 edge rows into the field",
+          "duration_ms": 0,
+          "evidence_ids": [],
+          "next_state": "adfit_composite",
+          "cached": false,
+          "seq": 5
+        },
+        {
+          "step": "adfit_composite",
+          "tool_or_model": "code:composite+chromium",
+          "input_summary": "plate + product-0@1.370x product-1@1.808x logo@1.541x + text(panel,headline,subtext,other-0) panel:rebuilt",
+          "output_summary": "1200x628 product-0: contact shadow at support y=545; product-1: contact shadow at support y=588; panel rebuilt in code (rounded_rect, fill #fbf6ee sampled)",
+          "duration_ms": 1759,
+          "evidence_ids": [
+            "out:product-0",
+            "out:product-1",
+            "out:logo"
+          ],
+          "next_state": "adfit_proof",
+          "cached": false,
+          "seq": 6
+        },
+        {
+          "step": "adfit_proof",
+          "tool_or_model": "code:elementProof",
+          "input_summary": "3 pasted elements",
+          "output_summary": "product-0:0/53002 (96% compared) product-1:0/115336 (98% compared) logo:0/7743 (86% compared) feather outside core only",
+          "duration_ms": 148,
+          "evidence_ids": [
+            "out:product-0",
+            "out:product-1",
+            "out:logo"
+          ],
+          "next_state": "adfit_review",
+          "cached": false,
+          "seq": 7
+        },
+        {
+          "step": "adfit_generate",
+          "tool_or_model": "model:muse-image-1.0",
+          "input_summary": "protected plate 1200x628 (retry) text-only",
+          "output_summary": "wire bytes=1813799",
+          "duration_ms": 25436,
+          "evidence_ids": [
+            "out:plate"
+          ],
+          "next_state": "adfit_composite",
+          "cached": false,
+          "seq": 8
+        },
+        {
+          "step": "adfit_generate",
+          "tool_or_model": "code:deband",
+          "input_summary": "plate 1200x628",
+          "output_summary": "debanded 171 edge rows into the field",
+          "duration_ms": 0,
+          "evidence_ids": [],
+          "next_state": "adfit_composite",
+          "cached": false,
+          "seq": 9
+        },
+        {
+          "step": "adfit_composite",
+          "tool_or_model": "code:composite+chromium",
+          "input_summary": "plate + product-0@1.370x product-1@1.808x logo@1.541x + text(panel,headline,subtext,other-0) panel:rebuilt",
+          "output_summary": "1200x628 product-0: contact shadow at support y=545; product-1: contact shadow at support y=588; panel rebuilt in code (rounded_rect, fill #fbf6ee sampled)",
+          "duration_ms": 670,
+          "evidence_ids": [
+            "out:product-0",
+            "out:product-1",
+            "out:logo"
+          ],
+          "next_state": "adfit_proof",
+          "cached": false,
+          "seq": 10
+        },
+        {
+          "step": "adfit_proof",
+          "tool_or_model": "code:elementProof",
+          "input_summary": "3 pasted elements",
+          "output_summary": "product-0:0/53002 (96% compared) product-1:0/115336 (98% compared) logo:0/7743 (86% compared) feather outside core only",
+          "duration_ms": 73,
+          "evidence_ids": [
+            "out:product-0",
+            "out:product-1",
+            "out:logo"
+          ],
+          "next_state": "adfit_review",
+          "cached": false,
+          "seq": 11
+        },
+        {
+          "step": "adfit_repair",
+          "tool_or_model": "code:recompose",
+          "input_summary": "flag:panel, move:other-0, move:headline, move:subtext, scale:product-1, scale:product-0",
+          "output_summary": "applied: other-0: move (180,94); headline: move (180,94); subtext: move (180,94); product-0: scale x0.85",
+          "duration_ms": 0,
+          "evidence_ids": [
+            "out:repair"
+          ],
+          "next_state": "done",
+          "cached": false,
+          "seq": 12
+        },
+        {
+          "step": "adfit_composite",
+          "tool_or_model": "code:composite+chromium",
+          "input_summary": "plate + product-0@1.334x product-1@1.808x logo@1.541x + text(panel,headline,subtext,other-0) panel:rebuilt",
+          "output_summary": "1200x628 product-0: contact shadow at support y=539; product-1: contact shadow at support y=588; panel rebuilt in code (rounded_rect, fill #fbf6ee sampled)",
+          "duration_ms": 8056,
+          "evidence_ids": [
+            "out:product-0",
+            "out:product-1",
+            "out:logo"
+          ],
+          "next_state": "adfit_proof",
+          "cached": false,
+          "seq": 13
+        },
+        {
+          "step": "adfit_proof",
+          "tool_or_model": "code:elementProof",
+          "input_summary": "3 pasted elements",
+          "output_summary": "product-0:0/50144 (96% compared) product-1:0/115336 (98% compared) logo:0/7743 (86% compared) feather outside core only",
+          "duration_ms": 621,
+          "evidence_ids": [
+            "out:product-0",
+            "out:product-1",
+            "out:logo"
+          ],
+          "next_state": "adfit_review",
+          "cached": false,
+          "seq": 14
+        },
+        {
+          "step": "adfit_repair",
+          "tool_or_model": "code:recompose",
+          "input_summary": "retry: flag:panel, scale:product-1, scale:product-0, scale:logo, flag:other-0, regenerate_plate:plate",
+          "output_summary": "applied: product-1: scale x0.78; product-0: scale x0.78; logo: scale x0.7; plate: regenerate (Background has a straight horizontal seam/band across the left text area and lower frame, breaking the continuous cream )",
+          "duration_ms": 0,
+          "evidence_ids": [
+            "out:repair"
+          ],
+          "next_state": "done",
+          "cached": false,
+          "seq": 15
+        },
+        {
+          "step": "adfit_generate",
+          "tool_or_model": "model:muse-image-1.0",
+          "input_summary": "protected plate 1200x628 (retry) text-only",
+          "output_summary": "wire bytes=2091487",
+          "duration_ms": 25229,
+          "evidence_ids": [
+            "out:plate"
+          ],
+          "next_state": "adfit_composite",
+          "cached": false,
+          "seq": 16
+        },
+        {
+          "step": "adfit_composite",
+          "tool_or_model": "code:composite+chromium",
+          "input_summary": "plate + product-0@1.343x product-1@1.761x logo@1.080x + text(panel,headline,subtext,other-0) panel:rebuilt",
+          "output_summary": "1200x628 product-0: contact shadow at support y=542; product-1: contact shadow at support y=584; panel rebuilt in code (rounded_rect, fill #fbf6ee sampled)",
+          "duration_ms": 815,
+          "evidence_ids": [
+            "out:product-0",
+            "out:product-1",
+            "out:logo"
+          ],
+          "next_state": "adfit_proof",
+          "cached": false,
+          "seq": 17
+        },
+        {
+          "step": "adfit_proof",
+          "tool_or_model": "code:elementProof",
+          "input_summary": "3 pasted elements",
+          "output_summary": "product-0:0/50895 (96% compared) product-1:0/109293 (97% compared) logo:0/3519 (80% compared) feather outside core only",
+          "duration_ms": 122,
+          "evidence_ids": [
+            "out:product-0",
+            "out:product-1",
+            "out:logo"
+          ],
+          "next_state": "adfit_review",
+          "cached": false,
+          "seq": 18
+        },
+        {
+          "step": "adfit_wonder_plan",
+          "tool_or_model": "model:muse-wonder-1.0",
+          "input_summary": "1 source x 3 sizes",
+          "output_summary": "families: ig-story-916=portrait_stack fb-link=landscape_split ig-feed-45=portrait_stack",
+          "duration_ms": 113138,
+          "evidence_ids": [
+            "out:plan"
+          ],
+          "next_state": "adfit_generate",
+          "cached": true,
+          "seq": 19
+        },
+        {
+          "step": "adfit_plate_check",
+          "tool_or_model": "model:muse-spark-1.3",
+          "input_summary": "3 plates",
+          "output_summary": "dirty (regenerate once): ig-story-916: straight horizontal horizon seams where wall meets stone ledge and foreground surface divide the frame into bands, not one continuous field | fb-link: straight horizon split dividing wall from stone tabletop across full width with bottom edge strip, not one continuous field | ig-feed-45: horizon seam between wall and thick stone slab divides frame plus faint horizontal band at top, n",
+          "duration_ms": 22849,
+          "evidence_ids": [
+            "out:plate"
+          ],
+          "next_state": "adfit_review",
+          "cached": true,
+          "seq": 20
+        },
+        {
+          "step": "adfit_text_check",
+          "tool_or_model": "model:muse-spark-1.3",
+          "input_summary": "3 outputs with re-rendered text",
+          "output_summary": "all exact",
+          "duration_ms": 35974,
+          "evidence_ids": [
+            "out:text"
+          ],
+          "next_state": "adfit_review",
+          "cached": true,
+          "seq": 21
+        },
+        {
+          "step": "adfit_review",
+          "tool_or_model": "model:muse-wonder-1.0",
+          "input_summary": "source + 3 outputs + deterministic findings",
+          "output_summary": "10 defects: ig-story-916/panel, ig-story-916/background, ig-story-916/panel, fb-link/panel, fb-link/other-0, fb-link/product-1, ig-feed-45/panel, ig-feed-45/background, ig-feed-45/other-0, ig-feed-45/subtext",
+          "duration_ms": 79517,
+          "evidence_ids": [
+            "out:review"
+          ],
+          "next_state": "adfit_repair",
+          "cached": true,
+          "seq": 22
+        },
+        {
+          "step": "adfit_plate_recheck",
+          "tool_or_model": "model:muse-spark-1.3",
+          "input_summary": "2 regened plates",
+          "output_summary": "still dirty: ig-story-916: Two straight horizontal seams divide the frame into three tonal bands/blocks, not one continuous field. | ig-feed-45: Two straight horizontal seams divide the frame into three tonal bands/blocks, not one continuous field.",
+          "duration_ms": 14192,
+          "evidence_ids": [
+            "out:plate"
+          ],
+          "next_state": "done",
+          "cached": true,
+          "seq": 23
+        },
+        {
+          "step": "adfit_repair",
+          "tool_or_model": "code:recompose",
+          "input_summary": "3 sizes with defects",
+          "output_summary": "3 recomposed from cached layers (before kept)",
+          "duration_ms": 0,
+          "evidence_ids": [
+            "out:repair"
+          ],
+          "next_state": "done",
+          "cached": true,
+          "seq": 24
+        },
+        {
+          "step": "adfit_review_retry",
+          "tool_or_model": "model:muse-wonder-1.0",
+          "input_summary": "second chance for 2 reverted size(s)",
+          "output_summary": "11 re-proposed defects: ig-story-916/panel, ig-story-916/subtext, ig-story-916/other-0, fb-link/panel, fb-link/product-1, fb-link/logo, fb-link/other-0, fb-link/plate, ig-feed-45/panel, ig-feed-45/other-0, ig-feed-45/logo",
+          "duration_ms": 112081,
+          "evidence_ids": [
+            "out:review"
+          ],
+          "next_state": "adfit_repair",
+          "cached": true,
+          "seq": 25
+        },
+        {
+          "step": "adfit_plate_recheck",
+          "tool_or_model": "model:muse-spark-1.3",
+          "input_summary": "1 retry-regened plates",
+          "output_summary": "all clean after retry regen",
+          "duration_ms": 13601,
+          "evidence_ids": [
+            "out:plate"
+          ],
+          "next_state": "done",
+          "cached": true,
+          "seq": 26
+        }
+      ],
+      "error": null,
+      "checks": {
+        "protected_pixels": {
+          "status": "passed",
+          "detail": "Protected core matches the resized source (80% compared)"
+        },
+        "text": {
+          "status": "fixed",
+          "detail": "re-rendered text verified exact after repair"
+        },
+        "layout_review": {
+          "status": "needs_review",
+          "detail": "CTA 'Shop now' is white text on an off-white panel and is unreadable; the gold CTA fill from the source is lost"
+        },
+        "repaired": {
+          "before": "fixtures/brands/luma/demo/before-fb-link.png",
+          "patches": [
+            "other-0: move (180,94)",
+            "headline: move (180,94)",
+            "subtext: move (180,94)",
+            "product-0: scale x0.85",
+            "product-1: scale x0.78",
+            "product-0: scale x0.78",
+            "logo: scale x0.7",
+            "plate: regenerate (Background has a straight horizontal seam/band across the left text area and lower frame, breaking the continuous cream )"
+          ]
+        }
+      }
+    }
+  ]
+}

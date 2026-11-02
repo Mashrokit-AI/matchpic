@@ -1,0 +1,941 @@
+{
+  "brand": "sheket",
+  "mode": "protected",
+  "finishedAt": "2026-11-02T12:42:13.615Z",
+  "modelCalls": 13,
+  "imageCalls": 7,
+  "firstPreviewMs": 154985,
+  "totalMs": 652448,
+  "outputs": [
+    {
+      "source": "demo-src-sheket",
+      "sourceLabel": "source-he.png",
+      "preset": "ig-feed-11",
+      "mode": "protected",
+      "status": "needs_review",
+      "image": "ig-feed-11.png",
+      "before": null,
+      "plan": {
+        "preset": "ig-feed-11",
+        "width": 1080,
+        "height": 1080,
+        "from_template": false,
+        "template_id": null,
+        "safe": {
+          "x": 43,
+          "y": 43,
+          "w": 994,
+          "h": 994
+        },
+        "logo": null,
+        "products": [
+          {
+            "x": 343,
+            "y": 276,
+            "w": 394,
+            "h": 462
+          }
+        ],
+        "headline": {
+          "x": 65,
+          "y": 135,
+          "w": 950,
+          "h": 92
+        },
+        "subtext": {
+          "x": 65,
+          "y": 65,
+          "w": 950,
+          "h": 49
+        },
+        "panel": {
+          "x": 65,
+          "y": 864,
+          "w": 950,
+          "h": 76
+        },
+        "other_texts": [
+          {
+            "x": 65,
+            "y": 788,
+            "w": 950,
+            "h": 54
+          }
+        ],
+        "product_scales": [
+          0.9704433497536946
+        ],
+        "logo_scale": null,
+        "notes": [
+          "wonder: square_balanced",
+          "wonder rationale: Square balanced stack with right-aligned text, centered product and even 0.02 gaps filling the safe area."
+        ],
+        "manifest": {
+          "preset": "ig-feed-11",
+          "width": 1080,
+          "height": 1080,
+          "family": "square_balanced",
+          "planner": "wonder",
+          "safe": {
+            "x": 43,
+            "y": 43,
+            "w": 994,
+            "h": 994
+          },
+          "elements": [
+            {
+              "id": "product-0",
+              "kind": "product",
+              "box": {
+                "x": 343,
+                "y": 276,
+                "w": 394,
+                "h": 462
+              },
+              "group": "products",
+              "z": 20,
+              "align": null,
+              "scale": 0.9704433497536946,
+              "source": "default",
+              "srcBox": {
+                "x": 126,
+                "y": 126,
+                "w": 368,
+                "h": 484
+              }
+            },
+            {
+              "id": "panel",
+              "kind": "panel",
+              "box": {
+                "x": 65,
+                "y": 864,
+                "w": 950,
+                "h": 76
+              },
+              "group": "offer",
+              "z": 10,
+              "align": "right",
+              "scale": null,
+              "source": "default",
+              "srcBox": null
+            },
+            {
+              "id": "headline",
+              "kind": "headline",
+              "box": {
+                "x": 65,
+                "y": 135,
+                "w": 950,
+                "h": 92
+              },
+              "group": "text",
+              "z": 30,
+              "align": "right",
+              "scale": null,
+              "source": "default",
+              "srcBox": null
+            },
+            {
+              "id": "subtext",
+              "kind": "subtext",
+              "box": {
+                "x": 65,
+                "y": 65,
+                "w": 950,
+                "h": 49
+              },
+              "group": "text",
+              "z": 31,
+              "align": "right",
+              "scale": null,
+              "source": "default",
+              "srcBox": null
+            },
+            {
+              "id": "other-0",
+              "kind": "other_text",
+              "box": {
+                "x": 65,
+                "y": 788,
+                "w": 950,
+                "h": 54
+              },
+              "group": "text",
+              "z": 32,
+              "align": "right",
+              "scale": null,
+              "source": "default",
+              "srcBox": null
+            }
+          ],
+          "templateZones": null,
+          "corrections": [
+            "text group: 3 boxes share the right edge"
+          ],
+          "rationale": "Square balanced stack with right-aligned text, centered product and even 0.02 gaps filling the safe area."
+        }
+      },
+      "proof": {
+        "product-0": {
+          "scale": 0.9704433497536946,
+          "core_differ": 0,
+          "core_total": 65162,
+          "feather_total": 6323,
+          "coverage": 0.9115478771770301,
+          "pass": true
+        },
+        "panel": {
+          "scale": 1.2666666666666666,
+          "core_differ": 0,
+          "core_total": 18739,
+          "feather_total": 0,
+          "coverage": 1,
+          "pass": true
+        }
+      },
+      "qa": null,
+      "retries": 0,
+      "modelCalls": 0,
+      "imageCalls": 2,
+      "latencyMs": 20409,
+      "trace": [
+        {
+          "step": "adfit_analyze",
+          "tool_or_model": "model:muse-spark-1.3",
+          "input_summary": "source 1280x720",
+          "output_summary": "lang=he products=1 logo=no headline=\"שומעים רק את המוזיקה\" panel=opaque bg=flat coords=pixels",
+          "duration_ms": 62592,
+          "evidence_ids": [
+            "src:analysis"
+          ],
+          "next_state": "adfit_masks",
+          "cached": true,
+          "seq": 1
+        },
+        {
+          "step": "adfit_masks",
+          "tool_or_model": "model:sam-3.1",
+          "input_summary": "product-0[headphones]",
+          "output_summary": "ok: product-0 coverage: products 1/1; product-0 clipped to its box (removed 8% cross-coverage); product-0 mask sparse (fill 0.39) even after retry — kept best",
+          "duration_ms": 45402,
+          "evidence_ids": [
+            "src:product-0"
+          ],
+          "next_state": "adfit_plan",
+          "cached": true,
+          "seq": 2
+        },
+        {
+          "step": "adfit_plan",
+          "tool_or_model": "model:muse-wonder-1.0",
+          "input_summary": "ig-feed-11 protected no-template family=square_balanced",
+          "output_summary": "wonder: square_balanced; wonder rationale: Square balanced stack with right-aligned text, centered product and even 0.02 gaps filling the safe area. | corrections: text group: 3 boxes share the right edge",
+          "duration_ms": 0,
+          "evidence_ids": [
+            "out:plan"
+          ],
+          "next_state": "adfit_generate",
+          "cached": false,
+          "seq": 3
+        },
+        {
+          "step": "adfit_generate",
+          "tool_or_model": "model:muse-image-1.0",
+          "input_summary": "protected plate 1080x1080",
+          "output_summary": "wire bytes=2331960",
+          "duration_ms": 19564,
+          "evidence_ids": [
+            "out:plate"
+          ],
+          "next_state": "adfit_composite",
+          "cached": false,
+          "seq": 4
+        },
+        {
+          "step": "adfit_generate",
+          "tool_or_model": "code:deband",
+          "input_summary": "plate 1080x1080",
+          "output_summary": "debanded 379 edge rows into the field",
+          "duration_ms": 0,
+          "evidence_ids": [],
+          "next_state": "adfit_composite",
+          "cached": false,
+          "seq": 5
+        },
+        {
+          "step": "adfit_composite",
+          "tool_or_model": "code:composite+chromium",
+          "input_summary": "plate + product-0@0.970x panel@1.267x + text(headline,subtext,other-0)",
+          "output_summary": "1080x1080 product-0: contact shadow at support y=737; panel pasted (complex) at 1.27x",
+          "duration_ms": 544,
+          "evidence_ids": [
+            "out:product-0",
+            "out:panel"
+          ],
+          "next_state": "adfit_proof",
+          "cached": false,
+          "seq": 6
+        },
+        {
+          "step": "adfit_proof",
+          "tool_or_model": "code:elementProof",
+          "input_summary": "2 pasted elements",
+          "output_summary": "product-0:0/65162 (91% compared) panel:0/18739 (100% compared) feather outside core only",
+          "duration_ms": 40,
+          "evidence_ids": [
+            "out:product-0",
+            "out:panel"
+          ],
+          "next_state": "adfit_review",
+          "cached": false,
+          "seq": 7
+        },
+        {
+          "step": "adfit_generate",
+          "tool_or_model": "model:muse-image-1.0",
+          "input_summary": "protected plate 1080x1080 (retry) text-only",
+          "output_summary": "wire bytes=1793037",
+          "duration_ms": 20464,
+          "evidence_ids": [
+            "out:plate"
+          ],
+          "next_state": "adfit_composite",
+          "cached": false,
+          "seq": 8
+        },
+        {
+          "step": "adfit_composite",
+          "tool_or_model": "code:composite+chromium",
+          "input_summary": "plate + product-0@0.970x panel@1.267x + text(headline,subtext,other-0)",
+          "output_summary": "1080x1080 product-0: contact shadow at support y=737; panel pasted (complex) at 1.27x",
+          "duration_ms": 401,
+          "evidence_ids": [
+            "out:product-0",
+            "out:panel"
+          ],
+          "next_state": "adfit_proof",
+          "cached": false,
+          "seq": 9
+        },
+        {
+          "step": "adfit_proof",
+          "tool_or_model": "code:elementProof",
+          "input_summary": "2 pasted elements",
+          "output_summary": "product-0:0/65162 (91% compared) panel:0/18739 (100% compared) feather outside core only",
+          "duration_ms": 33,
+          "evidence_ids": [
+            "out:product-0",
+            "out:panel"
+          ],
+          "next_state": "adfit_review",
+          "cached": false,
+          "seq": 10
+        },
+        {
+          "step": "adfit_repair",
+          "tool_or_model": "code:recompose",
+          "input_summary": "flag:product-0",
+          "output_summary": "flagged: product-0: Right side of headphones is clipped with a straight vertical cut through the headband and right earcup, unlike the complete product in the source; also a small stray shadow fragment floats below the earcups",
+          "duration_ms": 0,
+          "evidence_ids": [
+            "out:repair"
+          ],
+          "next_state": "done",
+          "cached": false,
+          "seq": 11
+        },
+        {
+          "step": "adfit_wonder_plan",
+          "tool_or_model": "model:muse-wonder-1.0",
+          "input_summary": "1 source x 3 sizes",
+          "output_summary": "families: ig-feed-11=square_balanced ig-story-916=portrait_stack ig-feed-45=portrait_stack",
+          "duration_ms": 74262,
+          "evidence_ids": [
+            "out:plan"
+          ],
+          "next_state": "adfit_generate",
+          "cached": false,
+          "seq": 12
+        },
+        {
+          "step": "adfit_plate_check",
+          "tool_or_model": "model:muse-spark-1.3",
+          "input_summary": "3 plates",
+          "output_summary": "dirty (regenerate once): ig-feed-11: straight horizontal seam near top forming header strip, frame is not one continuous field | ig-story-916: two straight horizontal seams dividing frame into top, middle and bottom bands/blocks | ig-feed-45: straight horizontal seam near bottom forming footer strip, frame split not continuous",
+          "duration_ms": 16290,
+          "evidence_ids": [
+            "out:plate"
+          ],
+          "next_state": "adfit_review",
+          "cached": false,
+          "seq": 13
+        },
+        {
+          "step": "adfit_text_check",
+          "tool_or_model": "model:muse-spark-1.3",
+          "input_summary": "3 outputs with re-rendered text",
+          "output_summary": "all exact",
+          "duration_ms": 39798,
+          "evidence_ids": [
+            "out:text"
+          ],
+          "next_state": "adfit_review",
+          "cached": false,
+          "seq": 14
+        },
+        {
+          "step": "adfit_review",
+          "tool_or_model": "model:muse-wonder-1.0",
+          "input_summary": "source + 3 outputs + deterministic findings",
+          "output_summary": "8 defects: ig-feed-11/product-0, ig-story-916/product-0, ig-feed-45/product-0, ig-feed-45/subtext, ig-story-916/background, ig-story-916/panel, ig-story-916/other-0, ig-story-916/product-0",
+          "duration_ms": 90861,
+          "evidence_ids": [
+            "out:review"
+          ],
+          "next_state": "adfit_repair",
+          "cached": false,
+          "seq": 15
+        },
+        {
+          "step": "adfit_plate_recheck",
+          "tool_or_model": "model:muse-spark-1.3",
+          "input_summary": "1 regened plates",
+          "output_summary": "still dirty: ig-story-916: straight horizontal seam dividing frame into upper and lower flat-color bands with hard edge",
+          "duration_ms": 15851,
+          "evidence_ids": [
+            "out:plate"
+          ],
+          "next_state": "done",
+          "cached": false,
+          "seq": 16
+        },
+        {
+          "step": "adfit_repair",
+          "tool_or_model": "code:recompose",
+          "input_summary": "3 sizes with defects",
+          "output_summary": "2 recomposed from cached layers (before kept)",
+          "duration_ms": 0,
+          "evidence_ids": [
+            "out:repair"
+          ],
+          "next_state": "done",
+          "cached": false,
+          "seq": 17
+        },
+        {
+          "step": "adfit_review_retry",
+          "tool_or_model": "model:muse-wonder-1.0",
+          "input_summary": "second chance for 1 reverted size(s)",
+          "output_summary": "wonder review failed (Model call timed out after 180000 ms)",
+          "duration_ms": 0,
+          "evidence_ids": [
+            "out:review"
+          ],
+          "next_state": "adfit_repair",
+          "cached": false,
+          "seq": 18
+        }
+      ],
+      "error": null,
+      "checks": {
+        "protected_pixels": {
+          "status": "passed",
+          "detail": "Protected core matches the resized source (91% compared)"
+        },
+        "text": {
+          "status": "passed",
+          "detail": "re-rendered text verified exact"
+        },
+        "layout_review": {
+          "status": "needs_review",
+          "detail": "deterministic: wonder_flag"
+        },
+        "repaired": null
+      }
+    },
+    {
+      "source": "demo-src-sheket",
+      "sourceLabel": "source-he.png",
+      "preset": "ig-feed-45",
+      "mode": "protected",
+      "status": "needs_review",
+      "image": "ig-feed-45.png",
+      "before": "before-ig-feed-45.png",
+      "plan": {
+        "preset": "ig-feed-45",
+        "width": 1080,
+        "height": 1350,
+        "from_template": false,
+        "template_id": null,
+        "safe": {
+          "x": 43,
+          "y": 54,
+          "w": 994,
+          "h": 1215
+        },
+        "logo": null,
+        "products": [
+          {
+            "x": 253,
+            "y": 314,
+            "w": 575,
+            "h": 674
+          }
+        ],
+        "headline": {
+          "x": 65,
+          "y": 157,
+          "w": 950,
+          "h": 92
+        },
+        "subtext": {
+          "x": 65,
+          "y": 81,
+          "w": 950,
+          "h": 51
+        },
+        "panel": {
+          "x": 65,
+          "y": 1134,
+          "w": 950,
+          "h": 81
+        },
+        "other_texts": [
+          {
+            "x": 65,
+            "y": 1053,
+            "w": 950,
+            "h": 57
+          }
+        ],
+        "product_scales": [
+          1.416256157635468
+        ],
+        "logo_scale": null,
+        "notes": [
+          "wonder: portrait_stack",
+          "wonder rationale: Portrait stack with right-aligned text, large centered product and even 0.018 gaps filling the 4:5 safe area."
+        ],
+        "manifest": {
+          "preset": "ig-feed-45",
+          "width": 1080,
+          "height": 1350,
+          "family": "portrait_stack",
+          "planner": "wonder",
+          "safe": {
+            "x": 43,
+            "y": 54,
+            "w": 994,
+            "h": 1215
+          },
+          "elements": [
+            {
+              "id": "product-0",
+              "kind": "product",
+              "box": {
+                "x": 253,
+                "y": 314,
+                "w": 575,
+                "h": 674
+              },
+              "group": "products",
+              "z": 20,
+              "align": null,
+              "scale": 1.416256157635468,
+              "source": "default",
+              "srcBox": {
+                "x": 126,
+                "y": 126,
+                "w": 368,
+                "h": 484
+              }
+            },
+            {
+              "id": "panel",
+              "kind": "panel",
+              "box": {
+                "x": 65,
+                "y": 1134,
+                "w": 950,
+                "h": 81
+              },
+              "group": "offer",
+              "z": 10,
+              "align": "right",
+              "scale": null,
+              "source": "default",
+              "srcBox": null
+            },
+            {
+              "id": "headline",
+              "kind": "headline",
+              "box": {
+                "x": 65,
+                "y": 181,
+                "w": 950,
+                "h": 92
+              },
+              "group": "text",
+              "z": 30,
+              "align": "right",
+              "scale": null,
+              "source": "corrected",
+              "srcBox": null
+            },
+            {
+              "id": "subtext",
+              "kind": "subtext",
+              "box": {
+                "x": 65,
+                "y": 81,
+                "w": 950,
+                "h": 51
+              },
+              "group": "text",
+              "z": 31,
+              "align": "right",
+              "scale": null,
+              "source": "default",
+              "srcBox": null
+            },
+            {
+              "id": "other-0",
+              "kind": "other_text",
+              "box": {
+                "x": 65,
+                "y": 1053,
+                "w": 950,
+                "h": 57
+              },
+              "group": "text",
+              "z": 32,
+              "align": "right",
+              "scale": null,
+              "source": "default",
+              "srcBox": null
+            }
+          ],
+          "templateZones": null,
+          "corrections": [
+            "text group: 3 boxes share the right edge",
+            "repair reverted for subtext (would touch headline) (separation < 16px)",
+            "text group: 3 boxes share the right edge",
+            "repair reverted for other-0 (would touch panel) (separation < 16px)"
+          ],
+          "rationale": "Portrait stack with right-aligned text, large centered product and even 0.018 gaps filling the 4:5 safe area."
+        }
+      },
+      "proof": {
+        "product-0": {
+          "scale": 1.416256157635468,
+          "core_differ": 0,
+          "core_total": 142708,
+          "feather_total": 9246,
+          "coverage": 0.9391526382984324,
+          "pass": true
+        },
+        "panel": {
+          "scale": 1.35,
+          "core_differ": 0,
+          "core_total": 21261,
+          "feather_total": 0,
+          "coverage": 1,
+          "pass": true
+        }
+      },
+      "qa": null,
+      "retries": 0,
+      "modelCalls": 0,
+      "imageCalls": 2,
+      "latencyMs": 18488,
+      "trace": [
+        {
+          "step": "adfit_analyze",
+          "tool_or_model": "model:muse-spark-1.3",
+          "input_summary": "source 1280x720",
+          "output_summary": "lang=he products=1 logo=no headline=\"שומעים רק את המוזיקה\" panel=opaque bg=flat coords=pixels",
+          "duration_ms": 62592,
+          "evidence_ids": [
+            "src:analysis"
+          ],
+          "next_state": "adfit_masks",
+          "cached": true,
+          "seq": 1
+        },
+        {
+          "step": "adfit_masks",
+          "tool_or_model": "model:sam-3.1",
+          "input_summary": "product-0[headphones]",
+          "output_summary": "ok: product-0 coverage: products 1/1; product-0 clipped to its box (removed 8% cross-coverage); product-0 mask sparse (fill 0.39) even after retry — kept best",
+          "duration_ms": 45402,
+          "evidence_ids": [
+            "src:product-0"
+          ],
+          "next_state": "adfit_plan",
+          "cached": true,
+          "seq": 2
+        },
+        {
+          "step": "adfit_plan",
+          "tool_or_model": "model:muse-wonder-1.0",
+          "input_summary": "ig-feed-45 protected no-template family=portrait_stack",
+          "output_summary": "wonder: portrait_stack; wonder rationale: Portrait stack with right-aligned text, large centered product and even 0.018 gaps filling the 4:5 safe area. | corrections: text group: 3 boxes share the right edge",
+          "duration_ms": 0,
+          "evidence_ids": [
+            "out:plan"
+          ],
+          "next_state": "adfit_generate",
+          "cached": false,
+          "seq": 3
+        },
+        {
+          "step": "adfit_generate",
+          "tool_or_model": "model:muse-image-1.0",
+          "input_summary": "protected plate 1080x1350",
+          "output_summary": "wire bytes=2235865",
+          "duration_ms": 17223,
+          "evidence_ids": [
+            "out:plate"
+          ],
+          "next_state": "adfit_composite",
+          "cached": false,
+          "seq": 4
+        },
+        {
+          "step": "adfit_generate",
+          "tool_or_model": "code:deband",
+          "input_summary": "plate 1080x1350",
+          "output_summary": "debanded 246 edge rows into the field",
+          "duration_ms": 0,
+          "evidence_ids": [],
+          "next_state": "adfit_composite",
+          "cached": false,
+          "seq": 5
+        },
+        {
+          "step": "adfit_composite",
+          "tool_or_model": "code:composite+chromium",
+          "input_summary": "plate + product-0@1.416x panel@1.350x + text(headline,subtext,other-0)",
+          "output_summary": "1080x1350 product-0: contact shadow at support y=987; panel pasted (complex) at 1.35x",
+          "duration_ms": 786,
+          "evidence_ids": [
+            "out:product-0",
+            "out:panel"
+          ],
+          "next_state": "adfit_proof",
+          "cached": false,
+          "seq": 6
+        },
+        {
+          "step": "adfit_proof",
+          "tool_or_model": "code:elementProof",
+          "input_summary": "2 pasted elements",
+          "output_summary": "product-0:0/142708 (94% compared) panel:0/21261 (100% compared) feather outside core only",
+          "duration_ms": 79,
+          "evidence_ids": [
+            "out:product-0",
+            "out:panel"
+          ],
+          "next_state": "adfit_review",
+          "cached": false,
+          "seq": 7
+        },
+        {
+          "step": "adfit_generate",
+          "tool_or_model": "model:muse-image-1.0",
+          "input_summary": "protected plate 1080x1350 (retry) text-only",
+          "output_summary": "wire bytes=2269053",
+          "duration_ms": 19374,
+          "evidence_ids": [
+            "out:plate"
+          ],
+          "next_state": "adfit_composite",
+          "cached": false,
+          "seq": 8
+        },
+        {
+          "step": "adfit_composite",
+          "tool_or_model": "code:composite+chromium",
+          "input_summary": "plate + product-0@1.416x panel@1.350x + text(headline,subtext,other-0)",
+          "output_summary": "1080x1350 product-0: contact shadow at support y=987; panel pasted (complex) at 1.35x",
+          "duration_ms": 702,
+          "evidence_ids": [
+            "out:product-0",
+            "out:panel"
+          ],
+          "next_state": "adfit_proof",
+          "cached": false,
+          "seq": 9
+        },
+        {
+          "step": "adfit_proof",
+          "tool_or_model": "code:elementProof",
+          "input_summary": "2 pasted elements",
+          "output_summary": "product-0:0/142708 (94% compared) panel:0/21261 (100% compared) feather outside core only",
+          "duration_ms": 65,
+          "evidence_ids": [
+            "out:product-0",
+            "out:panel"
+          ],
+          "next_state": "adfit_review",
+          "cached": false,
+          "seq": 10
+        },
+        {
+          "step": "adfit_repair",
+          "tool_or_model": "code:recompose",
+          "input_summary": "flag:product-0, move:subtext, move:headline, move:other-0",
+          "output_summary": "applied: headline: move (0,24)",
+          "duration_ms": 0,
+          "evidence_ids": [
+            "out:repair"
+          ],
+          "next_state": "done",
+          "cached": false,
+          "seq": 11
+        },
+        {
+          "step": "adfit_composite",
+          "tool_or_model": "code:composite+chromium",
+          "input_summary": "plate + product-0@1.416x panel@1.350x + text(headline,subtext,other-0)",
+          "output_summary": "1080x1350 product-0: contact shadow at support y=987; panel pasted (complex) at 1.35x",
+          "duration_ms": 1882,
+          "evidence_ids": [
+            "out:product-0",
+            "out:panel"
+          ],
+          "next_state": "adfit_proof",
+          "cached": false,
+          "seq": 12
+        },
+        {
+          "step": "adfit_proof",
+          "tool_or_model": "code:elementProof",
+          "input_summary": "2 pasted elements",
+          "output_summary": "product-0:0/142708 (94% compared) panel:0/21261 (100% compared) feather outside core only",
+          "duration_ms": 145,
+          "evidence_ids": [
+            "out:product-0",
+            "out:panel"
+          ],
+          "next_state": "adfit_review",
+          "cached": false,
+          "seq": 13
+        },
+        {
+          "step": "adfit_wonder_plan",
+          "tool_or_model": "model:muse-wonder-1.0",
+          "input_summary": "1 source x 3 sizes",
+          "output_summary": "families: ig-feed-11=square_balanced ig-story-916=portrait_stack ig-feed-45=portrait_stack",
+          "duration_ms": 74262,
+          "evidence_ids": [
+            "out:plan"
+          ],
+          "next_state": "adfit_generate",
+          "cached": true,
+          "seq": 14
+        },
+        {
+          "step": "adfit_plate_check",
+          "tool_or_model": "model:muse-spark-1.3",
+          "input_summary": "3 plates",
+          "output_summary": "dirty (regenerate once): ig-feed-11: straight horizontal seam near top forming header strip, frame is not one continuous field | ig-story-916: two straight horizontal seams dividing frame into top, middle and bottom bands/blocks | ig-feed-45: straight horizontal seam near bottom forming footer strip, frame split not continuous",
+          "duration_ms": 16290,
+          "evidence_ids": [
+            "out:plate"
+          ],
+          "next_state": "adfit_review",
+          "cached": true,
+          "seq": 15
+        },
+        {
+          "step": "adfit_text_check",
+          "tool_or_model": "model:muse-spark-1.3",
+          "input_summary": "3 outputs with re-rendered text",
+          "output_summary": "all exact",
+          "duration_ms": 39798,
+          "evidence_ids": [
+            "out:text"
+          ],
+          "next_state": "adfit_review",
+          "cached": true,
+          "seq": 16
+        },
+        {
+          "step": "adfit_review",
+          "tool_or_model": "model:muse-wonder-1.0",
+          "input_summary": "source + 3 outputs + deterministic findings",
+          "output_summary": "8 defects: ig-feed-11/product-0, ig-story-916/product-0, ig-feed-45/product-0, ig-feed-45/subtext, ig-story-916/background, ig-story-916/panel, ig-story-916/other-0, ig-story-916/product-0",
+          "duration_ms": 90861,
+          "evidence_ids": [
+            "out:review"
+          ],
+          "next_state": "adfit_repair",
+          "cached": true,
+          "seq": 17
+        },
+        {
+          "step": "adfit_plate_recheck",
+          "tool_or_model": "model:muse-spark-1.3",
+          "input_summary": "1 regened plates",
+          "output_summary": "still dirty: ig-story-916: straight horizontal seam dividing frame into upper and lower flat-color bands with hard edge",
+          "duration_ms": 15851,
+          "evidence_ids": [
+            "out:plate"
+          ],
+          "next_state": "done",
+          "cached": true,
+          "seq": 18
+        },
+        {
+          "step": "adfit_repair",
+          "tool_or_model": "code:recompose",
+          "input_summary": "3 sizes with defects",
+          "output_summary": "2 recomposed from cached layers (before kept)",
+          "duration_ms": 0,
+          "evidence_ids": [
+            "out:repair"
+          ],
+          "next_state": "done",
+          "cached": true,
+          "seq": 19
+        },
+        {
+          "step": "adfit_review_retry",
+          "tool_or_model": "model:muse-wonder-1.0",
+          "input_summary": "second chance for 1 reverted size(s)",
+          "output_summary": "wonder review failed (Model call timed out after 180000 ms)",
+          "duration_ms": 0,
+          "evidence_ids": [
+            "out:review"
+          ],
+          "next_state": "adfit_repair",
+          "cached": true,
+          "seq": 20
+        }
+      ],
+      "error": null,
+      "checks": {
+        "protected_pixels": {
+          "status": "passed",
+          "detail": "Protected core matches the resized source (94% compared)"
+        },
+        "text": {
+          "status": "fixed",
+          "detail": "re-rendered text verified exact after repair"
+        },
+        "layout_review": {
+          "status": "needs_review",
+          "detail": "deterministic: wonder_flag, wonder_flag"
+        },
+        "repaired": {
+          "before": "fixtures/brands/sheket/demo/before-ig-feed-45.png",
+          "patches": [
+            "headline: move (0,24)"
+          ]
+        }
+      }
+    }
+  ]
+}

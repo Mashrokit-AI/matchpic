@@ -71,15 +71,14 @@ interface DemoDef {
 
 /** Saved demo examples (session 11): one native size each, distinct brands. */
 const DEMO_JOBS: DemoDef[] = [
-  { jobId: 'demo-vela', brand: 'vela', lang: 'en', nativePreset: 'ig-feed-11' },
-  { jobId: 'demo-dafna-story', brand: 'dafna', lang: 'he', nativePreset: 'ig-story-916' },
-  { jobId: 'demo-zazo', brand: 'zazo', lang: 'en', nativePreset: 'fb-link' },
-  { jobId: 'demo-noa', brand: 'noa', lang: 'he', nativePreset: 'ig-feed-45' },
-  { jobId: 'demo-toda', brand: 'toda', lang: 'he', nativePreset: 'yt-thumb' },
+  { jobId: 'demo-luma', brand: 'luma', lang: 'en', nativePreset: 'ig-feed-11' },
+  { jobId: 'demo-stride', brand: 'stride', lang: 'en', nativePreset: 'ig-story-916' },
+  { jobId: 'demo-northbean', brand: 'northbean', lang: 'en', nativePreset: 'fb-link' },
+  { jobId: 'demo-sheket', brand: 'sheket', lang: 'he', nativePreset: 'yt-thumb' },
 ];
 
 /** Fallback demo id when the DB has no seeded demos (tests + /api/demo). */
-export const DEMO_JOB_ID = 'demo-vela';
+export const DEMO_JOB_ID = 'demo-luma';
 
 /** PNG dimensions from the IHDR chunk (all fixture sources are PNG). */
 function pngSize(path: string): { width: number; height: number } {

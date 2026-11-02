@@ -37,6 +37,11 @@ const SOURCES: Record<string, { brand: string; file: string; name: string }> = {
   noa: { brand: 'noa', file: 'source.png', name: 'NOA' },
   zazo: { brand: 'zazo', file: 'source-en.png', name: 'ZAZO' },
   toda: { brand: 'toda', file: 'source-he.png', name: 'TODA' },
+  luma: { brand: 'luma', file: 'source-en.png', name: 'LUMA' },
+  stride: { brand: 'stride', file: 'source-en.png', name: 'STRIDE' },
+  northbean: { brand: 'northbean', file: 'source-en.png', name: 'NORTHBEAN' },
+  teva: { brand: 'teva', file: 'source-he.png', name: 'טבע' },
+  sheket: { brand: 'sheket', file: 'source-he.png', name: 'שקט' },
 };
 
 const ITERATION_SIZES = ['ig-feed-11', 'fb-link', 'ig-story-916'];

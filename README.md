@@ -52,17 +52,44 @@ brands are synthetic and fictional; nothing is ever published.
 | QA | `muse-spark-1.3` | fresh PASS/FAIL read of every output |
 | Brand match | `muse-spark-1.3` | propose a brand for an upload |
 
-## Run
+## Getting started
+
+**Prerequisites:** Node.js 20 or newer, npm, git. macOS, Linux or WSL. A Meta Model API key is needed only for live generation; the saved demo works without one.
 
 ```bash
-npm install
-npm run web        # build the UI + start on http://127.0.0.1:3023/
+# 1. Clone and install
+git clone https://github.com/Mashrokit-AI/matchpic.git
+cd matchpic
+npm ci
+
+# 2. Install the headless browser used to render text (Playwright Chromium)
+npx playwright install chromium
+
+# 3. Settings (no secrets in this file)
+cp .env.example .env
+
+# 4. Model API key — kept OUTSIDE the repo
+mkdir -p ~/.config/offer-guard
+echo 'MODEL_API_KEY=your-meta-model-api-key' > ~/.config/offer-guard/secrets.env
+chmod 600 ~/.config/offer-guard/secrets.env
+
+# 5. Build the UI and start the server
+npm run web
 ```
 
-The Model API key lives **outside the repo** in
-`~/.config/offer-guard/secrets.env` (`MODEL_API_KEY=…`, chmod 600) —
-the historical path, kept after the MatchPic pivot. Non-secret settings go in
-`.env` (see `.env.example`).
+Open http://127.0.0.1:3023/ and click an example under **Try an example**, or drop your own creative and press **Generate**.
+
+- **No key yet?** Set `ADFIT_LIVE=off` in `.env` (the value must be `off`): the saved examples, detail pages and brands all work; live generation answers with a friendly "paused" message.
+- The first start creates `data/adfit.db` and seeds the demo examples and demo brands from `fixtures/brands/`. To reseed, stop the server and delete `data/adfit.db`.
+- The key file path can be changed with `ADFIT_SECRETS_FILE=/path/to/secrets.env`. The historical path `~/.config/offer-guard/` is kept from before the MatchPic pivot.
+- Behind a reverse proxy at a sub-path, set `ADFIT_BASE_PATH=/matchpic/` and `ADFIT_TRUST_PROXY=1`.
+
+Check that everything works:
+
+```bash
+npm test          # unit tests, no network, no key needed
+npm run typecheck
+```
 
 Useful commands:
 
