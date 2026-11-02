@@ -376,7 +376,7 @@ html[dir="rtl"] h3 { line-height: 1.4; }
   color: var(--on-night);
 }
 .hero-head h1 { margin: 0 0 var(--s4); max-width: 820px; font-size: 48px; }
-.hero-head h1 .hl { color: var(--turquoise); }
+.hero-head h1 .hl { color: var(--turquoise); display: block; }
 .hero-head .sub { margin: 0; color: var(--on-night-2); font-size: 19px; }
 @media (max-width: 767px) {
   .hero-head { padding-block: var(--s8) var(--s6); }
