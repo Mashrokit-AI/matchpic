@@ -168,7 +168,7 @@ function outputCard(o: OutputRow, sources: string[]): OutputCardDto {
     preset: o.preset,
     mode: o.mode,
     status: o.status,
-    image: `media/output/${o.id}`,
+    image: `media/output/${o.id}?v=${encodeURIComponent(o.job_id)}`,
     qaPass,
     retries: o.retries,
     proofDiff,
@@ -292,7 +292,8 @@ export function buildExamples(s: Store): ExampleDto[] {
       finishedAt: j.finished_at,
     });
   }
-  return out;
+  // English examples first, Hebrew after (stable within each language).
+  return out.sort((a, b) => (a.lang === 'he' ? 1 : 0) - (b.lang === 'he' ? 1 : 0));
 }
 
 export function buildJob(s: Store, id: string): JobDto | null {
