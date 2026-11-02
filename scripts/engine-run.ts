@@ -33,7 +33,10 @@ const SOURCES: Record<string, { brand: string; file: string; name: string }> = {
   'gali-en': { brand: 'gali', file: 'source-en.png', name: 'GALI' },
   vela: { brand: 'vela', file: 'source-en.png', name: 'VELA' },
   dafna: { brand: 'dafna', file: 'source-he.png', name: 'DAFNA' },
+  'dafna-story': { brand: 'dafna', file: 'source-story.png', name: 'DAFNA' },
   noa: { brand: 'noa', file: 'source.png', name: 'NOA' },
+  zazo: { brand: 'zazo', file: 'source-en.png', name: 'ZAZO' },
+  toda: { brand: 'toda', file: 'source-he.png', name: 'TODA' },
 };
 
 const ITERATION_SIZES = ['ig-feed-11', 'fb-link', 'ig-story-916'];
@@ -134,6 +137,23 @@ async function main(): Promise<void> {
       await writeFile(join(outDir, `${o.preset.id}.manifest.json`), JSON.stringify(o.manifest, null, 2));
       await writeFile(join(outDir, `${o.preset.id}.trace.json`), JSON.stringify(o.trace.all(), null, 2));
       if (o.repaired) await writeFile(join(outDir, `before-${o.preset.id}.png`), o.repaired.beforePng);
+      // Seed-ready export (scripts/assemble-demo.ts composes fixtures demo dirs).
+      await writeFile(join(outDir, `${o.preset.id}.export.json`), JSON.stringify({
+        preset: o.preset.id,
+        planner: o.planner,
+        family: o.family,
+        plan: o.plan,
+        manifest: o.manifest,
+        proofs: o.proofs,
+        digest: o.digest,
+        checks: o.checks,
+        repairedPatches: o.repaired ? o.repaired.patches : null,
+        modelCalls: o.modelCalls,
+        imageCalls: o.imageCalls,
+        latencyMs: o.latencyMs,
+        trace: o.trace.all(),
+        error: o.error,
+      }, null, 2));
     }
     const proofs = o.proofs ?? {};
     const minCov = Object.keys(proofs).length > 0 ? Math.min(...Object.values(proofs).map((p) => p.coverage)) : null;
@@ -159,6 +179,8 @@ async function main(): Promise<void> {
     firstPreviewMs: batch.firstPreviewMs,
     totalMs: batch.totalMs,
     wonderUsed: batch.wonderUsed,
+    jobModelCalls: batch.source.modelCalls + batch.modelCalls,
+    jobImageCalls: batch.outcomes.reduce((n, o) => n + o.imageCalls, 0),
     totals: ledger.totals(),
     outputs: report,
   }, null, 2));

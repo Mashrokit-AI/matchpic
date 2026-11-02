@@ -48,7 +48,18 @@ export interface JobTerminalEvent {
   error?: string;
 }
 
-export type JobEvent = JobProgressEvent | JobUpdateEvent | JobTerminalEvent;
+/** Shared preparation step (analyze / masks / plan), emitted once per source. */
+export interface JobPrepEvent {
+  type: 'prep';
+  step: 'analyze' | 'masks' | 'plan';
+  state: 'start' | 'done';
+  /** Step duration in ms (done events only). */
+  ms?: number;
+  /** Human detail, e.g. the planned size count. */
+  detail?: string;
+}
+
+export type JobEvent = JobProgressEvent | JobUpdateEvent | JobTerminalEvent | JobPrepEvent;
 
 export interface JobResult {
   jobId?: string;
@@ -136,15 +147,15 @@ export class JobManager {
   }
 
   /**
-   * Submit a heavy task. The task runs `onRow` per finished output (and
-   * `onUpdate` when a streamed preview reaches its final state) and resolves
-   * with the resulting store job id. Returns null when the server is busy
-   * (running + queue full).
+   * Submit a heavy task. The task runs `onRow` per finished output,
+   * `onUpdate` when a streamed preview reaches its final state, and `onPrep`
+   * for shared preparation steps, and resolves with the resulting store job
+   * id. Returns null when the server is busy (running + queue full).
    */
   submit(
     kind: Job['kind'],
     total: number,
-    task: (onRow: (row: JobRow) => void, onUpdate: (row: JobRow) => void) => Promise<JobResult>,
+    task: (onRow: (row: JobRow) => void, onUpdate: (row: JobRow) => void, onPrep: (step: JobPrepEvent['step'], state: 'start' | 'done', ms?: number, detail?: string) => void) => Promise<JobResult>,
   ): Job | null {
     if (this.running && this.waiting.length >= this.opts.queueMax) return null;
     const now = this.opts.now ?? Date.now;
@@ -185,6 +196,10 @@ export class JobManager {
     this.emit(job, { type: 'update', done: job.done, total: job.total, row });
   }
 
+  prep(job: Job, step: JobPrepEvent['step'], state: 'start' | 'done', ms?: number, detail?: string): void {
+    this.emit(job, { type: 'prep', step, state, ms, detail });
+  }
+
   private emit(job: Job, event: JobEvent): void {
     job.log.push(event);
     for (const fn of job.listeners) {
@@ -209,13 +224,13 @@ export class JobManager {
     const next = this.waiting.shift();
     if (next) {
       next.status = 'running';
-      void this.execute(next, (next as unknown as { task: (onRow: (r: JobRow) => void, onUpdate: (r: JobRow) => void) => Promise<JobResult> }).task);
+      void this.execute(next, (next as unknown as { task: (onRow: (r: JobRow) => void, onUpdate: (r: JobRow) => void, onPrep: (s: JobPrepEvent['step'], st: 'start' | 'done', ms?: number, detail?: string) => void) => Promise<JobResult> }).task);
     }
   }
 
   private async execute(
     job: Job,
-    task: (onRow: (row: JobRow) => void, onUpdate: (row: JobRow) => void) => Promise<JobResult>,
+    task: (onRow: (row: JobRow) => void, onUpdate: (row: JobRow) => void, onPrep: (step: JobPrepEvent['step'], state: 'start' | 'done', ms?: number, detail?: string) => void) => Promise<JobResult>,
   ): Promise<void> {
     // Stash the task so finish() can start queued jobs generically.
     (job as unknown as { task: typeof task }).task = task;
@@ -236,6 +251,7 @@ export class JobManager {
       const result = await task(
         (row) => this.onRow(job, row),
         (row) => this.updateRow(job, row),
+        (step, state, ms, detail) => this.prep(job, step, state, ms, detail),
       );
       if (timedOut) return;
       clearTimeout(timer);
@@ -250,7 +266,7 @@ export class JobManager {
 
 /** SSE response: replays the job log, then streams until a terminal event. */
 export function sseResponse(job: Job): Response {
-  const encode = (e: JobEvent): string => `data: ${JSON.stringify(e)}\n\n`;
+  const encode = (e: JobEvent): string => `event: ${e.type}\ndata: ${JSON.stringify(e)}\n\n`;
   const enc = new TextEncoder();
   let listener: ((e: JobEvent) => void) | null = null;
   const stream = new ReadableStream<Uint8Array>({

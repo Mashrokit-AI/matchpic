@@ -67,4 +67,42 @@ describe('snapPanelRect', () => {
     expect(snapped.x + snapped.w).toBeLessThanOrEqual(100);
     expect(snapped.y + snapped.h).toBeLessThanOrEqual(80);
   });
+
+  it('rejects a flat-background flood that merely surrounds the box (ZAZO)', () => {
+    // Solid cream background with a navy panel: the cream flood comes in
+    // under the pixel cap with a full-frame bbox — it must be discarded or
+    // the panel cut becomes the whole source (pasted as a miniature ad).
+    const w = 120;
+    const h = 63;
+    const data = Buffer.alloc(w * h * 4);
+    for (let y = 0; y < h; y++) {
+      for (let x = 0; x < w; x++) {
+        const o = (y * w + x) * 4;
+        // Orange sun block keeps cream at 45% (under the 50% pixel cap) while
+        // cream still touches all four edges — exactly the ZAZO shape: the
+        // background flood survives the cap with a full-frame bbox and must
+        // be rejected by box coverage instead.
+        const inSun = x >= 20 && x < 100 && y < 40;
+        const inPanel = !inSun && x >= 7 && x < 62 && y >= 40 && y < 57;
+        const isText = inPanel && y >= 45 && y < 50 && x >= 12 && x < 55;
+        data[o] = inSun ? 232 : inPanel ? (isText ? 244 : 23) : 244;
+        data[o + 1] = inSun ? 161 : inPanel ? (isText ? 236 : 50) : 236;
+        data[o + 2] = inSun ? 61 : inPanel ? (isText ? 221 : 61) : 221;
+        data[o + 3] = 255;
+      }
+    }
+    const img = { data, width: w, height: h };
+    // Loose box like Spark's real one (2px of background top and bottom), so
+    // edge seeds hit the cream background flood.
+    const snapped = snapPanelRect(img, { x: 7, y: 38, w: 55, h: 21 });
+    // Panel recovered, background rejected: nowhere near full-frame.
+    expect(snapped.x + snapped.w).toBeLessThanOrEqual(62);
+    expect(snapped.y + snapped.h).toBeLessThanOrEqual(59);
+    expect(snapped.w * snapped.h).toBeLessThan(w * h * 0.25);
+    // Expansion-only: the snap always covers the original box.
+    expect(snapped.x).toBeLessThanOrEqual(7);
+    expect(snapped.y).toBeLessThanOrEqual(38);
+    expect(snapped.x + snapped.w).toBeGreaterThanOrEqual(62);
+    expect(snapped.y + snapped.h).toBeGreaterThanOrEqual(59);
+  });
 });

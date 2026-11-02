@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { Store } from '../store/db.js';
 
@@ -26,6 +26,7 @@ interface DemoOutput {
   mode: string;
   status: string;
   image: string;
+  before: string | null;
   plan: unknown;
   proof: unknown;
   qa: unknown;
@@ -35,6 +36,7 @@ interface DemoOutput {
   latencyMs: number;
   trace: unknown[];
   error: string | null;
+  checks: unknown;
 }
 
 interface DemoJob {
@@ -43,14 +45,41 @@ interface DemoJob {
   finishedAt: string;
   modelCalls: number;
   imageCalls: number;
+  firstPreviewMs: number | null;
+  totalMs: number;
   outputs: DemoOutput[];
 }
 
-/** Store id of the saved GALI demo job served at GET /api/demo. */
-export const DEMO_JOB_ID = 'demo-gali-he';
+interface DemoDef {
+  jobId: string;
+  brand: string;
+  lang: string;
+  nativePreset: string;
+}
+
+/** Saved demo examples (session 11): one native size each, distinct brands. */
+const DEMO_JOBS: DemoDef[] = [
+  { jobId: 'demo-vela', brand: 'vela', lang: 'en', nativePreset: 'ig-feed-11' },
+  { jobId: 'demo-dafna-story', brand: 'dafna', lang: 'he', nativePreset: 'ig-story-916' },
+  { jobId: 'demo-zazo', brand: 'zazo', lang: 'en', nativePreset: 'fb-link' },
+  { jobId: 'demo-noa', brand: 'noa', lang: 'he', nativePreset: 'ig-feed-45' },
+  { jobId: 'demo-toda', brand: 'toda', lang: 'he', nativePreset: 'yt-thumb' },
+];
+
+/** Fallback demo id when the DB has no seeded demos (tests + /api/demo). */
+export const DEMO_JOB_ID = 'demo-vela';
+
+/** PNG dimensions from the IHDR chunk (all fixture sources are PNG). */
+function pngSize(path: string): { width: number; height: number } {
+  const bytes = readFileSync(path);
+  if (bytes.length > 24 && bytes.readUInt32BE(16) > 0 && bytes.readUInt32BE(20) > 0) {
+    return { width: bytes.readUInt32BE(16), height: bytes.readUInt32BE(20) };
+  }
+  return { width: 1080, height: 1080 };
+}
 
 /**
- * Seed fixture (demo) brands and the saved demo job into the store.
+ * Seed fixture brands and the saved demo jobs into the store.
  * Idempotent: existing rows are left untouched. Demo rows never expire.
  */
 export function ensureSeeded(repoRoot: string, dbPath: string): void {
@@ -58,7 +87,11 @@ export function ensureSeeded(repoRoot: string, dbPath: string): void {
   try {
     const brandsDir = join(repoRoot, 'fixtures', 'brands');
     if (!existsSync(brandsDir)) return;
-    for (const dir of ['gali', 'noa']) {
+    const dirs = readdirSync(brandsDir, { withFileTypes: true })
+      .filter((e) => e.isDirectory())
+      .map((e) => e.name)
+      .sort();
+    for (const dir of dirs) {
       const manifestPath = join(brandsDir, dir, 'brand.json');
       if (!existsSync(manifestPath)) continue;
       const manifest = JSON.parse(readFileSync(manifestPath, 'utf8')) as FixtureBrand;
@@ -93,42 +126,52 @@ export function ensureSeeded(repoRoot: string, dbPath: string): void {
       }
     }
 
-    // Saved demo job (finished GALI run, committed under fixtures).
-    const demoPath = join(brandsDir, 'gali', 'demo', 'demo.json');
-    if (existsSync(demoPath)) {
+    // Saved demo jobs (finished runs, committed under fixtures/.../demo).
+    // Timing is replayed from the real run so the run line shows real numbers.
+    for (const def of DEMO_JOBS) {
+      const demoPath = join(brandsDir, def.brand, 'demo', 'demo.json');
+      if (!existsSync(demoPath)) continue;
+      if (store.getJob(def.jobId)) continue;
       const demo = JSON.parse(readFileSync(demoPath, 'utf8')) as DemoJob;
-      if (!store.getJob(DEMO_JOB_ID)) {
-        const sourceIds = [...new Set(demo.outputs.map((o) => o.source))];
-        for (const sid of sourceIds) {
-          if (!store.getSource(sid)) {
-            const first = demo.outputs.find((o) => o.source === sid);
-            const meta = { width: 0, height: 0 };
-            void meta;
-            store.insertSource({ id: sid, imagePath: `fixtures/brands/gali/${first?.sourceLabel ?? 'source-he.png'}`, width: 1080, height: 1080, expiresAt: null });
-          }
-        }
-        store.insertJob({ id: DEMO_JOB_ID, brandId: demo.brand, mode: demo.mode, sizes: demo.outputs.map((o) => o.preset), sources: sourceIds });
-        for (const o of demo.outputs) {
-          store.insertOutput({
-            jobId: DEMO_JOB_ID,
-            sourceId: o.source,
-            preset: o.preset,
-            mode: o.mode,
-            status: o.status,
-            imagePath: `fixtures/brands/gali/demo/${o.image}`,
-            planJson: JSON.stringify(o.plan),
-            proofJson: o.proof ? JSON.stringify(o.proof) : null,
-            qaJson: o.qa ? JSON.stringify(o.qa) : null,
-            retries: o.retries,
-            modelCalls: o.modelCalls,
-            imageCalls: o.imageCalls,
-            latencyMs: o.latencyMs,
-            traceJson: JSON.stringify(o.trace),
-            error: o.error,
-          });
-        }
-        store.finishJob(DEMO_JOB_ID, 'done', null, demo.modelCalls, demo.imageCalls);
+      const finished = Date.parse(demo.finishedAt);
+      const jobCreated = Number.isFinite(finished) ? finished - (demo.totalMs ?? 0) : Date.now();
+      const sourceIds = [...new Set(demo.outputs.map((o) => o.source))];
+      for (const sid of sourceIds) {
+        if (store.getSource(sid)) continue;
+        const first = demo.outputs.find((o) => o.source === sid);
+        const rel = `fixtures/brands/${def.brand}/${first?.sourceLabel ?? 'source.png'}`;
+        const { width, height } = existsSync(join(repoRoot, rel)) ? pngSize(join(repoRoot, rel)) : { width: 1080, height: 1080 };
+        store.insertSource({ id: sid, imagePath: rel, width, height, expiresAt: null });
       }
+      store.insertJob({
+        id: def.jobId, brandId: demo.brand, mode: demo.mode,
+        sizes: demo.outputs.map((o) => o.preset), sources: sourceIds,
+        lang: def.lang, nativePreset: def.nativePreset,
+        createdAt: new Date(jobCreated).toISOString(),
+      });
+      for (const o of demo.outputs) {
+        const landed = jobCreated + Math.min(Math.max(o.latencyMs, 0), demo.totalMs ?? o.latencyMs);
+        store.insertOutput({
+          jobId: def.jobId,
+          sourceId: o.source,
+          preset: o.preset,
+          mode: o.mode,
+          status: o.status,
+          imagePath: `fixtures/brands/${def.brand}/demo/${o.image}`,
+          planJson: JSON.stringify(o.plan),
+          proofJson: o.proof ? JSON.stringify(o.proof) : null,
+          qaJson: o.qa ? JSON.stringify(o.qa) : null,
+          retries: o.retries,
+          modelCalls: o.modelCalls,
+          imageCalls: o.imageCalls,
+          latencyMs: o.latencyMs,
+          traceJson: JSON.stringify(o.trace),
+          error: o.error,
+          checksJson: o.checks ? JSON.stringify(o.checks) : null,
+          createdAt: new Date(landed).toISOString(),
+        });
+      }
+      store.finishJob(def.jobId, 'done', null, demo.modelCalls, demo.imageCalls, demo.finishedAt);
     }
   } finally {
     store.close();

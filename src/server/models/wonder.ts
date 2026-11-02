@@ -13,7 +13,7 @@ import type { GeometryFinding } from '../adfit/checks.js';
  * constraint afterwards — Wonder proposes, the manifest disposes.
  */
 
-export const WONDER_PROMPT_VERSION = 'wonder-plan-v1';
+export const WONDER_PROMPT_VERSION = 'wonder-plan-v2';
 export const WONDER_REVIEW_VERSION = 'wonder-review-v1';
 
 const normBoxJson = {
@@ -107,6 +107,8 @@ export interface WonderPlanInput {
   elementBoxes: Array<{ id: string; w: number; h: number }>;
   /** Measured rendered text-block sizes. */
   measuredText: Record<string, MeasuredText>;
+  /** Free other-text strings in binding order (boxes.others[i] renders freeOthers[i]). */
+  freeOthers: string[];
   sizes: WonderPlanSizeInput[];
 }
 
@@ -116,15 +118,16 @@ export function buildWonderPlanPrompt(input: WonderPlanInput): string {
     `SOURCE: ${input.sourceWidth}x${input.sourceHeight}, language ${a.language}, reading direction ${a.direction}.`,
     `ELEMENTS (source-pixel sizes, aspect must be preserved, never stretch): ${input.elementBoxes.map((e) => `${e.id} ${e.w}x${e.h}`).join('; ') || 'none'}.`,
     `PRODUCTS: ${a.products.map((p) => `${p.label} (${p.bbox.w}x${p.bbox.h}px)`).join('; ') || 'none'}. LOGO: ${a.logo_bbox ? `${a.logo_bbox.w}x${a.logo_bbox.h}px` : 'none'}.`,
-    `TEXT (verbatim, immutable — place boxes, never reword): ${[
-      a.headline ? `headline ${JSON.stringify(a.headline.text)}` : '',
-      a.subtext ? `subtext ${JSON.stringify(a.subtext.text)}` : '',
-      a.panel ? `panel lines ${a.panel.texts.map((t) => JSON.stringify(t)).join(' / ')}` : '',
-      ...a.other_texts.map((t) => `other ${JSON.stringify(t.text)}`),
-    ].filter(Boolean).join('; ') || 'none'}.`,
+    `TEXT SLOTS (verbatim, immutable — never reword, never invent; each listed string goes in its NAMED slot, never in others): ${[
+      a.headline ? `headline ${JSON.stringify(a.headline.text)} → boxes.headline` : 'headline: NONE → boxes.headline null',
+      a.subtext ? `subtext ${JSON.stringify(a.subtext.text)} → boxes.subtext` : 'subtext: NONE → boxes.subtext null',
+      a.panel ? `panel lines ${a.panel.texts.map((t) => JSON.stringify(t)).join(' / ')} → boxes.panel as ONE box covering every line` : 'panel: NONE → boxes.panel null',
+      a.logo_bbox ? 'logo → boxes.logo' : 'logo: NONE → boxes.logo null',
+    ].join('; ')}.`,
+    `OTHERS (exactly ${input.freeOthers.length}: one box per line below IN ORDER, never more, never fewer): ${input.freeOthers.map((t, i) => `[${i}] ${JSON.stringify(t)}`).join('; ') || 'NONE → boxes.others []'}.`,
     `MEASURED TEXT SIZES (rendered px at reference fonts): ${Object.entries(input.measuredText).map(([k, m]) => `${k} ${m.width}x${m.height}@${m.fontPx}px`).join('; ') || 'none'}.`,
     'COMPOSITION FAMILIES (pick one per size): landscape_split = product one side, text group the other; portrait_stack = headline, product, panel stacked with rhythm; square_balanced = centered product with balanced text above/below.',
-    'HARD RULES (code re-checks every one): margins >= 6% of the short side; key content inside the per-size safe area; no unintended overlap; product >= ~45% of safe height on 9:16 and ~70-80% of height on landscape; text group shares one alignment edge (right for RTL, left for LTR) with consistent gaps; no empty region > ~25% of the canvas.',
+    'HARD RULES (code re-checks every one): margins >= 6% of the short side; key content inside the per-size safe area; no unintended overlap; the TALLEST product >= ~45% of safe height on 9:16 and ~70-80% of height on landscape (secondary products stay proportionate); headline stays dominant (full-width line, taller than the subtext); text group shares one alignment edge (right for RTL, left for LTR) with consistent gaps; no empty region > ~25% of the canvas.',
     'TEMPLATE SIZES: the attached template previews show the brand layout — their zones BIND the layout; adapt element boxes within the zones, never outside them.',
     'BACKGROUND BRIEF: one line for the background painter — style, colors, and which regions must stay clean/low-detail for product and text. The background holds NO product, NO logo, NO text, NO product shadows.',
     'Return one entry per requested size below, with normalized 0-1 boxes, alignment edge, background brief, and one short rationale line.',
@@ -159,7 +162,7 @@ export interface WonderCallResult<T> {
 }
 
 function timeoutError(ms: number): Error {
-  return new Error(`Wonder call timed out after ${ms} ms`);
+  return new Error(`Model call timed out after ${ms} ms`);
 }
 
 async function withTimeout<T>(p: Promise<T>, ms: number): Promise<T> {
@@ -298,6 +301,8 @@ export interface WonderReviewInput {
   sourceMime: string;
   analysis: SourceAnalysis;
   outputs: WonderReviewOutput[];
+  /** Second-chance context after reverted patches (one retry per source). */
+  extraContext?: string;
 }
 
 export function buildWonderReviewPrompt(input: WonderReviewInput): string {
@@ -312,6 +317,7 @@ export function buildWonderReviewPrompt(input: WonderReviewInput): string {
   input.outputs.forEach((o, i) => {
     lines.push(`OUTPUT ${i + 1} = size ${o.preset}. Manifest: ${o.manifestJson}. Deterministic findings: ${o.checks.length > 0 ? o.checks.map((c) => `[${c.severity}] ${c.code} ${c.element ?? ''} ${c.detail}`).join(' | ') : 'none'}.`);
   });
+  if (input.extraContext) lines.push(`SECOND CHANCE: ${input.extraContext}`);
   lines.push('Reply with a single JSON object.');
   return lines.join('\n');
 }

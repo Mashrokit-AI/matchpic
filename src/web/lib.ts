@@ -1,29 +1,9 @@
-import { BRAND_NAME, BRAND_SLUG } from '../shared/brand.js';
-import { STRINGS, presetName, t, type Lang, type MessageKey } from '../shared/i18n.js';
+/** Shared DOM/API helpers for the no-framework UI. */
+import { BRAND_NAME } from '../shared/brand.js';
+import { STRINGS, type Lang } from '../shared/i18n.js';
+import { PRESETS } from '../shared/presets.js';
 
-export type { Lang };
-export { BRAND_NAME, BRAND_SLUG, STRINGS, presetName, t };
-
-/** Tiny DOM helper. String children become text nodes — never HTML. */
-export function h(
-  tag: string,
-  attrs: Record<string, string | number | boolean | null | undefined> = {},
-  ...children: Array<Node | string | null | undefined | false>
-): HTMLElement {
-  const el = document.createElement(tag);
-  for (const [k, v] of Object.entries(attrs)) {
-    if (v === null || v === undefined || v === false) continue;
-    if (k === 'class') el.className = String(v);
-    else if (k === 'for') el.setAttribute('for', String(v));
-    else if (v === true) el.setAttribute(k, '');
-    else el.setAttribute(k, String(v));
-  }
-  for (const c of children) {
-    if (c === null || c === undefined || c === false) continue;
-    el.append(c instanceof Node ? c : document.createTextNode(c));
-  }
-  return el;
-}
+export { BRAND_NAME };
 
 export function getLang(): Lang {
   try {
@@ -49,170 +29,194 @@ export function setLang(lang: Lang): void {
 export function applyLang(lang: Lang): void {
   document.documentElement.lang = lang;
   document.documentElement.dir = lang === 'he' ? 'rtl' : 'ltr';
-  document.title = `${BRAND_NAME} — ${t(lang, 'app_tagline')}`;
+  document.title = `${BRAND_NAME} — ${STRINGS[lang].hero_title}`;
 }
 
-/**
- * "WxH" wrapped in bidi isolates: in RTL text the × (a neutral) would
- * otherwise split the run and render asymmetric sizes swapped ("628×1200").
- * Harmless in LTR; safe inside <option> and alt text too.
- */
+export type ElSpec = {
+  tag?: string;
+  attrs?: Record<string, string>;
+  text?: string;
+  html?: string;
+  cls?: string;
+  children?: Array<HTMLElement | Text | null | undefined>;
+};
+
+/** Tiny element builder. `text` is always plain text (never parsed as HTML). */
+export function el(spec: ElSpec & { tag?: string }): HTMLElement {
+  const node = document.createElement(spec.tag ?? 'div');
+  if (spec.cls) node.className = spec.cls;
+  for (const [k, v] of Object.entries(spec.attrs ?? {})) {
+    if (k === 'href' && !isSafeHref(v)) continue;
+    node.setAttribute(k, v);
+  }
+  if (spec.text !== undefined) node.textContent = spec.text;
+  else if (spec.html !== undefined) node.innerHTML = spec.html;
+  for (const c of spec.children ?? []) {
+    if (c) node.append(c);
+  }
+  return node;
+}
+
+function isSafeHref(v: string): boolean {
+  return v.startsWith('/') || v.startsWith('#') || /^(https?):\/\//.test(v);
+}
+
+export function t(lang: Lang, key: keyof typeof STRINGS.en): string {
+  return STRINGS[lang][key];
+}
+
+/** Wrap an LTR token (dimensions, prices, model ids) so it never scrambles Hebrew. */
+export function bidi(text: string, cls = ''): HTMLElement {
+  return el({ tag: 'span', text: text, cls: `bidi ${cls}`.trim(), attrs: { dir: 'ltr' } });
+}
+
+/** Viewable output across old and new rows: 'pass', 'needs_review' (shown with an amber chip) and legacy 'done'. Only 'failed' has no image. */
+export function isOkStatus(status: string): boolean {
+  return status === 'done' || status === 'pass' || status === 'needs_review';
+}
+
+/** Bidi-isolated `W\u00d7H` string for dimensions inside Hebrew sentences. */
 export function dims(w: number, h: number): string {
   return `\u2066${w}\u00d7${h}\u2069`;
 }
 
-export class ApiError extends Error {
-  readonly key: string;
-
-  constructor(key: string) {
-    super(key);
-    this.key = key;
+export async function api<T>(path: string): Promise<T> {
+  const res = await fetch(path, { headers: { accept: 'application/json' } });
+  if (!res.ok) {
+    const body = (await res.json().catch(() => ({}))) as { error?: string };
+    throw new Error(body.error ?? 'err_unknown');
   }
+  return (await res.json()) as T;
 }
 
-/** Relative-URL fetch (works under any base path). Throws ApiError on {error}. */
-export async function api(path: string, init?: RequestInit): Promise<unknown> {
-  const res = await fetch(path, init);
-  const ct = res.headers.get('content-type') ?? '';
-  if (!ct.includes('application/json')) {
-    throw new ApiError(res.ok ? 'err_unknown' : 'err_not_found');
-  }
-  const body = (await res.json()) as { error?: string } & Record<string, unknown>;
-  if (!res.ok || typeof body.error === 'string') {
-    throw new ApiError(typeof body.error === 'string' ? body.error : 'err_unknown');
-  }
-  return body;
+export async function apiPost(path: string, body: FormData | Record<string, unknown>): Promise<Response> {
+  const init: RequestInit =
+    body instanceof FormData
+      ? { method: 'POST', body }
+      : { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) };
+  return fetch(path, init);
 }
 
-export function errText(lang: Lang, e: unknown): string {
-  const key = e instanceof ApiError ? e.key : 'err_unknown';
-  return key in STRINGS.en ? t(lang, key as MessageKey) : key;
+export async function apiPatch(path: string, body: Record<string, unknown>): Promise<Response> {
+  return fetch(path, { method: 'PATCH', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
 }
 
-export function fmtTime(lang: Lang, iso: string): string {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return iso;
+export async function apiDelete(path: string): Promise<Response> {
+  return fetch(path, { method: 'DELETE' });
+}
+
+export async function uploadFilesWithProgress(
+  path: string,
+  files: File[],
+  fields: Record<string, string>,
+  onProgress: (ratio: number) => void,
+): Promise<Response> {
+  const data = new FormData();
+  files.forEach((f, i) => data.append(`file${i}`, f, f.name));
+  for (const [k, v] of Object.entries(fields)) data.append(k, v);
+  onProgress(0.05);
   try {
-    return d.toLocaleString(lang === 'he' ? 'he-IL' : 'en-US', {
-      day: '2-digit',
-      month: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  } catch {
-    return iso;
+    const res = await fetch(path, { method: 'POST', body: data });
+    onProgress(1);
+    return res;
+  } catch (err) {
+    onProgress(0);
+    throw err;
   }
 }
 
-/** QA badge: green check or amber warning. */
-export function qaBadge(lang: Lang, pass: boolean | null): HTMLElement {
-  if (pass === true) return h('span', { class: 'badge v-clean' }, h('span', { class: 'ico', 'aria-hidden': 'true' }, '✓'), t(lang, 'qa_pass'));
-  if (pass === false) return h('span', { class: 'badge v-page' }, h('span', { class: 'ico', 'aria-hidden': 'true' }, '⚠'), t(lang, 'qa_fail'));
-  return h('span', { class: 'badge v-err' }, '…');
+export function presetLabel(id: string): string {
+  return PRESETS.find((p) => p.id === id)?.label ?? id;
 }
 
-export function modeBadge(lang: Lang, mode: string): HTMLElement {
-  return h('span', { class: 'chip' }, t(lang, mode === 'fast' ? 'mode_badge_fast' : 'mode_badge_protected'));
+export function presetDims(id: string): { w: number; h: number } | null {
+  const p = PRESETS.find((p) => p.id === id);
+  return p ? { w: p.width, h: p.height } : null;
 }
 
-/** Compact duration: `389ms`, `12.4s`. Same value as the trace, shorter unit. */
-export function fmtDur(ms: number): string {
-  if (!Number.isFinite(ms) || ms < 0) return '—';
-  if (ms < 1000) return `${Math.round(ms)}ms`;
-  return `${(ms / 1000).toFixed(1)}s`;
+export function dimsLabel(id: string): string | null {
+  const d = presetDims(id);
+  return d ? `${d.w}×${d.h}` : null;
 }
 
-/** One-line model footer for an output card: ids from the trace + duration. */
-export function modelFooter(models: string[], ms: number): HTMLElement {
-  const bits = [...models, fmtDur(ms)];
-  return h('div', { class: 'model-footer', dir: 'ltr' }, bits.join(' · '));
-}
-
-export type Orientation = 'square' | 'landscape' | 'vertical';
-
-/** Orientation group for a preset (unknown presets read as square). */
-export function orientationOf(presets: Array<{ id: string; width: number; height: number }>, id: string): Orientation {
-  const p = presets.find((x) => x.id === id);
-  if (!p || p.width <= 0 || p.height <= 0) return 'square';
-  if (p.height / p.width >= 1.5) return 'vertical';
-  if (p.width / p.height > 1.05) return 'landscape';
+/** Orientation group for the result grid: square/portrait/vertical first. */
+export function groupOf(presetId: string): 'square' | 'portrait' | 'vertical' | 'wide' {
+  const d = presetDims(presetId);
+  if (!d) return 'square';
+  const r = d.w / d.h;
+  if (r < 0.8) return 'vertical';
+  if (r < 1) return 'portrait';
+  if (r > 1.3) return 'wide';
   return 'square';
 }
 
-/** Group cards by orientation so mixed sizes look intentional. */
-export function groupByOrientation<T>(presets: Array<{ id: string; width: number; height: number }>, items: T[], presetOf: (item: T) => string): Array<{ key: Orientation; items: T[] }> {
-  const groups: Array<{ key: Orientation; items: T[] }> = [
-    { key: 'square', items: [] },
-    { key: 'landscape', items: [] },
-    { key: 'vertical', items: [] },
-  ];
-  for (const item of items) {
-    const g = groups.find((x) => x.key === orientationOf(presets, presetOf(item)));
-    g?.items.push(item);
-  }
-  return groups.filter((g) => g.items.length > 0);
-}
+export type CheckState = 'pending' | 'passed' | 'fixed' | 'needs_review' | 'failed';
 
-export interface Bbox {
-  x: number;
-  y: number;
-  w: number;
-  h: number;
-}
-
-/** Absolutely-positioned % box overlay (appended to a positioned frame). */
-export function bboxDiv(bbox: Bbox, frameW: number, frameH: number, cls: string, tag?: string): HTMLElement {
-  const d = h('div', {
-    class: `box ${cls}`,
-    style: [
-      `left:${((bbox.x / frameW) * 100).toFixed(2)}%`,
-      `top:${((bbox.y / frameH) * 100).toFixed(2)}%`,
-      `width:${((bbox.w / frameW) * 100).toFixed(2)}%`,
-      `height:${((bbox.h / frameH) * 100).toFixed(2)}%`,
-    ].join(';'),
+/** One status chip: label + state word. State drives the colour. */
+export function statusChip(label: string, state: CheckState, word: string): HTMLElement {
+  return el({
+    tag: 'span',
+    cls: `st ${state}`,
+    children: [el({ tag: 'span', text: label }), el({ tag: 'span', cls: 'w', text: word })],
   });
-  if (tag) d.append(h('span', { class: 'tag' }, tag));
-  return d;
 }
 
-/** One verification status badge (Pending / Passed / Fixed / Needs review). */
-export function checkBadge(lang: Lang, label: string, status: string): HTMLElement {
-  const cls = status === 'passed' ? 'v-clean' : status === 'fixed' ? 'v-page' : status === 'needs_review' ? 'v-err' : '';
-  const ico = status === 'passed' ? '✓' : status === 'fixed' ? '✓' : status === 'needs_review' ? '⚠' : '…';
-  const word = status === 'passed' ? t(lang, 'check_passed') : status === 'fixed' ? t(lang, 'check_fixed') : status === 'needs_review' ? t(lang, 'check_needs_review') : t(lang, 'check_pending');
-  return h('span', { class: `badge ${cls}`, title: word }, h('span', { class: 'ico', 'aria-hidden': 'true' }, ico), `${label}: ${word}`);
+/** Back-compat alias (older call sites). */
+export const checkBadge = statusChip;
+
+export function trRow(cells: Array<string | HTMLElement>): HTMLElement {
+  return el({
+    tag: 'tr',
+    children: cells.map((c) => el({ tag: 'td', children: [typeof c === 'string' ? el({ tag: 'span', text: c }) : c] })),
+  });
 }
 
-/** Brand mark: two overlapping placement frames. */
-export function brandSvg(): SVGSVGElement {
-  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-  svg.setAttribute('width', '30');
-  svg.setAttribute('height', '30');
-  svg.setAttribute('viewBox', '0 0 32 32');
-  svg.setAttribute('aria-hidden', 'true');
-  const back = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-  back.setAttribute('x', '9');
-  back.setAttribute('y', '3');
-  back.setAttribute('width', '20');
-  back.setAttribute('height', '20');
-  back.setAttribute('rx', '2');
-  back.setAttribute('fill', 'none');
-  back.setAttribute('stroke', '#7fb8a4');
-  back.setAttribute('stroke-width', '2.4');
-  const front = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-  front.setAttribute('x', '3');
-  front.setAttribute('y', '9');
-  front.setAttribute('width', '20');
-  front.setAttribute('height', '20');
-  front.setAttribute('rx', '2');
-  front.setAttribute('fill', '#0c6b4f');
-  const check = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-  check.setAttribute('d', 'M8.5 19.5l4 4L18 17');
-  check.setAttribute('stroke', '#fff');
-  check.setAttribute('stroke-width', '2.6');
-  check.setAttribute('fill', 'none');
-  check.setAttribute('stroke-linecap', 'round');
-  check.setAttribute('stroke-linejoin', 'round');
-  svg.append(back, front, check);
-  return svg;
+/** Paint a grayscale mask buffer green over a canvas (X-ray). */
+export function maskCanvas(gray: Uint8Array, w: number, h: number): HTMLCanvasElement {
+  const canvas = document.createElement('canvas');
+  canvas.width = w;
+  canvas.height = h;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return canvas;
+  const img = ctx.createImageData(w, h);
+  for (let i = 0; i < w * h; i++) {
+    const v = gray[i] ?? 0;
+    const o = i * 4;
+    if (v > 0) {
+      img.data[o] = 31;
+      img.data[o + 1] = 168;
+      img.data[o + 2] = 79;
+      img.data[o + 3] = 190;
+    }
+  }
+  ctx.putImageData(img, 0, 0);
+  return canvas;
+}
+
+export function debounce<F extends (...args: never[]) => void>(fn: F, ms: number): F {
+  let timer: ReturnType<typeof setTimeout> | null = null;
+  const wrapped = (...args: never[]): void => {
+    if (timer) clearTimeout(timer);
+    timer = setTimeout(() => fn(...args), ms);
+  };
+  return wrapped as F;
+}
+
+/** Format ms as `14.2 s` / `61 s` / `2:05` for the run line. */
+export function fmtDur(ms: number | null): string {
+  if (ms === null || !Number.isFinite(ms)) return '—';
+  const s = ms / 1000;
+  if (s < 60) return `${s < 10 ? s.toFixed(1) : Math.round(s)} s`;
+  const m = Math.floor(s / 60);
+  return `${m}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
+}
+
+/** Mirrored arrow glyph: base art points right; pass flip to mirror. */
+export function arrowSvg(flip: boolean): string {
+  return `<svg class="${flip ? 'flip-rtl' : ''}" width="24" height="16" viewBox="0 0 24 16" fill="none" aria-hidden="true"><path d="M1 8h21M16 2.5 21.5 8 16 13.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+}
+
+/** Thin down arrow (showcase: source → conversions). Never mirrored. */
+export function arrowDownSvg(): string {
+  return `<svg width="16" height="24" viewBox="0 0 16 24" fill="none" aria-hidden="true"><path d="M8 1v21M2.5 16 8 21.5 13.5 16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 }

@@ -46,6 +46,13 @@ export interface BrandDto {
   templates: TemplateDto[];
 }
 
+export interface CardChecksDto {
+  protected: 'pending' | 'passed' | 'fixed' | 'needs_review';
+  text: 'pending' | 'passed' | 'fixed' | 'needs_review';
+  layout: 'pending' | 'passed' | 'fixed' | 'needs_review';
+  repaired: boolean;
+}
+
 export interface OutputCardDto {
   id: number;
   sourceId: string;
@@ -57,6 +64,7 @@ export interface OutputCardDto {
   qaPass: boolean | null;
   retries: number;
   proofDiff: number | null;
+  checks: CardChecksDto;
   models: string[];
   traceMs: number;
 }
@@ -73,7 +81,51 @@ export interface JobDto {
   imageCalls: number;
   createdAt: string;
   finishedAt: string | null;
+  firstPreviewMs: number | null;
+  totalMs: number | null;
+  models: string[];
   outputs: OutputCardDto[];
+}
+
+export interface ExampleDto {
+  jobId: string;
+  brandId: string | null;
+  brandName: string | null;
+  mode: string;
+  lang: 'he' | 'en';
+  nativePreset: string | null;
+  sourceId: string;
+  sourceImage: string;
+  sourceWidth: number;
+  sourceHeight: number;
+  outputCount: number;
+  finishedAt: string | null;
+}
+
+export interface DetectedTextsDto {
+  width: number;
+  height: number;
+  language: string;
+  texts: {
+    headline: string | null;
+    subtext: string | null;
+    panel: string[];
+    others: string[];
+  };
+}
+
+/** One streamed SSE row (mirrors the server JobRow). */
+export interface JobRow {
+  outputId: number;
+  sourceId: string;
+  sourceIndex: number;
+  preset: string;
+  status: 'pass' | 'needs_review' | 'failed';
+  retries: number;
+  models: string[];
+  traceMs: number;
+  pending?: boolean;
+  error?: string;
 }
 
 export interface TraceEventDto {
@@ -97,6 +149,7 @@ export interface ManifestElementDto {
   align: string | null;
   scale: number | null;
   source: string;
+  srcBox?: { x: number; y: number; w: number; h: number } | null;
 }
 
 export interface ManifestDto {
@@ -124,7 +177,7 @@ export interface ChecksDto {
   repaired: { before: string; patches: string[] } | null;
 }
 
-export interface OutputDetailDto extends OutputCardDto {
+export interface OutputDetailDto extends Omit<OutputCardDto, 'checks'> {
   jobId: string;
   plan: {
     preset: string;

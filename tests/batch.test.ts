@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import sharp from 'sharp';
 import { presetById } from '../src/shared/presets.js';
-import type { LayoutPlan, SourceAnalysis } from '../src/shared/schemas.js';
+import type { LayoutPlan, SourceAnalysis, TemplateSpec } from '../src/shared/schemas.js';
 import { manifestFromPlan } from '../src/server/adfit/manifest.js';
-import { applyPatchesToManifest, computeChecks, consolidatePatches, cropTextRegions, dirtyPlates, expectedTextsFor, labelReviewImage } from '../src/server/adfit/batch.js';
+import { applyPatchesToManifest, computeChecks, consolidatePatches, cropTextRegions, dirtyPlates, expectedTextsFor, isContrastMiss, isGroundingMiss, isSeamDefect, labelReviewImage, regenGoesTextOnly } from '../src/server/adfit/batch.js';
 import { logoOnBandPlaced, planForSize, recordDroppedElements, wonderToLayoutPlan, type OutputRequest, type PreparedSource } from '../src/server/adfit/pipeline.js';
 import type { WonderSizePlan } from '../src/server/models/wonder.js';
 
@@ -75,6 +75,92 @@ describe('wonder conversion', () => {
     const w = wonder();
     w.boxes.logo = { x: NaN, y: 0, w: 0.1, h: 0.1 };
     expect(wonderToLayoutPlan(w, req())).toBeNull();
+  });
+
+  it('uses the full text zone when a wonder text box covers less than half of it', () => {
+    const spec = {
+      logo: null,
+      headline_zone: { x: 0.058, y: 0.207, w: 0.4, h: 0.207 },
+      subtext_zone: { x: 0.058, y: 0.433, w: 0.35, h: 0.061 },
+      panel_zone: null,
+      product_zone: { x: 0.65, y: 0.111, w: 0.3, h: 0.78 },
+      frames: [],
+      background_style: 'light photo',
+      text_align: 'start',
+      direction: 'ltr',
+    } satisfies TemplateSpec;
+    const a = analysis();
+    a.direction = 'ltr';
+    a.headline = { text: 'Morning glow', bbox: { x: 100, y: 100, w: 400, h: 60 }, bold: true, color: '#0f4c5c' };
+    a.panel = null;
+    const s = source({ analysis: a });
+    const r: OutputRequest = { source: s, preset: presetById('fb-link')!, mode: 'protected', template: { id: 't', spec: { ...spec }, imageBytes: Buffer.alloc(8), mimeType: 'image/png' }, framePng: null, brandName: 'VELA' };
+    const w = wonder();
+    w.boxes.products = [{ x: 0.66, y: 0.12, w: 0.28, h: 0.76 }];
+    w.boxes.headline = { x: 0.35, y: 0.25, w: 0.1, h: 0.05 };
+    const out = wonderToLayoutPlan(w, r);
+    expect(out).not.toBeNull();
+    // 120x31 inside a 480x130 zone (6% of the area) is a shrunk side note:
+    // the full designed zone wins.
+    expect(out?.plan.headline).toEqual({ x: 70, y: 130, w: 480, h: 130 });
+  });
+
+  it('expands a small 9:16 template product zone before binding wonder boxes', () => {
+    const spec = {
+      logo: null,
+      headline_zone: { x: 0.06, y: 0.078, w: 0.88, h: 0.06 },
+      subtext_zone: null,
+      panel_zone: { box: { x: 0.083, y: 0.672, w: 0.833, h: 0.115 }, color: '#fff8ee', shape: 'rounded_rect' },
+      product_zone: { x: 0.194, y: 0.208, w: 0.657, h: 0.292 },
+      frames: [],
+      background_style: 'light photo',
+      text_align: 'start',
+      direction: 'ltr',
+    } satisfies TemplateSpec;
+    const a = analysis();
+    a.direction = 'ltr';
+    a.panel = null;
+    const s = source({ analysis: a });
+    const r: OutputRequest = { source: s, preset: presetById('ig-story-916')!, mode: 'protected', template: { id: 't', spec: { ...spec }, imageBytes: Buffer.alloc(8), mimeType: 'image/png' }, framePng: null, brandName: 'VELA' };
+    const w = wonder();
+    w.preset = 'ig-story-916';
+    w.family = 'portrait_stack';
+    w.boxes.products = [{ x: 0.2, y: 0.22, w: 0.6, h: 0.28 }];
+    const out = wonderToLayoutPlan(w, r);
+    expect(out).not.toBeNull();
+    expect(out?.note).toMatch(/expanded for 9:16 fill/);
+  });
+
+  it('reconciles wonder slots against the analysis (ZAZO: nulls + phantom others)', () => {
+    // No-template source: headline + subtext + panel + logo, zero other_texts.
+    // Wonder left every named slot null and emitted 7 phantom others — the
+    // outputs rendered no text at all. Named slots fall back to the code
+    // planner; the phantom others are dropped.
+    const a = analysis();
+    a.direction = 'ltr';
+    a.headline = { text: 'Shade season is on', bbox: { x: 68, y: 132, w: 505, h: 128 }, bold: true, color: '#17323d' };
+    a.subtext = { text: 'Polarized lenses', bbox: { x: 68, y: 275, w: 365, h: 32 }, bold: false, color: '#17323d' };
+    a.panel = { bbox: { x: 69, y: 401, w: 545, h: 139 }, opaque: true, bg_color: '#17323d', text_color: '#ffffff', texts: ['$49'] };
+    a.other_texts = [];
+    const s = source({ analysis: a, width: 1200, height: 628 });
+    const r: OutputRequest = { source: s, preset: presetById('ig-feed-11')!, mode: 'protected', template: null, framePng: null, brandName: 'ZAZO' };
+    const w = wonder();
+    w.preset = 'ig-feed-11';
+    w.family = 'square_balanced';
+    w.boxes.logo = null;
+    w.boxes.panel = null;
+    w.boxes.headline = null;
+    w.boxes.subtext = null;
+    w.boxes.others = Array.from({ length: 7 }, (_, i) => ({ x: 0.07, y: 0.07 + i * 0.12, w: 0.86, h: 0.06 }));
+    const out = wonderToLayoutPlan(w, r);
+    expect(out).not.toBeNull();
+    expect(out?.plan.headline).not.toBeNull();
+    expect(out?.plan.subtext).not.toBeNull();
+    expect(out?.plan.panel).not.toBeNull();
+    expect(out?.plan.logo).not.toBeNull();
+    expect(out?.plan.logo_scale).not.toBeNull();
+    expect(out?.plan.other_texts).toHaveLength(0);
+    expect(out?.note).toMatch(/code planner/);
   });
 
   it('planForSize falls back to code and records the planner used', () => {
@@ -175,9 +261,11 @@ describe('sequential repair', () => {
     const plan: LayoutPlan = {
       preset: 'fb-link', width: 1200, height: 628, from_template: false, template_id: null,
       safe: { x: 48, y: 25, w: 1104, h: 578 },
-      logo: null, products: [{ x: 100, y: 90, w: 300, h: 440 }], headline: null,
+      // The second product blocks the below-panel escape, so the dropped
+      // subtext has nowhere legal to go and the patch must roll back.
+      logo: null, products: [{ x: 100, y: 90, w: 300, h: 440 }, { x: 500, y: 520, w: 600, h: 70 }], headline: null,
       subtext: { x: 500, y: 280, w: 600, h: 40 }, panel: { x: 500, y: 380, w: 600, h: 150 },
-      other_texts: [], product_scales: [1], logo_scale: null, notes: [],
+      other_texts: [], product_scales: [1, 1], logo_scale: null, notes: [],
     };
     const before = manifestFromPlan({ plan, preset: presetById('fb-link')!, planner: 'wonder', direction: 'ltr' });
     const { manifest: out, result } = applyPatchesToManifest(before, [
@@ -233,6 +321,36 @@ describe('patch consolidation', () => {
     ], els);
     expect(out).toHaveLength(1);
     expect(out[0]?.group).toBe('nope');
+  });
+});
+
+describe('seam defects', () => {
+  it('routes seam-class plate reasons to the text-only regen', () => {
+    expect(isSeamDefect('Hard empty cream strip with a straight seam behind the product')).toBe(true);
+    expect(isSeamDefect('Solid dark-brown band across the top')).toBe(true);
+    expect(isSeamDefect('duplicated bottle and garbled lettering')).toBe(false);
+  });
+
+  it('routes duplicated-content plate reasons to the text-only regen (ZAZO miniature)', () => {
+    expect(regenGoesTextOnly('Plate contains a baked-in miniature copy of the full source ad with duplicate ZAZO logo')).toBe(true);
+    expect(regenGoesTextOnly('ghost product residual in the corner')).toBe(true);
+    expect(regenGoesTextOnly('Not empty - distinct vase with green foliage plus blurred cups and bread')).toBe(true);
+    expect(regenGoesTextOnly('contains illustrated headphone product on the left side')).toBe(true);
+    expect(regenGoesTextOnly('Solid dark-brown band across the top')).toBe(true);
+    expect(regenGoesTextOnly('garbled lettering in the corner')).toBe(true);
+    expect(regenGoesTextOnly('colors drift from the source palette')).toBe(false);
+  });
+
+  it('routes grounding-miss plate reasons to the text-only regen (NOA table)', () => {
+    expect(regenGoesTextOnly('fb-link: the product base sits at y≈89% but the painted table back edge is at y≈83% — repaint')).toBe(true);
+    expect(isGroundingMiss('table back edge is at y≈83%')).toBe(true);
+    expect(isGroundingMiss('straight horizontal seam across the middle')).toBe(false);
+  });
+
+  it('routes unreadable-text plate reasons to the text-only regen (NOA headline)', () => {
+    expect(regenGoesTextOnly('ig-feed-11: headline unreadable on the plate (contrast 1.07 < 2.0) — repaint')).toBe(true);
+    expect(isContrastMiss('headline unreadable on the plate')).toBe(true);
+    expect(isContrastMiss('table back edge is at y≈83%')).toBe(false);
   });
 });
 

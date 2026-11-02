@@ -51,6 +51,7 @@ describe('wonder plan', () => {
       analysis: analysis(),
       elementBoxes: [{ id: 'product-0', w: 300, h: 560 }],
       measuredText: { headline: { width: 400, height: 60, fontPx: 60 } },
+      freeOthers: [],
       sizes,
     });
     expect(p).toContain('landscape_split');
@@ -59,6 +60,12 @@ describe('wonder plan', () => {
     expect(p).toContain('20% הנחה');
     expect(p).toContain('6%');
     expect(p).toContain('fb-link 1200x628');
+    // Explicit slot contract: each string names its box (ZAZO: Wonder dumped
+    // every line into others and left the named slots null).
+    expect(p).toContain('→ boxes.headline');
+    expect(p).toContain('subtext: NONE → boxes.subtext null');
+    expect(p).toContain('ONE box covering every line');
+    expect(p).toContain('OTHERS (exactly 0');
   });
 
   it('parses a structured plan and logs the ledger cost', async () => {
@@ -66,7 +73,7 @@ describe('wonder plan', () => {
     const res = await planWithWonder(mockClient({ sizes: [{ preset: 'fb-link', family: 'landscape_split', boxes: { products: [{ x: 0, y: 0, w: 0.4, h: 1 }], logo: null, panel: null, headline: null, subtext: null, others: [] }, align: 'right', background_brief: 'mint, clean right side', rationale: 'product left, text right' }] }), {
       model: 'muse-wonder-1.0',
       sourceBytes: Buffer.alloc(8), sourceMime: 'image/png', sourceWidth: 1080, sourceHeight: 1080,
-      analysis: analysis(), elementBoxes: [], measuredText: {}, sizes, ledger,
+      analysis: analysis(), elementBoxes: [], measuredText: {}, freeOthers: [], sizes, ledger,
     });
     expect(res.ok).toBe(true);
     expect(wonderPlanSchema.parse(res.parsed).sizes[0]?.family).toBe('landscape_split');
@@ -81,7 +88,7 @@ describe('wonder plan', () => {
     const res = await planWithWonder(counting, {
       model: 'muse-wonder-1.0',
       sourceBytes: Buffer.alloc(8), sourceMime: 'image/png', sourceWidth: 1080, sourceHeight: 1080,
-      analysis: analysis(), elementBoxes: [], measuredText: {}, sizes, ledger,
+      analysis: analysis(), elementBoxes: [], measuredText: {}, freeOthers: [], sizes, ledger,
     });
     expect(res.ok).toBe(false);
     expect(res.reason).toMatch(/budget cap/);
@@ -93,7 +100,7 @@ describe('wonder plan', () => {
     const res = await planWithWonder(failing, {
       model: 'muse-wonder-1.0',
       sourceBytes: Buffer.alloc(8), sourceMime: 'image/png', sourceWidth: 1080, sourceHeight: 1080,
-      analysis: analysis(), elementBoxes: [], measuredText: {}, sizes,
+      analysis: analysis(), elementBoxes: [], measuredText: {}, freeOthers: [], sizes,
     });
     expect(res.ok).toBe(false);
     expect(res.reason).toMatch(/code planner/);
@@ -167,6 +174,27 @@ describe('deterministic checks', () => {
     a.panel = null;
     const findings = checkManifestGeometry(m, a, { headline: [60] });
     expect(checksPass(findings)).toBe(true);
+  });
+
+  it('judges product size by the hero product, not each secondary', () => {
+    const story = (products: LayoutPlan['products']): LayoutPlan => ({
+      preset: 'ig-story-916', width: 1080, height: 1920, from_template: false, template_id: null,
+      safe: { x: 54, y: 269, w: 972, h: 1267 },
+      logo: null, products, headline: null, subtext: null, panel: null, other_texts: [],
+      product_scales: products.map(() => 1), logo_scale: null, notes: [],
+    });
+    const a = analysis();
+    a.logo_bbox = null;
+    a.headline = null;
+    a.panel = null;
+    // Hero at the 45% floor with a smaller secondary jar: composition, not a defect.
+    const ok = manifestFromPlan({ plan: story([{ x: 276, y: 395, w: 218, h: 570 }, { x: 517, y: 612, w: 372, h: 371 }]), preset: presetById('ig-story-916')!, planner: 'wonder', direction: 'ltr' });
+    expect(checkManifestGeometry(ok, a).filter((f) => f.code === 'product_size')).toHaveLength(0);
+    // Hero below the floor: still warned.
+    const small = manifestFromPlan({ plan: story([{ x: 400, y: 700, w: 280, h: 400 }]), preset: presetById('ig-story-916')!, planner: 'wonder', direction: 'ltr' });
+    const warns = checkManifestGeometry(small, a).filter((f) => f.code === 'product_size');
+    expect(warns).toHaveLength(1);
+    expect(warns[0]?.element).toBe('product-0');
   });
 
   it('fails safe-area escapes, overlaps, tiny text and missing products', () => {

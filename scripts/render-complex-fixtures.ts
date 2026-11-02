@@ -289,20 +289,14 @@ function sha12(bytes: Buffer): string {
 }
 
 async function launchOne(): Promise<Awaited<ReturnType<typeof chromium.launch>>> {
-  // Same fallback ladder as the engine (see launchRenderBrowser): default,
-  // then single-process for sandboxed shells, then system Chrome.
-  const single = process.env.RENDER_SINGLE_PROCESS === '1';
-  const launchArgs = single ? { args: ['--single-process', '--no-sandbox', '--disable-gpu'] } : {};
-  return chromium.launch(launchArgs).catch((e: unknown) => {
-    if (e instanceof Error && /Executable doesn't exist/.test(e.message)) return chromium.launch({ channel: 'chrome', ...launchArgs });
-    throw e;
-  });
+  // Plain Playwright Chromium only. Never the system Chrome channel and
+  // never --single-process: those crashed the owner's machine (session 11).
+  return chromium.launch();
 }
 
 async function main(): Promise<void> {
   for (const b of [VELA, DAFNA]) {
-    // One browser per brand, one page per browser: single-process Chromium
-    // cannot reliably serve sequential pages.
+    // One browser per brand, reused across that brand's sizes.
     const browser = await launchOne();
     try {
       await mkdir(b.dir, { recursive: true });

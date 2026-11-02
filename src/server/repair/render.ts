@@ -152,11 +152,14 @@ html,body{margin:0;padding:0;width:${input.width}px;height:${input.height}px;}
 
 /**
  * Chromium for text rendering. Sandboxed shells (no Mach bootstrap on macOS)
- * cannot launch the default multi-process browser; RENDER_SINGLE_PROCESS=1
- * falls back to one process. Dev machines with Google Chrome but no
- * downloaded Playwright browsers fall back to the system Chrome channel.
+ * cannot launch the default multi-process browser; on Linux,
+ * RENDER_SINGLE_PROCESS=1 falls back to one process, and machines with
+ * Google Chrome but no downloaded Playwright browsers fall back to the
+ * system Chrome channel. On macOS the system Chrome channel is NEVER used
+ * (it crashed the owner's machine): plain Playwright Chromium only.
  */
 async function launchRenderBrowser() {
+  if (process.platform === 'darwin') return chromium.launch();
   const args = process.env.RENDER_SINGLE_PROCESS === '1' ? ['--single-process', '--no-sandbox', '--disable-gpu'] : undefined;
   try {
     return await chromium.launch(args ? { args } : undefined);
@@ -193,7 +196,7 @@ async function withPage<T>(width: number, height: number, fn: (page: Page) => Pr
   // Single-process Chromium cannot reliably serve sequential pages on one
   // browser (the process dies after the first page closes): give every
   // render its own browser there. Multi-process browsers share one.
-  if (process.env.RENDER_SINGLE_PROCESS === '1') {
+  if (process.platform !== 'darwin' && process.env.RENDER_SINGLE_PROCESS === '1') {
     const browser = await launchRenderBrowser();
     try {
       const page = await browser.newPage({ viewport: { width, height }, deviceScaleFactor: 1 });
@@ -473,7 +476,9 @@ export async function renderRebuiltPanel(input: RebuiltPanelInput): Promise<Rebu
       await page.setContent(buildRebuiltPanelHtml({ ...input, fontCss, sizes }), { waitUntil: 'load' });
       await page.evaluate(() => document.fonts.ready.then(() => undefined));
     }
-    const png = await page.screenshot({ type: 'png', omitBackground: false });
+    // Transparent outside the rounded rect (opaque corners stamp as white
+    // squares on the plate — seen live on every rebuilt panel).
+    const png = await page.screenshot({ type: 'png', omitBackground: true });
     return { png, sizes, fontStack: stack };
   });
 }

@@ -48,7 +48,9 @@ CREATE TABLE IF NOT EXISTS job (
   model_calls INTEGER NOT NULL,
   image_calls INTEGER NOT NULL,
   created_at TEXT NOT NULL,
-  finished_at TEXT
+  finished_at TEXT,
+  lang TEXT,
+  native_preset TEXT
 );
 CREATE TABLE IF NOT EXISTS output (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -138,6 +140,10 @@ export interface JobRow {
   image_calls: number;
   created_at: string;
   finished_at: string | null;
+  /** Saved-example language (demo jobs only; NULL otherwise). */
+  lang: string | null;
+  /** Saved-example native source preset (demo jobs only; NULL otherwise). */
+  native_preset: string | null;
 }
 
 export interface OutputRow {
@@ -176,10 +182,16 @@ export class Store {
     db.exec(SCHEMA);
     // Light migration for pre-existing databases (CREATE TABLE IF NOT EXISTS
     // never adds columns to an old table).
-    try {
-      db.exec('ALTER TABLE output ADD COLUMN checks_json TEXT');
-    } catch {
-      // Column already exists.
+    for (const ddl of [
+      'ALTER TABLE output ADD COLUMN checks_json TEXT',
+      'ALTER TABLE job ADD COLUMN lang TEXT',
+      'ALTER TABLE job ADD COLUMN native_preset TEXT',
+    ]) {
+      try {
+        db.exec(ddl);
+      } catch {
+        // Column already exists.
+      }
     }
     return new Store(db);
   }
@@ -207,6 +219,15 @@ export class Store {
   deleteBrand(id: string): void {
     this.db.prepare('DELETE FROM template WHERE brand_id=?').run(id);
     this.db.prepare('DELETE FROM brand WHERE id=?').run(id);
+  }
+
+  updateBrand(id: string, patch: { name?: string; colors?: string[]; fonts?: string[] }): void {
+    const row = this.getBrand(id);
+    if (!row) return;
+    const name = patch.name ?? row.name;
+    const colors = patch.colors ?? (JSON.parse(row.colors_json) as string[]);
+    const fonts = patch.fonts ?? (JSON.parse(row.fonts_json) as string[]);
+    this.db.prepare('UPDATE brand SET name = ?, colors_json = ?, fonts_json = ? WHERE id = ?').run(name, JSON.stringify(colors), JSON.stringify(fonts), id);
   }
 
   setBrandLogo(id: string, logoPath: string): void {
@@ -284,18 +305,23 @@ export class Store {
 
   // --- jobs ---
 
-  insertJob(j: { id: string; brandId: string | null; mode: string; sizes: string[]; sources: string[] }): void {
+  insertJob(j: { id: string; brandId: string | null; mode: string; sizes: string[]; sources: string[]; lang?: string | null; nativePreset?: string | null; createdAt?: string }): void {
     this.db
-      .prepare('INSERT INTO job (id, brand_id, mode, sizes_json, sources_json, status, error, model_calls, image_calls, created_at, finished_at) VALUES (?, ?, ?, ?, ?, ?, NULL, 0, 0, ?, NULL)')
-      .run(j.id, j.brandId, j.mode, JSON.stringify(j.sizes), JSON.stringify(j.sources), 'running', now());
+      .prepare('INSERT INTO job (id, brand_id, mode, sizes_json, sources_json, status, error, model_calls, image_calls, created_at, finished_at, lang, native_preset) VALUES (?, ?, ?, ?, ?, ?, NULL, 0, 0, ?, NULL, ?, ?)')
+      .run(j.id, j.brandId, j.mode, JSON.stringify(j.sizes), JSON.stringify(j.sources), 'running', j.createdAt ?? now(), j.lang ?? null, j.nativePreset ?? null);
+  }
+
+  /** Saved demo-example jobs (seeded ids), oldest first. */
+  demoJobs(): JobRow[] {
+    return this.db.prepare("SELECT * FROM job WHERE id LIKE 'demo-%' ORDER BY created_at").all() as JobRow[];
   }
 
   getJob(id: string): JobRow | null {
     return (this.db.prepare('SELECT * FROM job WHERE id=?').get(id) as JobRow | undefined) ?? null;
   }
 
-  finishJob(id: string, status: string, error: string | null, modelCalls: number, imageCalls: number): void {
-    this.db.prepare('UPDATE job SET status=?, error=?, model_calls=?, image_calls=?, finished_at=? WHERE id=?').run(status, error, modelCalls, imageCalls, now(), id);
+  finishJob(id: string, status: string, error: string | null, modelCalls: number, imageCalls: number, finishedAt?: string): void {
+    this.db.prepare('UPDATE job SET status=?, error=?, model_calls=?, image_calls=?, finished_at=? WHERE id=?').run(status, error, modelCalls, imageCalls, finishedAt ?? now(), id);
   }
 
   latestFinishedJob(limit = 5): JobRow[] {
@@ -308,11 +334,11 @@ export class Store {
     jobId: string; sourceId: string; preset: string; mode: string; status: string; imagePath: string;
     planJson: string; proofJson: string | null; qaJson: string | null; retries: number;
     modelCalls: number; imageCalls: number; latencyMs: number; traceJson: string; error: string | null;
-    checksJson?: string | null;
+    checksJson?: string | null; createdAt?: string;
   }): number {
     const r = this.db
       .prepare('INSERT INTO output (job_id, source_id, preset, mode, status, image_path, plan_json, proof_json, qa_json, retries, model_calls, image_calls, latency_ms, trace_json, error, created_at, checks_json) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
-      .run(o.jobId, o.sourceId, o.preset, o.mode, o.status, o.imagePath, o.planJson, o.proofJson, o.qaJson, o.retries, o.modelCalls, o.imageCalls, o.latencyMs, o.traceJson, o.error, now(), o.checksJson ?? null);
+      .run(o.jobId, o.sourceId, o.preset, o.mode, o.status, o.imagePath, o.planJson, o.proofJson, o.qaJson, o.retries, o.modelCalls, o.imageCalls, o.latencyMs, o.traceJson, o.error, o.createdAt ?? now(), o.checksJson ?? null);
     return Number(r.lastInsertRowid);
   }
 

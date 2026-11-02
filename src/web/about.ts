@@ -1,42 +1,35 @@
-import { BRAND_NAME, h, t, type Lang } from './lib.js';
+/** How it works: 4-step visual + short limits list. */
+import type { Lang } from '../shared/i18n.js';
+import { arrowSvg, el, t } from './lib.js';
 
-const REPO = 'https://github.com/Mashrokit-AI/matchpic';
-const BUILD_LOG = 'https://github.com/Mashrokit-AI/matchpic/blob/main/docs/build/BUILD_LOG.md';
-
-export function aboutView(lang: Lang): HTMLElement {
-  const root = h('div', {});
-  root.append(h('h1', {}, `${t(lang, 'about_title')} ${BRAND_NAME}`));
-  root.append(h('p', { class: 'sub' }, t(lang, 'about_story', { brand: BRAND_NAME })));
-  const steps: Array<['about_step1' | 'about_step2' | 'about_step3' | 'about_step4' | 'about_step5', string | null]> = [
-    ['about_step1', 'muse-spark-1.3'],
-    ['about_step2', 'sam-3.1'],
-    ['about_step3', 'muse-image-1.0'],
-    ['about_step4', null],
-    ['about_step5', 'muse-spark-1.3'],
+export function renderAbout(root: HTMLElement, lang: Lang): void {
+  const rtl = lang === 'he';
+  root.append(el({ tag: 'h1', text: t(lang, 'about_title') }));
+  const steps: Array<{ t: string; l: string; m: string }> = [
+    { t: t(lang, 'about_v1t'), l: t(lang, 'about_v1l'), m: 'muse-spark-1.3' },
+    { t: t(lang, 'about_v2t'), l: t(lang, 'about_v2l'), m: 'sam-3.1' },
+    { t: t(lang, 'about_v3t'), l: t(lang, 'about_v3l'), m: 'muse-wonder-1.0' },
+    { t: t(lang, 'about_v4t'), l: t(lang, 'about_v4l'), m: 'muse-image-1.0' },
   ];
-  const ol = h('ol', { class: 'about-list' });
-  steps.forEach(([key, model], i) => {
-    const li = h('li', { id: `about-step${i + 1}` }, t(lang, key));
-    if (model) li.append(' ', h('span', { class: 'model-tag', dir: 'ltr' }, model));
-    ol.append(li);
+  const viz = el({ tag: 'div', cls: 'viz' });
+  steps.forEach((s, i) => {
+    viz.append(el({
+      tag: 'div', cls: 'vstep', children: [
+        el({ tag: 'span', cls: 'n', text: `${i + 1}` }),
+        el({ tag: 'span', cls: 't', text: s.t }),
+        el({ tag: 'span', cls: 'l', text: s.l }),
+        el({ tag: 'span', cls: 'm', text: s.m, attrs: { dir: 'ltr' } }),
+        el({ tag: 'span', cls: 'arr', html: arrowSvg(rtl) }),
+      ],
+    }));
   });
-  root.append(
-    h('section', { class: 'card', id: 'about-how' }, h('h2', { style: 'margin-top:0' }, `${t(lang, 'about_how')} — ${BRAND_NAME}`), ol),
-  );
-  const limits = h('ul', { class: 'about-list' });
-  for (const key of ['about_limit1', 'about_limit2', 'about_limit3', 'about_limit4', 'about_limit5'] as const) {
-    limits.append(h('li', {}, t(lang, key)));
+  root.append(viz);
+  const limits = el({ tag: 'section', cls: 'limits' });
+  limits.append(el({ tag: 'h2', text: t(lang, 'about_limits') }));
+  const ul = el({ tag: 'ul' });
+  for (const key of ['about_limit1', 'about_limit2', 'about_limit3', 'about_limit4'] as const) {
+    ul.append(el({ tag: 'li', text: t(lang, key) }));
   }
-  root.append(
-    h('section', { class: 'card', style: 'margin-top:14px' }, h('h2', { style: 'margin-top:0' }, t(lang, 'about_limits')), limits),
-    h('section', { class: 'card', style: 'margin-top:14px' },
-      h('h2', { style: 'margin-top:0' }, t(lang, 'about_links')),
-      h('p', {},
-        h('a', { href: REPO, target: '_blank', rel: 'noopener' }, t(lang, 'footer_repo')),
-        ' · ',
-        h('a', { href: BUILD_LOG, target: '_blank', rel: 'noopener', dir: 'ltr' }, 'docs/build/BUILD_LOG.md'),
-      ),
-    ),
-  );
-  return root;
+  limits.append(ul);
+  root.append(limits);
 }

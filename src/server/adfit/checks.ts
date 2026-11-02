@@ -73,14 +73,18 @@ export function checkManifestGeometry(
     }
   }
 
-  // Product size floors.
-  for (const e of manifest.elements) {
-    if (e.kind !== 'product') continue;
-    if (tall && e.box.h < Math.round(safe.h * 0.45)) {
-      out.push({ code: 'product_size', severity: 'warn', element: e.id, detail: `${e.id} below 45% of safe height on 9:16` });
+  // Product size floors: the hero (tallest) product carries the size bar —
+  // secondary products stay proportionate to it, so a small jar beside a big
+  // bottle is composition, not a defect (per-product floors spammed the review
+  // with unfixable scale patches).
+  const products = manifest.elements.filter((e) => e.kind === 'product');
+  if (products.length > 0) {
+    const hero = products.reduce((a, b) => (b.box.h > a.box.h ? b : a));
+    if (tall && hero.box.h < Math.round(safe.h * 0.45)) {
+      out.push({ code: 'product_size', severity: 'warn', element: hero.id, detail: `${hero.id} below 45% of safe height on 9:16` });
     }
-    if (wide && e.box.h < Math.round(H * 0.7)) {
-      out.push({ code: 'product_size', severity: 'warn', element: e.id, detail: `${e.id} below 70% of canvas height on landscape` });
+    if (wide && hero.box.h < Math.round(H * 0.7)) {
+      out.push({ code: 'product_size', severity: 'warn', element: hero.id, detail: `${hero.id} below 70% of canvas height on landscape` });
     }
   }
 

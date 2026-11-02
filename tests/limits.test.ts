@@ -57,6 +57,9 @@ describe('JobManager', () => {
     expect(text).toContain('"type":"progress"');
     expect(text).toContain('"type":"done"');
     expect(text).toContain('"jobId":"store-1"');
+    // Named-event lines: the client subscribes per event name.
+    expect(text).toContain('event: progress\ndata: ');
+    expect(text).toContain('event: done\ndata: ');
   });
 
   it('fails jobs past the hard timeout', async () => {

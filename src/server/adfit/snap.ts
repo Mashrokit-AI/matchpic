@@ -75,6 +75,10 @@ export function panelComplexity(rgba: RgbaImage, box: PixelBox): { stdev: number
  * uniform region: seeds whose region does not touch the box center (text
  * glyphs, background) are discarded, and the union bbox of the rest is the
  * panel. Text inside the panel is harmless (holes don't move the bbox).
+ * A kept region's bbox must also be substantially covered by the original
+ * box: on flat-design sources a background flood can come in under the
+ * pixel cap with a full-frame bbox that merely surrounds the box (seen live
+ * on ZAZO: cream background kept, panel cut became the whole source).
  * Expansion-only in effect; garbage in → original box out.
  */
 export function snapPanelRect(rgba: RgbaImage, box: PixelBox): PixelBox {
@@ -147,12 +151,20 @@ export function snapPanelRect(rgba: RgbaImage, box: PixelBox): PixelBox {
   const rows = [y1, y1 + 2, my, y2 - 3, y2 - 1];
   const cols = [x1, mx, x2 - 1];
   const seeds = rows.flatMap((y) => cols.map((x) => clamp(x, y)));
-  const regions: PixelBox[] = [];
+  // Expansion-only: the original box is always part of the union, so the
+  // snap can never shrink below it (glyph-only unions on huge panels).
+  const regions: PixelBox[] = [{ x: x1, y: y1, w: x2 - x1, h: y2 - y1 }];
   for (const [sx, sy] of seeds) {
     const r = flood(sx, sy);
-    if (r) regions.push(r);
+    if (!r) continue;
+    const ox1 = Math.max(r.x, x1);
+    const oy1 = Math.max(r.y, y1);
+    const ox2 = Math.min(r.x + r.w, x2);
+    const oy2 = Math.min(r.y + r.h, y2);
+    const covered = Math.max(0, ox2 - ox1) * Math.max(0, oy2 - oy1);
+    if (covered < r.w * r.h * 0.18) continue;
+    regions.push(r);
   }
-  if (regions.length === 0) return { x: x1, y: y1, w: x2 - x1, h: y2 - y1 };
   const ux1 = Math.min(...regions.map((r) => r.x));
   const uy1 = Math.min(...regions.map((r) => r.y));
   const ux2 = Math.max(...regions.map((r) => r.x + r.w));

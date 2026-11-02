@@ -10,8 +10,8 @@ import { loadModelConfig } from '../../shared/config.js';
 import { PRESETS, presetById } from '../../shared/presets.js';
 import { templateSpecSchema } from '../../shared/schemas.js';
 import { DEMO_JOB_ID } from '../adfit/seed.js';
-import { prepareSource, runOutput, runPool, type FitMode, type OutputTemplate, type PreparedSource } from '../adfit/pipeline.js';
-import { rowStatusFromChecks, runBatchSource } from '../adfit/batch.js';
+import { prepareSource, runAnalysisStage, runOutput, runPool, type FitMode, type OutputTemplate, type PreparedSource } from '../adfit/pipeline.js';
+import { rowStatusFromChecks, runBatchSource, type TextOverrides } from '../adfit/batch.js';
 import { CostLedger } from '../models/costs.js';
 import { matchBrand } from '../models/brand-match.js';
 import { createModelClient } from '../models/client.js';
@@ -21,7 +21,7 @@ import { segmentTargets } from '../repair/masks.js';
 import { Store } from '../store/db.js';
 import { TraceCollector } from '../workflow/trace.js';
 import { loadHttpConfig, type HttpConfig } from './config.js';
-import { buildBrand, buildBrands, buildJob, buildOutput, traceSummaryOf } from './dto.js';
+import { buildBrand, buildBrands, buildExamples, buildJob, buildOutput, traceSummaryOf } from './dto.js';
 import { JobManager, RateLimiter, sseResponse, summarize, type JobRow } from './jobs.js';
 import { MEDIA_KINDS, readContainedFile, resolveMask, resolveMedia, type MediaKind } from './media.js';
 import { UploadError, validateAndStoreUpload, validateImageBytes } from './uploads.js';
@@ -120,6 +120,52 @@ function collectFiles(body: Record<string, unknown>): UploadedFile[] {
     else if (Array.isArray(v)) for (const e of v) if (isFile(e)) out.push(e);
   }
   return out;
+}
+
+/**
+ * Parse the setup flow's confirmed-text field: per-source-index overrides
+ * (`{"0": {"headline": "...", ...}}`) or one object for the first source.
+ * Strings only (≤300 chars); anything else is dropped, never trusted.
+ */
+function parseTextsField(raw: unknown): Record<number, TextOverrides> {
+  if (typeof raw !== 'string' || raw.length === 0 || raw.length > 20000) return {};
+  let json: unknown;
+  try {
+    json = JSON.parse(raw);
+  } catch {
+    return {};
+  }
+  const one = (v: unknown): TextOverrides | null => {
+    if (!v || typeof v !== 'object' || Array.isArray(v)) return null;
+    const o = v as Record<string, unknown>;
+    const out: TextOverrides = {};
+    const str = (x: unknown): string | null => (typeof x === 'string' && x.trim().length > 0 ? x.slice(0, 300) : null);
+    const arr = (x: unknown): string[] | null =>
+      Array.isArray(x) ? x.filter((e): e is string => typeof e === 'string').map((e) => e.slice(0, 300)).slice(0, 8) : null;
+    const h = str(o['headline']);
+    const s = str(o['subtext']);
+    const p = arr(o['panel']);
+    const t = arr(o['others']);
+    if (h) out.headline = h;
+    if (s) out.subtext = s;
+    if (p && p.length > 0) out.panel = p;
+    if (t && t.length > 0) out.others = t;
+    return Object.keys(out).length > 0 ? out : null;
+  };
+  if (json && typeof json === 'object' && !Array.isArray(json)) {
+    const keys = Object.keys(json);
+    if (keys.length > 0 && keys.every((k) => /^\d+$/.test(k))) {
+      const out: Record<number, TextOverrides> = {};
+      for (const k of keys) {
+        const parsed = one((json as Record<string, unknown>)[k]);
+        if (parsed) out[Number(k)] = parsed;
+      }
+      return out;
+    }
+    const single = one(json);
+    return single ? { 0: single } : {};
+  }
+  return {};
 }
 
 export function createApp(deps: AppDeps): Hono {
@@ -367,6 +413,8 @@ export function createApp(deps: AppDeps): Hono {
     brandName: string | null,
     onRow: (row: JobRow) => void,
     onUpdate: (row: JobRow) => void,
+    onPrep: (step: 'analyze' | 'masks' | 'plan', state: 'start' | 'done', ms?: number, detail?: string) => void = () => undefined,
+    textsBySource: Record<number, TextOverrides> = {},
   ): Promise<{ jobId: string }> => {
     const perSize = await resolvePerSize(brandId, sizes);
     const models = { client: makeClient(), extractModel, samModel, wonderModel, image: makeImageConfig() };
@@ -395,6 +443,8 @@ export function createApp(deps: AppDeps): Hono {
           ledger,
           wonderAllowed,
           concurrency: cfg.sizeConcurrency,
+          onStage: onPrep,
+          textOverrides: textsBySource[sourceIndex] ?? null,
           onPreview: async (o) => {
             if (!o.png || !o.plan || !o.manifest) return;
             const fileName = `${sourceIndex}-${o.preset.id}.png`;
@@ -559,9 +609,18 @@ export function createApp(deps: AppDeps): Hono {
     return c.json(dto);
   });
   inner.get('/api/demo', (c) => {
-    const dto = withStore((s) => buildJob(s, DEMO_JOB_ID));
+    const dto = withStore((s) => {
+      const demos = s.demoJobs();
+      return buildJob(s, demos[0]?.id ?? DEMO_JOB_ID);
+    });
     if (!dto) return err(c, 404, 'err_not_found');
     return c.json(dto);
+  });
+  // Saved demo examples (up to 5, each a finished demo job). Details come
+  // from GET /api/runs/:id — same JobDto shape, no new client model.
+  inner.get('/api/examples', (c) => {
+    const list = withStore((s) => buildExamples(s));
+    return c.json({ examples: list });
   });
 
   // --- media by record id ---
@@ -750,6 +809,103 @@ export function createApp(deps: AppDeps): Hono {
     }
   });
 
+  // --- setup flow: read the detected text before generating (one Spark call) ---
+  inner.post('/api/analyze', async (c) => {
+    if (!cfg.live) return err(c, 503, 'err_live_off');
+    if (capped('model')) return err(c, 503, 'err_live_off');
+    if (spendCaps().allOver) return err(c, 429, 'err_busy');
+    const len = c.req.header('content-length');
+    if (len && Number(len) > cfg.uploadMaxBytes + 65536) return err(c, 413, 'err_too_large');
+    let parsed: Record<string, unknown>;
+    try {
+      parsed = (await c.req.parseBody()) as Record<string, unknown>;
+    } catch {
+      return err(c, 400, 'err_bad_request');
+    }
+    const files = collectFiles(parsed);
+    if (files.length !== 1) return err(c, 400, 'err_bad_request');
+    const raw = Buffer.from(await (files[0] as UploadedFile).arrayBuffer());
+    let checked: { bytes: Buffer; width: number; height: number };
+    try {
+      checked = await validateImageBytes(raw, cfg.uploadMaxBytes, cfg.uploadMaxPixels);
+    } catch (e) {
+      if (e instanceof UploadError) return err(c, e.key === 'err_too_large' ? 413 : 400, e.key);
+      throw e;
+    }
+    try {
+      const models = { client: makeClient(), extractModel, samModel, wonderModel, image: makeImageConfig() };
+      const ledger = new CostLedger(Number.POSITIVE_INFINITY);
+      const staged = await runAnalysisStage(models, { id: 'analyze', bytes: checked.bytes, mimeType: 'image/png', width: checked.width, height: checked.height }, new TraceCollector(), { repoRoot, ledger });
+      withStore((s) => s.recordUsage('model', staged.attempts));
+      for (const entry of ledger.all()) {
+        withStore((st) => st.recordSpend({ model: entry.model, modelId: entry.modelId, costUsd: entry.costUsd, inputTokens: entry.inputTokens, outputTokens: entry.outputTokens, images: entry.images }));
+      }
+      const a = staged.analysis;
+      return c.json({
+        width: checked.width,
+        height: checked.height,
+        language: a.language,
+        texts: {
+          headline: a.headline?.text ?? null,
+          subtext: a.subtext?.text ?? null,
+          panel: a.panel?.texts ?? [],
+          others: a.other_texts.map((t) => t.text),
+        },
+      });
+    } catch {
+      return err(c, 500, 'err_unknown');
+    }
+  });
+
+  inner.patch('/api/brands/:id', async (c) => {
+    const row = withStore((s) => s.getBrand(c.req.param('id')));
+    if (!row) return err(c, 404, 'err_not_found');
+    if (row.is_demo) return err(c, 400, 'err_demo_readonly');
+    let body: { name?: unknown; colors?: unknown; fonts?: unknown };
+    try {
+      body = (await c.req.json()) as { name?: unknown; colors?: unknown; fonts?: unknown };
+    } catch {
+      return err(c, 400, 'err_bad_request');
+    }
+    const patch: { name?: string; colors?: string[]; fonts?: string[] } = {};
+    if (typeof body.name === 'string' && body.name.trim().length > 0) patch.name = body.name.trim().slice(0, 60);
+    if (Array.isArray(body.colors)) {
+      const colors = body.colors.filter((x): x is string => typeof x === 'string' && /^#[0-9a-fA-F]{6}$/.test(x)).slice(0, 6);
+      if (colors.length > 0) patch.colors = colors;
+    }
+    if (Array.isArray(body.fonts)) {
+      const fonts = body.fonts.filter((x): x is string => typeof x === 'string' && x.length > 0 && x.length < 80).slice(0, 4);
+      if (fonts.length > 0) patch.fonts = fonts;
+    }
+    if (Object.keys(patch).length === 0) return err(c, 400, 'err_bad_request');
+    withStore((s) => s.updateBrand(row.id, patch));
+    return c.json({ ok: true });
+  });
+
+  // --- duplicate a brand (demo brands are read-only: duplicate to edit) ---
+  inner.post('/api/brands/:id/duplicate', async (c) => {
+    const row = withStore((s) => s.getBrand(c.req.param('id')));
+    if (!row) return err(c, 404, 'err_not_found');
+    let name = `${row.name} 2`;
+    try {
+      const body = (await c.req.json()) as { name?: unknown };
+      if (typeof body?.name === 'string' && body.name.trim().length > 0) name = body.name.trim().slice(0, 60);
+    } catch {
+      // No JSON body: default copy name.
+    }
+    const id = newId('brand');
+    const templates = withStore((s) => s.templatesForBrand(row.id));
+    withStore((s) => {
+      s.insertBrand({ id, name, colors: JSON.parse(row.colors_json) as string[], fonts: JSON.parse(row.fonts_json) as string[], logoPath: row.logo_path, isDemo: false, expiresAt: dayFromNow() });
+      for (const t of templates) {
+        const tid = newId('tpl');
+        s.insertTemplate({ id: tid, brandId: id, preset: t.preset, imagePath: t.image_path, framePath: t.frame_path, expiresAt: dayFromNow() });
+        if (t.spec_json) s.setTemplateReady(tid, t.spec_json);
+      }
+    });
+    return c.json({ id }, 201);
+  });
+
   // --- live generation jobs ---
   inner.post('/api/jobs', async (c) => {
     if (!cfg.live) return err(c, 503, 'err_live_off');
@@ -815,9 +971,10 @@ export function createApp(deps: AppDeps): Hono {
     withStore((s) => s.insertJob({ id: storeJobId, brandId, mode, sizes, sources: raws.map((r) => r.id) }));
 
     const total = raws.length * sizes.length;
-    const job = jobs.submit('generate', total, async (onRow, onUpdate) => {
+    const textsBySource = parseTextsField(parsed.texts);
+    const job = jobs.submit('generate', total, async (onRow, onUpdate, onPrep) => {
       if (mode === 'protected') {
-        return executeProtected(storeJobId, raws, sizes, brandId, brand?.name ?? null, onRow, onUpdate);
+        return executeProtected(storeJobId, raws, sizes, brandId, brand?.name ?? null, onRow, onUpdate, onPrep, textsBySource);
       }
       const { prepared, traces, failed } = await prepareAll(raws);
       if (failed.size > 0) {
@@ -870,9 +1027,9 @@ export function createApp(deps: AppDeps): Hono {
     const mode = (prev.mode === 'fast' ? 'fast' : 'protected') as FitMode;
     withStore((s) => s.insertJob({ id: storeJobId, brandId: prevJob.brand_id, mode, sizes: [prev.preset], sources: [source.id] }));
     const brand = prevJob.brand_id ? withStore((s) => s.getBrand(prevJob.brand_id as string)) : null;
-    const job = jobs.submit('regenerate', 1, async (onRow, onUpdate) => {
+    const job = jobs.submit('regenerate', 1, async (onRow, onUpdate, onPrep) => {
       if (mode === 'protected') {
-        return executeProtected(storeJobId, [{ id: source.id, bytes, width: source.width, height: source.height }], [prev.preset], prevJob.brand_id, brand?.name ?? null, onRow, onUpdate);
+        return executeProtected(storeJobId, [{ id: source.id, bytes, width: source.width, height: source.height }], [prev.preset], prevJob.brand_id, brand?.name ?? null, onRow, onUpdate, onPrep);
       }
       const { prepared, traces, failed } = await prepareAll([{ id: source.id, bytes, width: source.width, height: source.height }]);
       if (failed.size > 0 || prepared.length === 0) {

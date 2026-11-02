@@ -70,6 +70,14 @@ export function buildBrand(s: Store, id: string): BrandDto | null {
   return brandDto(b, s.templatesForBrand(id));
 }
 
+export interface CardChecksDto {
+  protected: 'pending' | 'passed' | 'fixed' | 'needs_review';
+  text: 'pending' | 'passed' | 'fixed' | 'needs_review';
+  layout: 'pending' | 'passed' | 'fixed' | 'needs_review';
+  /** True when the review repaired this size ("Fixed by Wonder"). */
+  repaired: boolean;
+}
+
 export interface OutputCardDto {
   id: number;
   sourceId: string;
@@ -81,6 +89,8 @@ export interface OutputCardDto {
   qaPass: boolean | null;
   retries: number;
   proofDiff: number | null;
+  /** The three status chips (legacy rows without checks_json get an honest mapping). */
+  checks: CardChecksDto;
   /** Distinct model ids from the trace, in first-appearance order (no `model:` prefix). */
   models: string[];
   /** Sum of trace step durations in ms (the honest per-output cost). */
@@ -99,6 +109,12 @@ export interface JobDto {
   imageCalls: number;
   createdAt: string;
   finishedAt: string | null;
+  /** First streamed preview (ms after job creation; null while nothing landed). */
+  firstPreviewMs: number | null;
+  /** Whole run (ms, creation → finish; null while running). */
+  totalMs: number | null;
+  /** Distinct model ids across all output traces, first-appearance order. */
+  models: string[];
   outputs: OutputCardDto[];
 }
 
@@ -143,6 +159,7 @@ function outputCard(o: OutputRow, sources: string[]): OutputCardDto {
   } catch {
     proofDiff = null;
   }
+  const checks = cardChecks(o, qaPass);
   const { models, traceMs } = traceSummary(o.trace_json);
   return {
     id: o.id,
@@ -155,8 +172,40 @@ function outputCard(o: OutputRow, sources: string[]): OutputCardDto {
     qaPass,
     retries: o.retries,
     proofDiff,
+    checks,
     models,
     traceMs,
+  };
+}
+
+type CardStatus = CardChecksDto['protected'];
+
+function asCardStatus(v: unknown, fallback: CardStatus): CardStatus {
+  return v === 'passed' || v === 'fixed' || v === 'needs_review' || v === 'pending' ? v : fallback;
+}
+
+/** Card chips from checks_json, with an honest mapping for legacy rows. */
+function cardChecks(o: OutputRow, qaPass: boolean | null): CardChecksDto {
+  try {
+    const c = o.checks_json ? (JSON.parse(o.checks_json) as { protected_pixels?: { status?: unknown }; text?: { status?: unknown }; layout_review?: { status?: unknown }; repaired?: unknown }) : null;
+    if (c && (c.protected_pixels || c.text || c.layout_review)) {
+      return {
+        protected: asCardStatus(c.protected_pixels?.status, 'pending'),
+        text: asCardStatus(c.text?.status, 'pending'),
+        layout: asCardStatus(c.layout_review?.status, 'pending'),
+        repaired: c.repaired !== null && c.repaired !== undefined,
+      };
+    }
+  } catch {
+    // Fall through to the legacy mapping.
+  }
+  const ok = qaPass === true;
+  const pass: CardStatus = o.status === 'failed' ? 'needs_review' : ok ? 'passed' : 'needs_review';
+  return {
+    protected: o.mode === 'fast' ? 'pending' : pass,
+    text: pass,
+    layout: pass,
+    repaired: o.retries > 0 && ok,
   };
 }
 
@@ -168,6 +217,16 @@ function jobDto(j: JobRow, outputs: OutputRow[]): JobDto {
     sources = JSON.parse(j.sources_json) as string[];
   } catch {
     // Corrupt rows render with empty lists, never crash the API.
+  }
+  const cards = outputs.map((o) => outputCard(o, sources));
+  const created = Date.parse(j.created_at);
+  const landed = outputs.map((o) => Date.parse(o.created_at)).filter((t) => Number.isFinite(t));
+  const finished = j.finished_at ? Date.parse(j.finished_at) : NaN;
+  const models: string[] = [];
+  for (const c of cards) {
+    for (const m of c.models) {
+      if (!models.includes(m)) models.push(m);
+    }
   }
   return {
     id: j.id,
@@ -181,8 +240,59 @@ function jobDto(j: JobRow, outputs: OutputRow[]): JobDto {
     imageCalls: j.image_calls,
     createdAt: j.created_at,
     finishedAt: j.finished_at,
-    outputs: outputs.map((o) => outputCard(o, sources)),
+    firstPreviewMs: Number.isFinite(created) && landed.length > 0 ? Math.max(0, Math.min(...landed) - created) : null,
+    totalMs: Number.isFinite(created) && Number.isFinite(finished) ? Math.max(0, finished - created) : null,
+    models,
+    outputs: cards,
   };
+}
+
+export interface ExampleDto {
+  jobId: string;
+  brandId: string | null;
+  brandName: string | null;
+  mode: string;
+  lang: 'he' | 'en';
+  nativePreset: string | null;
+  sourceId: string;
+  sourceImage: string;
+  sourceWidth: number;
+  sourceHeight: number;
+  outputCount: number;
+  finishedAt: string | null;
+}
+
+/** Saved-example strip: one row per demo job (no output pixels here). */
+export function buildExamples(s: Store): ExampleDto[] {
+  const out: ExampleDto[] = [];
+  for (const j of s.demoJobs()) {
+    let sources: string[] = [];
+    try {
+      sources = JSON.parse(j.sources_json) as string[];
+    } catch {
+      sources = [];
+    }
+    const sourceId = sources[0];
+    if (!sourceId) continue;
+    const source = s.getSource(sourceId);
+    if (!source) continue;
+    const brand = j.brand_id ? s.getBrand(j.brand_id) : null;
+    out.push({
+      jobId: j.id,
+      brandId: j.brand_id,
+      brandName: brand?.name ?? null,
+      mode: j.mode,
+      lang: j.lang === 'he' ? 'he' : 'en',
+      nativePreset: j.native_preset,
+      sourceId,
+      sourceImage: `media/source/${sourceId}`,
+      sourceWidth: source.width,
+      sourceHeight: source.height,
+      outputCount: s.outputsForJob(j.id).length,
+      finishedAt: j.finished_at,
+    });
+  }
+  return out;
 }
 
 export function buildJob(s: Store, id: string): JobDto | null {
@@ -191,7 +301,7 @@ export function buildJob(s: Store, id: string): JobDto | null {
   return jobDto(j, s.outputsForJob(id));
 }
 
-export interface OutputDetailDto extends OutputCardDto {
+export interface OutputDetailDto extends Omit<OutputCardDto, 'checks'> {
   jobId: string;
   plan: unknown;
   manifest: unknown;

@@ -252,6 +252,331 @@ export function drawContactShadow(
   return true;
 }
 
+export interface SurfaceEdge {
+  /** Canvas y of the surface back edge (wall meets tabletop). */
+  y: number;
+  /** Edge strength 0-255 (min of local step and sustained shift). */
+  score: number;
+  /** True for a crisp table line (vs a soft focus falloff). */
+  crisp: boolean;
+}
+
+/**
+ * Find the plate's support-surface back edge under a planned product base:
+ * the strongest sustained horizontal luminance step inside the product's
+ * x-range within ±bandPx of yCenter. A pasted product reads as grounded
+ * only when its base sits just below this edge; the grounding prompt asks
+ * the painter for exactly that, and this verifies it (seen live: NOA's bag
+ * sunk 33px into the table on fb-link, floating 60px over it on the story).
+ * Returns null when the background is seamless (score < 5): texture noise
+ * scores ~2-3, soft falloffs ~6-7, crisp table lines 50+.
+ */
+export function findSurfaceEdge(
+  canvas: RgbaImage,
+  x0: number,
+  x1: number,
+  yCenter: number,
+  bandPx: number,
+): SurfaceEdge | null {
+  const W = canvas.width;
+  const H = canvas.height;
+  const xa = Math.max(0, Math.min(W - 1, Math.round(x0)));
+  const xb = Math.max(xa + 1, Math.min(W, Math.round(x1)));
+  const ya = Math.max(32, Math.min(H - 33, Math.round(yCenter - bandPx)));
+  const yb = Math.max(ya + 1, Math.min(H - 33, Math.round(yCenter + bandPx)));
+  const lum = (x: number, y: number): number => {
+    const o = (y * W + x) * 4;
+    return 0.299 * (canvas.data[o] as number) + 0.587 * (canvas.data[o + 1] as number) + 0.114 * (canvas.data[o + 2] as number);
+  };
+  const rowMean = (y: number): number => {
+    let s = 0;
+    let n = 0;
+    for (let x = xa; x < xb; x += 4) {
+      s += lum(x, y);
+      n++;
+    }
+    return n > 0 ? s / n : 0;
+  };
+  const means: number[] = [];
+  for (let y = ya - 32; y <= yb + 32; y++) means.push(rowMean(Math.max(0, Math.min(H - 1, y))));
+  const at = (y: number): number => means[y - (ya - 32)] as number;
+  const avg = (lo: number, hi: number): number => {
+    let s = 0;
+    for (let y = lo; y <= hi; y++) s += at(y);
+    return s / (hi - lo + 1);
+  };
+  let best = 0;
+  let bestY = -1;
+  for (let y = ya; y <= yb; y++) {
+    const local = Math.abs(avg(y + 1, y + 3) - avg(y - 3, y - 1));
+    const sustained = Math.abs(avg(y + 10, y + 30) - avg(y - 30, y - 10));
+    const score = Math.min(local, sustained);
+    if (score > best) {
+      best = score;
+      bestY = y;
+    }
+  }
+  if (bestY < 0 || best < 5) return null;
+  return { y: bestY, score: Math.round(best * 10) / 10, crisp: best >= 15 };
+}
+
+/**
+ * Luminance drift across a vertical gap (mean of 8 rows at each end): tells
+ * air from fabric under a product base. A surface edge BELOW the base with a
+ * uniform gap (~fabric, drift < 10) means the product already sits on a
+ * seamless support — only a falling-off gap (drift ≥ 10) reads as floating.
+ * Seen live: VELA's jar over uniform fabric (no flag) vs NOA's bag over a
+ * bright-to-dark falloff (flag).
+ */
+export function gapDrift(canvas: RgbaImage, x0: number, x1: number, yA: number, yB: number): number {
+  const W = canvas.width;
+  const H = canvas.height;
+  const xa = Math.max(0, Math.min(W - 1, Math.round(x0)));
+  const xb = Math.max(xa + 1, Math.min(W, Math.round(x1)));
+  const lum = (x: number, y: number): number => {
+    const o = (y * W + x) * 4;
+    return 0.299 * (canvas.data[o] as number) + 0.587 * (canvas.data[o + 1] as number) + 0.114 * (canvas.data[o + 2] as number);
+  };
+  const rows = (y: number): number => {
+    let s = 0;
+    let n = 0;
+    for (let r = 0; r < 8; r++) {
+      const yy = Math.max(0, Math.min(H - 1, Math.round(y) + r));
+      for (let x = xa; x < xb; x += 4) {
+        s += lum(x, yy);
+        n++;
+      }
+    }
+    return n > 0 ? s / n : 0;
+  };
+  return Math.abs(rows(yA) - rows(Math.min(yB, H - 1)));
+}
+
+export interface DebandResult {
+  corrected: boolean;
+  rows: number;
+}
+
+/**
+ * Remove full-width banding strips from a flat-design plate: per-row median
+ * luminance is equalized toward the global median, but only for uniform
+ * off-tone runs that touch the top or bottom edge (the observed defect is
+ * footer/header strips the painter adds — interior stripes are design,
+ * multi-content rows like disc crossings are never touched, and gradients
+ * are intentional and never pass through here). Relative contrast inside
+ * each row is preserved, so discs and shapes keep their edges. Seen live:
+ * ZAZO's text-only regens come back with 2-3 darker footer bands (row
+ * medians 182/201 vs a 242 field).
+ */
+export function debandFlatPlate(canvas: RgbaImage): DebandResult {
+  const W = canvas.width;
+  const H = canvas.height;
+  const rowStats = (y: number): { med: number; sd: number } => {
+    const a: number[] = [];
+    for (let x = 0; x < W; x += 6) {
+      const o = (y * W + x) * 4;
+      a.push(0.299 * (canvas.data[o] as number) + 0.587 * (canvas.data[o + 1] as number) + 0.114 * (canvas.data[o + 2] as number));
+    }
+    a.sort((p, q) => p - q);
+    const med = a[Math.floor(a.length / 2)] as number;
+    const mean = a.reduce((s, v) => s + v, 0) / a.length;
+    const sd = Math.sqrt(a.reduce((s, v) => s + (v - mean) * (v - mean), 0) / a.length);
+    return { med, sd };
+  };
+  const meds: number[] = [];
+  const sds: number[] = [];
+  for (let y = 0; y < H; y++) {
+    const s = rowStats(y);
+    meds.push(s.med);
+    sds.push(s.sd);
+  }
+  const sorted = [...meds].sort((p, q) => p - q);
+  const global = sorted[Math.floor(sorted.length / 2)] as number;
+  // Deviant = off-tone AND uniform: multi-content rows (a disc crossing the
+  // row) are never "corrected", or a bottom-cropped disc would wash out. The
+  // 4-unit threshold pulls gradient transition rows into the run, so no
+  // visible step survives at the corrected/uncorrected boundary.
+  const deviant = meds.map((m, y) => Math.abs(global - m) > 4 && (sds[y] as number) < 12);
+  // Keep deviant runs touching an edge; interior runs are design.
+  const fix = new Array<boolean>(H).fill(false);
+  for (let y = 0; y < H && deviant[y]; y++) fix[y] = true;
+  for (let y = H - 1; y >= 0 && deviant[y]; y--) fix[y] = true;
+  let rows = 0;
+  for (let y = 0; y < H; y++) {
+    if (!fix[y]) continue;
+    const off = global - (meds[y] as number);
+    rows++;
+    for (let x = 0; x < W; x++) {
+      const o = (y * W + x) * 4;
+      for (let c = 0; c < 3; c++) {
+        canvas.data[o + c] = Math.max(0, Math.min(255, Math.round((canvas.data[o + c] as number) + off)));
+      }
+    }
+  }
+  return { corrected: rows > 0, rows };
+}
+
+/** WCAG relative luminance of an sRGB triple. */
+export function relativeLuminance(r: number, g: number, b: number): number {
+  const lin = (v: number): number => {
+    const s = v / 255;
+    return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);
+  };
+  return 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
+}
+
+export interface TextContrast {
+  ratio: number;
+  /** Plate luminance the text was judged against (hostile tercile). */
+  plateLum: number;
+  textLum: number;
+}
+
+/**
+ * Contrast of re-rendered text against the plate behind its box. WCAG ratio
+ * of the text color vs the plate's worse tercile (darkest vs brightest
+ * third, whichever reads worse): on a gradient half the glyphs can vanish
+ * while the mean looks fine (seen live: NOA's headline half-sunk in a wood
+ * band at 1.85, invisible on the story at 1.07 — good outputs score 2.4+).
+ */
+export function textContrastRatio(
+  canvas: RgbaImage,
+  box: { x: number; y: number; w: number; h: number },
+  text: { r: number; g: number; b: number },
+): TextContrast {
+  const W = canvas.width;
+  const H = canvas.height;
+  const x0 = Math.max(0, Math.min(W - 1, Math.round(box.x)));
+  const y0 = Math.max(0, Math.min(H - 1, Math.round(box.y)));
+  const x1 = Math.max(x0 + 1, Math.min(W, Math.round(box.x + box.w)));
+  const y1 = Math.max(y0 + 1, Math.min(H, Math.round(box.y + box.h)));
+  const ls: number[] = [];
+  for (let y = y0; y < y1; y += 6) {
+    for (let x = x0; x < x1; x += 6) {
+      const o = (y * W + x) * 4;
+      ls.push(relativeLuminance(canvas.data[o] as number, canvas.data[o + 1] as number, canvas.data[o + 2] as number));
+    }
+  }
+  ls.sort((a, b) => a - b);
+  const textLum = relativeLuminance(text.r, text.g, text.b);
+  if (ls.length === 0) return { ratio: 21, plateLum: 1, textLum };
+  const lo = ls[Math.floor(ls.length * 0.3)]!;
+  const hi = ls[Math.floor(ls.length * 0.7)]!;
+  const ratioOf = (p: number): number => (Math.max(textLum, p) + 0.05) / (Math.min(textLum, p) + 0.05);
+  const plateLum = ratioOf(lo) <= ratioOf(hi) ? lo : hi;
+  return { ratio: Math.round(ratioOf(plateLum) * 100) / 100, plateLum, textLum };
+}
+
+/**
+ * Trim flat background caught in a loose panel cut: edge rows/columns that
+ * are uniform AND far from the panel's center tone (photo corners, white
+ * strips below the box — seen live on DAFNA's pasted panel) are shaved off,
+ * so the cut hugs the panel. Textured edges (photo panels) and gradients
+ * never trim: the row must be uniform and >40 units from center tone.
+ */
+export function trimFlatBorders(rgba: RgbaImage): RgbaImage {
+  const W = rgba.width;
+  const H = rgba.height;
+  const lum = (x: number, y: number): number => {
+    const o = (y * W + x) * 4;
+    return 0.299 * (rgba.data[o] as number) + 0.587 * (rgba.data[o + 1] as number) + 0.114 * (rgba.data[o + 2] as number);
+  };
+  const center: number[] = [];
+  for (let y = Math.floor(H * 0.35); y < Math.floor(H * 0.65); y++) {
+    for (let x = Math.floor(W * 0.2); x < Math.floor(W * 0.8); x += 3) center.push(lum(x, y));
+  }
+  center.sort((a, b) => a - b);
+  const tone = center.length > 0 ? (center[Math.floor(center.length / 2)] as number) : 128;
+  const rowStats = (y: number): { med: number; sd: number } => {
+    const a: number[] = [];
+    for (let x = 0; x < W; x += 3) a.push(lum(x, y));
+    a.sort((p, q) => p - q);
+    const med = a[Math.floor(a.length / 2)] as number;
+    const mean = a.reduce((s, v) => s + v, 0) / a.length;
+    return { med, sd: Math.sqrt(a.reduce((s, v) => s + (v - mean) * (v - mean), 0) / a.length) };
+  };
+  const colStats = (x: number): { med: number; sd: number } => {
+    const a: number[] = [];
+    for (let y = 0; y < H; y += 3) a.push(lum(x, y));
+    a.sort((p, q) => p - q);
+    const med = a[Math.floor(a.length / 2)] as number;
+    const mean = a.reduce((s, v) => s + v, 0) / a.length;
+    return { med, sd: Math.sqrt(a.reduce((s, v) => s + (v - mean) * (v - mean), 0) / a.length) };
+  };
+  const flat = (med: number, sd: number): boolean => sd < 10 && Math.abs(med - tone) > 40;
+  let x0 = 0;
+  let y0 = 0;
+  let x1 = W;
+  let y1 = H;
+  while (y0 < y1 - 8) {
+    const s = rowStats(y0);
+    if (!flat(s.med, s.sd)) break;
+    y0++;
+  }
+  while (y1 > y0 + 8) {
+    const s = rowStats(y1 - 1);
+    if (!flat(s.med, s.sd)) break;
+    y1--;
+  }
+  while (x0 < x1 - 8) {
+    const s = colStats(x0);
+    if (!flat(s.med, s.sd)) break;
+    x0++;
+  }
+  while (x1 > x0 + 8) {
+    const s = colStats(x1 - 1);
+    if (!flat(s.med, s.sd)) break;
+    x1--;
+  }
+  if (x0 === 0 && y0 === 0 && x1 === W && y1 === H) return rgba;
+  const w = x1 - x0;
+  const h = y1 - y0;
+  const data = Buffer.alloc(w * h * 4);
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const si = (((y0 + y) * W + (x0 + x)) * 4);
+      const di = ((y * w + x) * 4);
+      data[di] = rgba.data[si] as number;
+      data[di + 1] = rgba.data[si + 1] as number;
+      data[di + 2] = rgba.data[si + 2] as number;
+      data[di + 3] = rgba.data[si + 3] as number;
+    }
+  }
+  return { data, width: w, height: h };
+}
+
+/**
+ * Round the corners of a pasted panel cut: source panels are rounded rects
+ * but the cut bbox is square, so the corners carry photo background that
+ * stamps as grey squares on the plate (seen live on every pasted panel).
+ * Multiplies alpha by a rounded-rect mask (1px soft edge); the radius is a
+ * proportion of the cut size, matching typical panel radii.
+ */
+export function roundPanelCorners(rgba: RgbaImage, radiusPx?: number): RgbaImage {
+  const W = rgba.width;
+  const H = rgba.height;
+  const r = Math.max(1, Math.min(Math.floor(Math.min(W, H) / 2), radiusPx ?? Math.round(Math.min(W, H) * 0.09)));
+  const data = Buffer.from(rgba.data);
+  const inside = (x: number, y: number): number => {
+    const dx = Math.min(x, W - 1 - x);
+    const dy = Math.min(y, H - 1 - y);
+    if (dx >= r || dy >= r) return 1;
+    const d = Math.sqrt((r - dx - 0.5) * (r - dx - 0.5) + (r - dy - 0.5) * (r - dy - 0.5));
+    if (d <= r - 1) return 1;
+    if (d >= r) return 0;
+    return r - d;
+  };
+  for (let y = 0; y < H; y++) {
+    for (let x = 0; x < W; x++) {
+      const m = inside(x, y);
+      if (m >= 1) continue;
+      const o = (y * W + x) * 4;
+      data[o + 3] = Math.round((data[o + 3] as number) * m);
+    }
+  }
+  return { data, width: W, height: H };
+}
+
 /**
  * Paste an RGBA cutout onto an RGBA canvas at (left, top) with a soft 1-2 px
  * edge feather: alpha comes from the cutout, but the outermost 2 px ring of

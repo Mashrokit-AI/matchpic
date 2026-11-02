@@ -64,6 +64,25 @@ describe('growLogoMask', () => {
     expect(countIn(grown, 96, 80, 88)).toBe(0); // far blob: beyond dilate range
   });
 
+  it('refuses ink in a foreign color (branches behind the lockup)', () => {
+    const { rgba, core } = lockup();
+    // Dark olive branch bar within dilate range of the lockup: bright
+    // enough vs the light bg to pass the ink threshold, but nowhere in the
+    // lockup's own palette — DAFNA's halo was grown exactly like this.
+    for (let y = 4; y < 16; y++) {
+      for (let x = 42; x < 54; x++) {
+        const o = (y * 96 + x) * 4;
+        rgba.data[o] = 95;
+        rgba.data[o + 1] = 110;
+        rgba.data[o + 2] = 60;
+      }
+    }
+    const grown = growLogoMask(rgba, core, { x: 0, y: 0, w: 96, h: 20 });
+    expect(countIn(grown, 96, 42, 54)).toBe(0);
+    // Same-ink letters still complete.
+    expect(countIn(grown, 96, 32, 40)).toBe(8 * 12);
+  });
+
   it('stays inside the given box', () => {
     const { rgba, core } = lockup();
     const grown = growLogoMask(rgba, core, { x: 0, y: 0, w: 30, h: 20 });

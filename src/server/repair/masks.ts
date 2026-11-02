@@ -122,6 +122,29 @@ export function growLogoMask(rgba: RgbaImage, mask: Uint8Array, box: PixelBox, d
       Math.abs((rgba.data[o + 2] as number) - bg[2]) > threshold
     );
   };
+  // Ink palette from the SAM core: on photo backgrounds "different from bg"
+  // also matches bokeh and branches, so grown pixels must look like the
+  // lockup itself (a coarse color shared with ≥2% of core pixels). Seen
+  // live: DAFNA's logo grown into a white halo over olive branches.
+  const quant = (x: number, y: number): number => {
+    const o = (y * W + x) * 4;
+    return (((rgba.data[o] as number) >> 3) << 10) | (((rgba.data[o + 1] as number) >> 3) << 5) | ((rgba.data[o + 2] as number) >> 3);
+  };
+  const buckets = new Map<number, number>();
+  let coreN = 0;
+  for (let y = y1; y < y2; y++) {
+    for (let x = x1; x < x2; x++) {
+      // Ink core pixels only: background caught in a loose SAM core must
+      // not authorize further background growth.
+      if (!mask[y * W + x] || !isInk(x, y)) continue;
+      const q = quant(x, y);
+      buckets.set(q, (buckets.get(q) ?? 0) + 1);
+      coreN++;
+    }
+  }
+  const minBucket = Math.max(8, Math.round(coreN * 0.02));
+  const palette = new Set([...buckets.entries()].filter(([, n]) => n >= minBucket).map(([c]) => c));
+  const addable = (x: number, y: number): boolean => isInk(x, y) && (palette.size === 0 || palette.has(quant(x, y)));
   // BFS outward from SAM core pixels, bounded by dilatePx and the box.
   const out = Uint8Array.from(mask);
   const depth = new Int16Array(W * H).fill(-1);
@@ -152,15 +175,15 @@ export function growLogoMask(rgba: RgbaImage, mask: Uint8Array, box: PixelBox, d
       const ni = ny * W + nx;
       if (depth[ni] !== -1) continue;
       depth[ni] = d + 1;
-      if (!out[ni] && isInk(nx, ny)) {
+      if (!out[ni] && addable(nx, ny)) {
         out[ni] = 1;
         queue.push(ni);
       } else if (out[ni]) {
         queue.push(ni);
       }
-      // Non-ink pixels are traversed (depth recorded) but never added, so
-      // the grow can cross small gaps between letters.
-      if (!out[ni] && !isInk(nx, ny)) queue.push(ni);
+      // Non-addable pixels are traversed (depth recorded) but never added,
+      // so the grow can cross small gaps between letters.
+      if (!out[ni] && !addable(nx, ny)) queue.push(ni);
     }
   }
   return out;

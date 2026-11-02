@@ -1,0 +1,905 @@
+{
+  "brand": "toda",
+  "mode": "protected",
+  "finishedAt": "2026-11-02T10:35:29.705Z",
+  "modelCalls": 22,
+  "imageCalls": 9,
+  "firstPreviewMs": 217816,
+  "totalMs": 453977,
+  "outputs": [
+    {
+      "source": "demo-src-toda",
+      "sourceLabel": "source-he.png",
+      "preset": "ig-feed-11",
+      "mode": "protected",
+      "status": "pass",
+      "image": "ig-feed-11.png",
+      "before": "before-ig-feed-11.png",
+      "plan": {
+        "preset": "ig-feed-11",
+        "width": 1080,
+        "height": 1080,
+        "from_template": false,
+        "template_id": null,
+        "safe": {
+          "x": 43,
+          "y": 43,
+          "w": 994,
+          "h": 994
+        },
+        "logo": {
+          "x": 810,
+          "y": 65,
+          "w": 205,
+          "h": 53
+        },
+        "products": [
+          {
+            "x": 244,
+            "y": 357,
+            "w": 593,
+            "h": 465
+          }
+        ],
+        "headline": {
+          "x": 151,
+          "y": 134,
+          "w": 864,
+          "h": 124
+        },
+        "subtext": {
+          "x": 151,
+          "y": 274,
+          "w": 864,
+          "h": 64
+        },
+        "panel": {
+          "x": 151,
+          "y": 839,
+          "w": 864,
+          "h": 176
+        },
+        "other_texts": [],
+        "product_scales": [
+          1.3922155688622755
+        ],
+        "logo_scale": 0.9761904761904762,
+        "notes": [
+          "wonder: square_balanced",
+          "wonder rationale: Square balanced stack: logo and RTL text above, centered dominant product in the middle, purchase panel below, all inside safe margins with no overlaps."
+        ],
+        "manifest": {
+          "preset": "ig-feed-11",
+          "width": 1080,
+          "height": 1080,
+          "family": "square_balanced",
+          "planner": "wonder",
+          "safe": {
+            "x": 43,
+            "y": 43,
+            "w": 994,
+            "h": 994
+          },
+          "elements": [
+            {
+              "id": "product-0",
+              "kind": "product",
+              "box": {
+                "x": 171,
+                "y": 395,
+                "w": 415,
+                "h": 326
+              },
+              "group": "products",
+              "z": 20,
+              "align": null,
+              "scale": 0.9743161232341389,
+              "source": "corrected",
+              "srcBox": {
+                "x": 94,
+                "y": 227,
+                "w": 432,
+                "h": 338
+              }
+            },
+            {
+              "id": "panel",
+              "kind": "panel",
+              "box": {
+                "x": 151,
+                "y": 839,
+                "w": 864,
+                "h": 176
+              },
+              "group": "offer",
+              "z": 10,
+              "align": "right",
+              "scale": null,
+              "source": "default",
+              "srcBox": null
+            },
+            {
+              "id": "headline",
+              "kind": "headline",
+              "box": {
+                "x": 151,
+                "y": 134,
+                "w": 864,
+                "h": 124
+              },
+              "group": "text",
+              "z": 30,
+              "align": "right",
+              "scale": null,
+              "source": "default",
+              "srcBox": null
+            },
+            {
+              "id": "subtext",
+              "kind": "subtext",
+              "box": {
+                "x": 151,
+                "y": 274,
+                "w": 864,
+                "h": 64
+              },
+              "group": "text",
+              "z": 31,
+              "align": "right",
+              "scale": null,
+              "source": "default",
+              "srcBox": null
+            },
+            {
+              "id": "logo",
+              "kind": "logo",
+              "box": {
+                "x": 810,
+                "y": 65,
+                "w": 205,
+                "h": 53
+              },
+              "group": "logo",
+              "z": 40,
+              "align": null,
+              "scale": 0.9761904761904762,
+              "source": "default",
+              "srcBox": {
+                "x": 965,
+                "y": 46,
+                "w": 210,
+                "h": 54
+              }
+            }
+          ],
+          "templateZones": null,
+          "corrections": [
+            "text group: 2 boxes share the right edge",
+            "text group: 2 boxes share the right edge",
+            "repair reverted for product-0 (would touch subtext) (separation < 16px)",
+            "text group: 2 boxes share the right edge"
+          ],
+          "rationale": "Square balanced stack: logo and RTL text above, centered dominant product in the middle, purchase panel below, all inside safe margins with no overlaps."
+        }
+      },
+      "proof": {
+        "product-0": {
+          "scale": 0.9743161232341389,
+          "core_differ": 0,
+          "core_total": 35807,
+          "feather_total": 4288,
+          "coverage": 0.8930539967577005,
+          "pass": true
+        },
+        "logo": {
+          "scale": 0.9761904761904762,
+          "core_differ": 0,
+          "core_total": 3895,
+          "feather_total": 1613,
+          "coverage": 0.7071532316630356,
+          "pass": true
+        },
+        "panel": {
+          "scale": 1.0476190476190477,
+          "core_differ": 0,
+          "core_total": 103611,
+          "feather_total": 0,
+          "coverage": 1,
+          "pass": true
+        }
+      },
+      "qa": null,
+      "retries": 0,
+      "modelCalls": 0,
+      "imageCalls": 2,
+      "latencyMs": 13978,
+      "trace": [
+        {
+          "step": "adfit_analyze",
+          "tool_or_model": "model:muse-spark-1.3",
+          "input_summary": "source 1280x720 digest 6a6b42e3288c",
+          "output_summary": "lang=he products=1 (layer cache hit)",
+          "duration_ms": 0,
+          "evidence_ids": [
+            "src:analysis"
+          ],
+          "next_state": "adfit_masks",
+          "cached": true,
+          "seq": 1
+        },
+        {
+          "step": "adfit_masks",
+          "tool_or_model": "model:sam-3.1",
+          "input_summary": "digest 6a6b42e3288c",
+          "output_summary": "ok: product-0,logo (layer cache hit)",
+          "duration_ms": 0,
+          "evidence_ids": [
+            "src:product-0",
+            "src:logo"
+          ],
+          "next_state": "adfit_plan",
+          "cached": true,
+          "seq": 2
+        },
+        {
+          "step": "adfit_plan",
+          "tool_or_model": "model:muse-wonder-1.0",
+          "input_summary": "ig-feed-11 protected no-template family=square_balanced",
+          "output_summary": "wonder: square_balanced; wonder rationale: Square balanced stack: logo and RTL text above, centered dominant product in the middle, purchase panel below, all inside safe margins with no overlaps. | corrections: text group: 2 boxes share the right edge",
+          "duration_ms": 0,
+          "evidence_ids": [
+            "out:plan"
+          ],
+          "next_state": "adfit_generate",
+          "cached": false,
+          "seq": 3
+        },
+        {
+          "step": "adfit_generate",
+          "tool_or_model": "model:muse-image-1.0",
+          "input_summary": "protected plate 1080x1080",
+          "output_summary": "wire bytes=786975",
+          "duration_ms": 11952,
+          "evidence_ids": [
+            "out:plate"
+          ],
+          "next_state": "adfit_composite",
+          "cached": false,
+          "seq": 4
+        },
+        {
+          "step": "adfit_composite",
+          "tool_or_model": "code:composite+chromium",
+          "input_summary": "plate + product-0@1.392x logo@0.976x panel@1.048x + text(headline,subtext)",
+          "output_summary": "1080x1080 product-0: contact shadow at support y=820; panel pasted (complex) at 1.05x",
+          "duration_ms": 1674,
+          "evidence_ids": [
+            "out:product-0",
+            "out:logo",
+            "out:panel"
+          ],
+          "next_state": "adfit_proof",
+          "cached": false,
+          "seq": 5
+        },
+        {
+          "step": "adfit_proof",
+          "tool_or_model": "code:elementProof",
+          "input_summary": "3 pasted elements",
+          "output_summary": "product-0:0/75612 (92% compared) logo:0/3895 (71% compared) panel:0/103611 (100% compared) feather outside core only",
+          "duration_ms": 50,
+          "evidence_ids": [
+            "out:product-0",
+            "out:logo",
+            "out:panel"
+          ],
+          "next_state": "adfit_review",
+          "cached": false,
+          "seq": 6
+        },
+        {
+          "step": "adfit_repair",
+          "tool_or_model": "model:muse-image-1.0",
+          "input_summary": "regenerate_plate:background, scale:product-0, move:product-0",
+          "output_summary": "applied: plate: regenerate (Pink backdrop disc is distorted into a vertical ellipse and cropped at the left canvas edge, unlike the full circular di); product-0: scale x0.7",
+          "duration_ms": 0,
+          "evidence_ids": [
+            "out:repair"
+          ],
+          "next_state": "done",
+          "cached": false,
+          "seq": 7
+        },
+        {
+          "step": "adfit_generate",
+          "tool_or_model": "model:muse-image-1.0",
+          "input_summary": "protected plate 1080x1080 (retry)",
+          "output_summary": "wire bytes=1393999",
+          "duration_ms": 10547,
+          "evidence_ids": [
+            "out:plate"
+          ],
+          "next_state": "adfit_composite",
+          "cached": false,
+          "seq": 8
+        },
+        {
+          "step": "adfit_composite",
+          "tool_or_model": "code:composite+chromium",
+          "input_summary": "plate + product-0@0.974x logo@0.976x panel@1.048x + text(headline,subtext)",
+          "output_summary": "1080x1080 product-0: contact shadow at support y=752; panel pasted (complex) at 1.05x",
+          "duration_ms": 1540,
+          "evidence_ids": [
+            "out:product-0",
+            "out:logo",
+            "out:panel"
+          ],
+          "next_state": "adfit_proof",
+          "cached": false,
+          "seq": 9
+        },
+        {
+          "step": "adfit_proof",
+          "tool_or_model": "code:elementProof",
+          "input_summary": "3 pasted elements",
+          "output_summary": "product-0:0/35807 (89% compared) logo:0/3895 (71% compared) panel:0/103611 (100% compared) feather outside core only",
+          "duration_ms": 98,
+          "evidence_ids": [
+            "out:product-0",
+            "out:logo",
+            "out:panel"
+          ],
+          "next_state": "adfit_review",
+          "cached": false,
+          "seq": 10
+        },
+        {
+          "step": "adfit_repair",
+          "tool_or_model": "code:recompose",
+          "input_summary": "retry: move:product-0",
+          "output_summary": "applied: product-0: move (-162,-32)",
+          "duration_ms": 0,
+          "evidence_ids": [
+            "out:repair"
+          ],
+          "next_state": "done",
+          "cached": false,
+          "seq": 11
+        },
+        {
+          "step": "adfit_composite",
+          "tool_or_model": "code:composite+chromium",
+          "input_summary": "plate + product-0@0.974x logo@0.976x panel@1.048x + text(headline,subtext)",
+          "output_summary": "1080x1080 product-0: contact shadow at support y=720; panel pasted (complex) at 1.05x",
+          "duration_ms": 1057,
+          "evidence_ids": [
+            "out:product-0",
+            "out:logo",
+            "out:panel"
+          ],
+          "next_state": "adfit_proof",
+          "cached": false,
+          "seq": 12
+        },
+        {
+          "step": "adfit_proof",
+          "tool_or_model": "code:elementProof",
+          "input_summary": "3 pasted elements",
+          "output_summary": "product-0:0/35807 (89% compared) logo:0/3895 (71% compared) panel:0/103611 (100% compared) feather outside core only",
+          "duration_ms": 38,
+          "evidence_ids": [
+            "out:product-0",
+            "out:logo",
+            "out:panel"
+          ],
+          "next_state": "adfit_review",
+          "cached": false,
+          "seq": 13
+        },
+        {
+          "step": "adfit_wonder_plan",
+          "tool_or_model": "model:muse-wonder-1.0",
+          "input_summary": "1 source x 1 sizes",
+          "output_summary": "families: ig-feed-11=square_balanced",
+          "duration_ms": 105567,
+          "evidence_ids": [
+            "out:plan"
+          ],
+          "next_state": "adfit_generate",
+          "cached": false,
+          "seq": 14
+        },
+        {
+          "step": "adfit_plate_check",
+          "tool_or_model": "model:muse-spark-1.3",
+          "input_summary": "1 plates",
+          "output_summary": "all clean",
+          "duration_ms": 5452,
+          "evidence_ids": [
+            "out:plate"
+          ],
+          "next_state": "adfit_review",
+          "cached": false,
+          "seq": 15
+        },
+        {
+          "step": "adfit_text_check",
+          "tool_or_model": "model:muse-spark-1.3",
+          "input_summary": "1 outputs with re-rendered text",
+          "output_summary": "all exact",
+          "duration_ms": 8938,
+          "evidence_ids": [
+            "out:text"
+          ],
+          "next_state": "adfit_review",
+          "cached": false,
+          "seq": 16
+        },
+        {
+          "step": "adfit_review",
+          "tool_or_model": "model:muse-wonder-1.0",
+          "input_summary": "source + 1 outputs + deterministic findings",
+          "output_summary": "3 defects: ig-feed-11/background, ig-feed-11/product-0, ig-feed-11/product-0",
+          "duration_ms": 36002,
+          "evidence_ids": [
+            "out:review"
+          ],
+          "next_state": "adfit_repair",
+          "cached": false,
+          "seq": 17
+        },
+        {
+          "step": "adfit_plate_recheck",
+          "tool_or_model": "model:muse-spark-1.3",
+          "input_summary": "1 regened plates",
+          "output_summary": "all clean after regen",
+          "duration_ms": 5166,
+          "evidence_ids": [
+            "out:plate"
+          ],
+          "next_state": "done",
+          "cached": false,
+          "seq": 18
+        },
+        {
+          "step": "adfit_repair",
+          "tool_or_model": "code:recompose",
+          "input_summary": "1 sizes with defects",
+          "output_summary": "1 recomposed from cached layers (before kept)",
+          "duration_ms": 0,
+          "evidence_ids": [
+            "out:repair"
+          ],
+          "next_state": "done",
+          "cached": false,
+          "seq": 19
+        },
+        {
+          "step": "adfit_review_retry",
+          "tool_or_model": "model:muse-wonder-1.0",
+          "input_summary": "second chance for 1 reverted size(s)",
+          "output_summary": "1 re-proposed defects: ig-feed-11/product-0",
+          "duration_ms": 121082,
+          "evidence_ids": [
+            "out:review"
+          ],
+          "next_state": "adfit_repair",
+          "cached": false,
+          "seq": 20
+        }
+      ],
+      "error": null,
+      "checks": {
+        "protected_pixels": {
+          "status": "passed",
+          "detail": "Protected core matches the resized source (71% compared)"
+        },
+        "text": {
+          "status": "fixed",
+          "detail": "re-rendered text verified exact after repair"
+        },
+        "layout_review": {
+          "status": "fixed",
+          "detail": "repaired: plate: regenerate (Pink backdrop disc is distorted into a vertical ellipse and cropped at the left canvas edge, unlike the full circular di); product-0: scale x0.7; product-0: move (-162,-32)"
+        },
+        "repaired": {
+          "before": "fixtures/brands/toda/demo/before-ig-feed-11.png",
+          "patches": [
+            "plate: regenerate (Pink backdrop disc is distorted into a vertical ellipse and cropped at the left canvas edge, unlike the full circular di)",
+            "product-0: scale x0.7",
+            "product-0: move (-162,-32)"
+          ]
+        }
+      }
+    },
+    {
+      "source": "demo-src-toda",
+      "sourceLabel": "source-he.png",
+      "preset": "fb-link",
+      "mode": "protected",
+      "status": "pass",
+      "image": "fb-link.png",
+      "before": null,
+      "plan": {
+        "preset": "fb-link",
+        "width": 1200,
+        "height": 628,
+        "from_template": false,
+        "template_id": null,
+        "safe": {
+          "x": 48,
+          "y": 25,
+          "w": 1104,
+          "h": 578
+        },
+        "logo": {
+          "x": 895,
+          "y": 38,
+          "w": 244,
+          "h": 63
+        },
+        "products": [
+          {
+            "x": 48,
+            "y": 47,
+            "w": 464,
+            "h": 364
+          }
+        ],
+        "headline": {
+          "x": 538,
+          "y": 114,
+          "w": 614,
+          "h": 100
+        },
+        "subtext": {
+          "x": 538,
+          "y": 227,
+          "w": 614,
+          "h": 63
+        },
+        "panel": {
+          "x": 351,
+          "y": 433,
+          "w": 498,
+          "h": 157
+        },
+        "other_texts": [],
+        "product_scales": [
+          1.0892018779342723
+        ],
+        "logo_scale": 1.162962962962963,
+        "notes": [
+          "logo: default top corner (rtl)",
+          "panel: default bottom",
+          "headline: default side column",
+          "subtext: default side column",
+          "products: default side-by-side (wide)"
+        ],
+        "manifest": {
+          "preset": "fb-link",
+          "width": 1200,
+          "height": 628,
+          "family": "landscape_split",
+          "planner": "code",
+          "safe": {
+            "x": 48,
+            "y": 25,
+            "w": 1104,
+            "h": 578
+          },
+          "elements": [
+            {
+              "id": "product-0",
+              "kind": "product",
+              "box": {
+                "x": 48,
+                "y": 47,
+                "w": 464,
+                "h": 364
+              },
+              "group": "products",
+              "z": 20,
+              "align": null,
+              "scale": 1.0892018779342723,
+              "source": "default",
+              "srcBox": {
+                "x": 94,
+                "y": 227,
+                "w": 432,
+                "h": 338
+              }
+            },
+            {
+              "id": "panel",
+              "kind": "panel",
+              "box": {
+                "x": 351,
+                "y": 433,
+                "w": 498,
+                "h": 157
+              },
+              "group": "offer",
+              "z": 10,
+              "align": "right",
+              "scale": null,
+              "source": "default",
+              "srcBox": null
+            },
+            {
+              "id": "headline",
+              "kind": "headline",
+              "box": {
+                "x": 538,
+                "y": 114,
+                "w": 614,
+                "h": 100
+              },
+              "group": "text",
+              "z": 30,
+              "align": "right",
+              "scale": null,
+              "source": "default",
+              "srcBox": null
+            },
+            {
+              "id": "subtext",
+              "kind": "subtext",
+              "box": {
+                "x": 538,
+                "y": 227,
+                "w": 614,
+                "h": 63
+              },
+              "group": "text",
+              "z": 31,
+              "align": "right",
+              "scale": null,
+              "source": "default",
+              "srcBox": null
+            },
+            {
+              "id": "logo",
+              "kind": "logo",
+              "box": {
+                "x": 895,
+                "y": 38,
+                "w": 244,
+                "h": 63
+              },
+              "group": "logo",
+              "z": 40,
+              "align": null,
+              "scale": 1.162962962962963,
+              "source": "default",
+              "srcBox": {
+                "x": 965,
+                "y": 46,
+                "w": 210,
+                "h": 54
+              }
+            }
+          ],
+          "templateZones": null,
+          "corrections": [
+            "product-0: below size floor but blocked from growing — needs review",
+            "text group: 2 boxes share the right edge",
+            "text group: tight stack with 13px gaps",
+            "product-0: below size floor but blocked from growing — needs review"
+          ],
+          "rationale": null
+        }
+      },
+      "proof": {
+        "product-0": {
+          "scale": 1.0892018779342723,
+          "core_differ": 0,
+          "core_total": 45249,
+          "feather_total": 4815,
+          "coverage": 0.9038231064237776,
+          "pass": true
+        },
+        "logo": {
+          "scale": 1.162962962962963,
+          "core_differ": 0,
+          "core_total": 5859,
+          "feather_total": 1959,
+          "coverage": 0.749424405218726,
+          "pass": true
+        },
+        "panel": {
+          "scale": 0.8845470692717584,
+          "core_differ": 0,
+          "core_total": 74202,
+          "feather_total": 0,
+          "coverage": 1,
+          "pass": true
+        }
+      },
+      "qa": null,
+      "retries": 0,
+      "modelCalls": 0,
+      "imageCalls": 1,
+      "latencyMs": 18407,
+      "trace": [
+        {
+          "step": "adfit_analyze",
+          "tool_or_model": "model:muse-spark-1.3",
+          "input_summary": "source 1280x720",
+          "output_summary": "lang=he products=1 logo=yes headline=\"שומעים כל פרט\" panel=opaque bg=flat coords=pixels",
+          "duration_ms": 20623,
+          "evidence_ids": [
+            "src:analysis"
+          ],
+          "next_state": "adfit_masks",
+          "cached": true,
+          "seq": 1
+        },
+        {
+          "step": "adfit_masks",
+          "tool_or_model": "model:sam-3.1",
+          "input_summary": "product-0[headphones] logo[logo]",
+          "output_summary": "ok: product-0,logo coverage: products 1/1; product-0 holes filled (+8775px); product-0 mask sparse (fill 0.30) even after retry — kept best",
+          "duration_ms": 3377,
+          "evidence_ids": [
+            "src:product-0",
+            "src:logo"
+          ],
+          "next_state": "adfit_plan",
+          "cached": true,
+          "seq": 2
+        },
+        {
+          "step": "adfit_plan",
+          "tool_or_model": "code:planLayout",
+          "input_summary": "fb-link protected no-template family=landscape_split",
+          "output_summary": "logo: default top corner (rtl); panel: default bottom; headline: default side column; subtext: default side column; products: default side-by-side (wide) | corrections: product-0: below size floor but blocked from growing — needs review; text group: 2 boxes share the right edge; text group: tight stack with 13px gaps; product-0: below size floor but blocked from growing — needs review",
+          "duration_ms": 0,
+          "evidence_ids": [
+            "out:plan"
+          ],
+          "next_state": "adfit_generate",
+          "cached": false,
+          "seq": 3
+        },
+        {
+          "step": "adfit_generate",
+          "tool_or_model": "model:muse-image-1.0",
+          "input_summary": "protected plate 1200x628",
+          "output_summary": "wire bytes=791729",
+          "duration_ms": 18053,
+          "evidence_ids": [
+            "out:plate"
+          ],
+          "next_state": "adfit_composite",
+          "cached": false,
+          "seq": 4
+        },
+        {
+          "step": "adfit_composite",
+          "tool_or_model": "code:composite+chromium",
+          "input_summary": "plate + product-0@1.089x logo@1.163x panel@0.885x + text(headline,subtext)",
+          "output_summary": "1200x628 product-0: contact shadow at support y=409; panel pasted (complex) at 0.88x",
+          "duration_ms": 251,
+          "evidence_ids": [
+            "out:product-0",
+            "out:logo",
+            "out:panel"
+          ],
+          "next_state": "adfit_proof",
+          "cached": false,
+          "seq": 5
+        },
+        {
+          "step": "adfit_proof",
+          "tool_or_model": "code:elementProof",
+          "input_summary": "3 pasted elements",
+          "output_summary": "product-0:0/45249 (90% compared) logo:0/5859 (75% compared) panel:0/74202 (100% compared) feather outside core only",
+          "duration_ms": 28,
+          "evidence_ids": [
+            "out:product-0",
+            "out:logo",
+            "out:panel"
+          ],
+          "next_state": "adfit_review",
+          "cached": false,
+          "seq": 6
+        },
+        {
+          "step": "adfit_wonder_plan",
+          "tool_or_model": "model:muse-wonder-1.0",
+          "input_summary": "1 source x 4 sizes",
+          "output_summary": "wonder plan failed (Model call timed out after 180000 ms), using code planner",
+          "duration_ms": 0,
+          "evidence_ids": [
+            "out:plan"
+          ],
+          "next_state": "adfit_generate",
+          "cached": true,
+          "seq": 7
+        },
+        {
+          "step": "adfit_plate_check",
+          "tool_or_model": "model:muse-spark-1.3",
+          "input_summary": "4 plates",
+          "output_summary": "all clean",
+          "duration_ms": 4609,
+          "evidence_ids": [
+            "out:plate"
+          ],
+          "next_state": "adfit_review",
+          "cached": true,
+          "seq": 8
+        },
+        {
+          "step": "adfit_text_check",
+          "tool_or_model": "model:muse-spark-1.3",
+          "input_summary": "4 outputs with re-rendered text",
+          "output_summary": "all exact",
+          "duration_ms": 13990,
+          "evidence_ids": [
+            "out:text"
+          ],
+          "next_state": "adfit_review",
+          "cached": true,
+          "seq": 9
+        },
+        {
+          "step": "adfit_review",
+          "tool_or_model": "model:muse-wonder-1.0",
+          "input_summary": "source + 4 outputs + deterministic findings",
+          "output_summary": "4 defects: ig-feed-11/background_plate, ig-feed-11/product-0, ig-feed-45/background_plate, ig-story-916/background_plate",
+          "duration_ms": 154116,
+          "evidence_ids": [
+            "out:review"
+          ],
+          "next_state": "adfit_repair",
+          "cached": true,
+          "seq": 10
+        },
+        {
+          "step": "adfit_plate_recheck",
+          "tool_or_model": "model:muse-spark-1.3",
+          "input_summary": "3 regened plates",
+          "output_summary": "still dirty: ig-feed-45: contains illustrated headphone product on left side over pink circle",
+          "duration_ms": 7265,
+          "evidence_ids": [
+            "out:plate"
+          ],
+          "next_state": "done",
+          "cached": true,
+          "seq": 11
+        },
+        {
+          "step": "adfit_repair",
+          "tool_or_model": "code:recompose",
+          "input_summary": "3 sizes with defects",
+          "output_summary": "3 recomposed from cached layers (before kept)",
+          "duration_ms": 0,
+          "evidence_ids": [
+            "out:repair"
+          ],
+          "next_state": "done",
+          "cached": true,
+          "seq": 12
+        }
+      ],
+      "error": null,
+      "checks": {
+        "protected_pixels": {
+          "status": "passed",
+          "detail": "Protected core matches the resized source (75% compared)"
+        },
+        "text": {
+          "status": "passed",
+          "detail": "re-rendered text verified exact"
+        },
+        "layout_review": {
+          "status": "passed",
+          "detail": "deterministic + Wonder review passed"
+        },
+        "repaired": null
+      }
+    }
+  ]
+}

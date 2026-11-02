@@ -18,9 +18,11 @@ export function sourceDigest(bytes: Buffer): string {
  * Layer cache format version. Bump when mask semantics change (v2: product
  * masks are clipped to their own Spark box + margin, so one phrase match can
  * no longer merge two products into one cut; v3: enclosed holes filled +
- * sparse masks retried box-only). A mismatch re-segments.
+ * sparse masks retried box-only; v4: logo contrast-grow constrained to the
+ * lockup's own ink palette, so photo backgrounds no longer grow into the
+ * cut). A mismatch re-segments.
  */
-export const LAYERS_VERSION = 3;
+export const LAYERS_VERSION = 4;
 
 export interface CachedLayers {
   digest: string;

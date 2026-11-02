@@ -18,6 +18,7 @@ import { serve } from '@hono/node-server';
 import { chromium, type Browser, type Page } from 'playwright';
 import { findRepoRoot, loadEnvFiles } from '../src/shared/env.js';
 import { ensureSeeded } from '../src/server/adfit/seed.js';
+import { Store } from '../src/server/store/db.js';
 import { createApp } from '../src/server/http/app.js';
 
 const REPO_ROOT = findRepoRoot(import.meta.url);
@@ -76,6 +77,20 @@ async function main(): Promise<void> {
   const dbPath = join(SHOTS_DIR, '.shots.db');
   rmSync(dbPath, { force: true });
   ensureSeeded(REPO_ROOT, dbPath);
+  // A fake mid-run job (no live credits): exercises the skeleton tiles +
+  // prep line via the run-page polling fallback.
+  {
+    const store = Store.open(dbPath);
+    try {
+      store.insertJob({
+        id: 'shot-running', brandId: null, mode: 'protected',
+        sizes: ['ig-feed-11', 'ig-feed-45', 'ig-story-916', 'fb-feed', 'fb-link', 'li-post', 'yt-thumb', 'tiktok-916'],
+        sources: [],
+      });
+    } finally {
+      store.close();
+    }
+  }
   const app = createApp({ repoRoot: REPO_ROOT, dbPath });
   const server = serve({ fetch: app.fetch, port: PORT, hostname: '127.0.0.1' });
   await new Promise((r) => setTimeout(r, 500));
@@ -88,44 +103,100 @@ async function main(): Promise<void> {
   const firstOutput = demo.outputs[0];
   if (!firstOutput) throw new Error('demo job has no outputs — run the live batch first');
   console.log(`ui-shots: demo output #${firstOutput.id} (${firstOutput.preset}, ${firstOutput.mode})`);
+  const examples = (await (await fetch(`${base}/api/examples`)).json()) as {
+    examples: Array<{ jobId: string; brandName: string | null }>;
+  };
+  console.log(`ui-shots: ${examples.examples.length} examples`);
 
-  // Sandboxed shells (no Mach bootstrap on macOS) cannot launch the default
-  // multi-process browser; UI_SHOTS_SINGLE_PROCESS=1 falls back to one process.
-  const SINGLE = process.env.UI_SHOTS_SINGLE_PROCESS === '1';
-  const launchBrowser = (): Promise<Browser> =>
-    chromium.launch(SINGLE ? { args: ['--single-process', '--no-sandbox', '--disable-gpu'] } : undefined);
+  // Plain Playwright Chromium only: never system Chrome, never --single-process.
+  const launchBrowser = (): Promise<Browser> => chromium.launch();
   let browser: Browser = await launchBrowser();
   try {
     for (const lang of LANGS) {
       for (const vp of VIEWPORTS) {
-        const shots: Array<{ name: string; hash: string; setup?: (p: Page) => Promise<void> }> = [
-          { name: 'home', hash: '#/' },
+        const shots: Array<{ name: string; hash: string; desktopOnly?: boolean; full?: boolean; setup?: (p: Page) => Promise<void> }> = [
+          {
+            name: 'home',
+            hash: '#/',
+            setup: async (p) => {
+              await p.locator('.strip-item').first().waitFor({ timeout: 15000 });
+              await p.locator('.showcase-src').waitFor({ timeout: 15000 });
+            },
+          },
           {
             name: 'detail',
             hash: `#/output/${firstOutput.id}`,
             setup: async (p) => {
-              for (const id of ['#tgl-masks', '#tgl-zones', '#tgl-safe']) {
-                const box = p.locator(id);
-                if ((await box.count()) > 0) await box.check();
-              }
-              await p.waitForTimeout(800);
-              await p.locator('.evidence2').first().scrollIntoViewIfNeeded();
+              await p.locator('.stage img').first().waitFor({ timeout: 15000 });
             },
           },
           {
-            name: 'trace',
+            name: 'xray',
             hash: `#/output/${firstOutput.id}`,
             setup: async (p) => {
-              // The drawer opens by itself on desktop; only click when closed.
-              if ((await p.locator('#trace[open]').count()) === 0) await p.click('#trace summary');
+              await p.locator('.stage img').first().waitFor({ timeout: 15000 });
+              const xray = p.getByRole('button', { name: /x-ray|רנטגן/i });
+              if ((await xray.count()) > 0 && xray.first() && (await xray.first().isEnabled())) {
+                await xray.first().click();
+              }
+              const safe = p.getByRole('button', { name: /safe area|אזור בטוח/i });
+              if ((await safe.count()) > 0 && safe.first() && (await safe.first().isEnabled())) {
+                await safe.first().click();
+              }
+              await p.waitForTimeout(600);
+            },
+          },
+          {
+            name: 'verify',
+            hash: `#/output/${firstOutput.id}`,
+            setup: async (p) => {
+              await p.locator('.stage img').first().waitFor({ timeout: 15000 });
+              if ((await p.locator('details.verify[open]').count()) === 0) {
+                await p.locator('details.verify summary').click();
+              }
               await p.waitForTimeout(400);
-              await p.locator('#trace').scrollIntoViewIfNeeded();
+              await p.locator('details.verify').scrollIntoViewIfNeeded();
             },
           },
           { name: 'brands', hash: '#/brands' },
           { name: 'about', hash: '#/about' },
+          {
+            name: 'home-full',
+            hash: '#/',
+            full: true,
+            setup: async (p) => {
+              await p.locator('.strip-item').first().waitFor({ timeout: 15000 });
+              await p.locator('.showcase-src').waitFor({ timeout: 15000 });
+              await p.waitForTimeout(800);
+            },
+          },
+          {
+            name: 'run',
+            hash: '#/run/shot-running',
+            desktopOnly: true,
+            setup: async (p) => {
+              await p.locator('.tile .skel').first().waitFor({ timeout: 15000 });
+              await p.locator('.prep-line').first().scrollIntoViewIfNeeded();
+            },
+          },
         ];
+        for (let i = 0; i < examples.examples.length; i++) {
+          const ex = examples.examples[i]!;
+          shots.push({
+            name: `example-${i}`,
+            hash: '#/',
+            desktopOnly: true,
+            setup: async (p) => {
+              await p.locator('.strip-item').first().waitFor({ timeout: 15000 });
+              await p.locator(`.strip-item[data-job="${ex.jobId}"]`).click();
+              await p.locator('.strip-item[aria-pressed="true"] .lab').first().waitFor({ timeout: 15000 });
+              await p.locator('.showcase-cell img').first().waitFor({ timeout: 15000 });
+              await p.waitForTimeout(800);
+            },
+          });
+        }
         for (const s of shots) {
+          if (s.desktopOnly && vp.name !== '1440') continue;
           const shotName = `${s.name}-${lang}-${vp.name}`;
           let page;
           try {
@@ -139,8 +210,14 @@ async function main(): Promise<void> {
           await page.goto(`${base}/?lang=${lang}${s.hash}`, { waitUntil: 'domcontentloaded' });
           await settle(page);
           if (s.setup) await s.setup(page);
-          await page.screenshot({ path: join(SHOTS_DIR, `${shotName}.png`) });
+          await page.screenshot({ path: join(SHOTS_DIR, `${shotName}.png`), fullPage: s.full ?? false });
           console.log(`shot: ${shotName}.png`);
+          const pageOverflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+          if (pageOverflow > 1) problems.push({ shot: shotName, kind: 'page-overflow-x', detail: `${pageOverflow}px wider than the viewport` });
+          if (s.full) {
+            const pageH = await page.evaluate(() => document.documentElement.scrollHeight);
+            console.log(`  full page height: ${pageH}px`);
+          }
           await page.close();
         }
       }

@@ -3,6 +3,93 @@ import { presetById } from '../src/shared/presets.js';
 import type { LayoutPlan } from '../src/shared/schemas.js';
 import { enforceManifest, familyForPreset, manifestFromPlan, paintOrder, templateZonesPx } from '../src/server/adfit/manifest.js';
 
+describe('vertical fill and text hierarchy', () => {
+  const story = { preset: 'ig-story-916', width: 1080, height: 1920, safe: { x: 54, y: 269, w: 972, h: 1267 } } as const;
+
+  it('resyncs the product scale when enforcement grows the box', () => {
+    const p = plan({
+      ...story,
+      logo: null,
+      products: [{ x: 400, y: 700, w: 280, h: 400 }],
+      headline: null,
+      subtext: null,
+      panel: { x: 110, y: 1240, w: 860, h: 200 },
+      product_scales: [1],
+      logo_scale: null,
+    });
+    const m = manifestFromPlan({ plan: p, preset: presetById('ig-story-916')!, planner: 'wonder', direction: 'ltr' });
+    const out = enforceManifest({ manifest: m, direction: 'ltr' });
+    const prod = out.elements.find((e) => e.id === 'product-0')!;
+    expect(prod.box.h).toBeGreaterThanOrEqual(Math.round(1267 * 0.45));
+    // Grown box, grown scale: the compositor pastes cut pixels at e.scale, so
+    // a stale scale would render small and centered (the shrunk-products bug).
+    expect(prod.scale).toBeCloseTo(prod.box.w / 280, 5);
+  });
+
+  it('grows a lone tall product past the floor toward 60% of the safe height', () => {
+    const p = plan({
+      ...story,
+      logo: null,
+      products: [{ x: 416, y: 441, w: 206, h: 576 }],
+      headline: null,
+      subtext: null,
+      panel: { x: 110, y: 1240, w: 860, h: 200 },
+      product_scales: [1.03],
+      logo_scale: null,
+    });
+    const m = manifestFromPlan({ plan: p, preset: presetById('ig-story-916')!, planner: 'wonder', direction: 'rtl' });
+    const out = enforceManifest({ manifest: m, direction: 'rtl' });
+    const prod = out.elements.find((e) => e.id === 'product-0')!;
+    expect(prod.box.h).toBe(Math.round(1267 * 0.6));
+    expect(prod.scale).toBeCloseTo(1.03 * (prod.box.w / 206), 5);
+    expect(out.corrections.join(' ')).toMatch(/60% safe-height/);
+  });
+
+  it('keeps the headline dominant on square canvases', () => {
+    const m = manifestFromPlan({
+      plan: plan({
+        logo: null,
+        products: [{ x: 60, y: 372, w: 300, h: 480 }],
+        headline: { x: 761, y: 499, w: 232, h: 59 },
+        subtext: { x: 782, y: 562, w: 211, h: 60 },
+        panel: null,
+        product_scales: [1],
+        logo_scale: null,
+        notes: [],
+      }),
+      preset: presetById('ig-feed-11')!,
+      planner: 'wonder',
+      direction: 'rtl',
+    });
+    const out = enforceManifest({ manifest: m, direction: 'rtl' });
+    const h = out.elements.find((e) => e.id === 'headline')!;
+    const s = out.elements.find((e) => e.id === 'subtext')!;
+    expect(h.box.w).toBeGreaterThanOrEqual(Math.round(994 * 0.55));
+    expect(h.box.h).toBeGreaterThanOrEqual(Math.ceil(s.box.h * 1.25));
+    expect(out.corrections.join(' ')).toMatch(/dominance|taller than the subtext/);
+  });
+
+  it('stacks landscape text into one tight group with uniform gaps', () => {
+    const m = manifestFromPlan({
+      plan: plan({
+        preset: 'fb-link', width: 1200, height: 628, safe: { x: 48, y: 25, w: 1104, h: 578 },
+        logo: null, products: [], product_scales: [], logo_scale: null, panel: null,
+        headline: { x: 70, y: 130, w: 480, h: 59 },
+        subtext: { x: 70, y: 272, w: 420, h: 31 },
+        notes: [],
+      }),
+      preset: presetById('fb-link')!,
+      planner: 'wonder',
+      direction: 'ltr',
+    });
+    const out = enforceManifest({ manifest: m, direction: 'ltr' });
+    const h = out.elements.find((e) => e.id === 'headline')!;
+    const s = out.elements.find((e) => e.id === 'subtext')!;
+    expect(s.box.y).toBe(h.box.y + h.box.h + Math.max(8, Math.round(628 * 0.02)));
+    expect(out.corrections.join(' ')).toMatch(/tight stack/);
+  });
+});
+
 function plan(over: Partial<LayoutPlan> = {}): LayoutPlan {
   const safe = { x: 43, y: 43, w: 994, h: 994 };
   return {
@@ -89,6 +176,54 @@ describe('layout manifest', () => {
     const prod = out.elements.find((e) => e.id === 'product-0')!;
     expect(prod.box.h).toBeGreaterThan(400);
     expect(out.corrections.join(' ')).toMatch(/45% safe-height/);
+  });
+
+  it('stops growing a width-capped product instead of inflating empty box height', () => {
+    // ZAZO story: flat sunglasses at full safe width. Growing height alone
+    // would inflate empty collision area (the compositor pastes at e.scale,
+    // which follows the width) and squeeze text into unresolvable overlaps.
+    const p = plan({
+      preset: 'ig-story-916',
+      width: 1080,
+      height: 1920,
+      safe: { x: 54, y: 269, w: 972, h: 1267 },
+      logo: null,
+      products: [{ x: 65, y: 700, w: 950, h: 280 }],
+      headline: { x: 76, y: 300, w: 929, h: 100 },
+      subtext: { x: 76, y: 1150, w: 929, h: 80 },
+      panel: { x: 76, y: 1260, w: 929, h: 250 },
+      product_scales: [1],
+      logo_scale: null,
+    });
+    const m = manifestFromPlan({ plan: p, preset: presetById('ig-story-916')!, planner: 'wonder', direction: 'ltr' });
+    const out = enforceManifest({ manifest: m, direction: 'ltr' });
+    const prod = out.elements.find((e) => e.id === 'product-0')!;
+    expect(prod.box).toEqual({ x: 65, y: 700, w: 950, h: 280 });
+    expect(prod.scale).toBe(1);
+    expect(out.corrections.join(' ')).toMatch(/below size floor but blocked from growing/);
+  });
+
+  it('restores the pre-shrink size when shrinking cannot clear an overlap', () => {
+    // Two fully nested products: 12 shrink iterations cannot separate
+    // concentric boxes, so the loop must restore (not strand a sliver).
+    const p = plan({
+      logo: null,
+      products: [
+        { x: 340, y: 340, w: 400, h: 400 },
+        { x: 340, y: 340, w: 400, h: 400 },
+      ],
+      headline: null,
+      subtext: null,
+      panel: null,
+      product_scales: [1, 1],
+      logo_scale: null,
+    });
+    const m = manifestFromPlan({ plan: p, preset: presetById('ig-feed-11')!, planner: 'code', direction: 'ltr' });
+    const out = enforceManifest({ manifest: m, direction: 'ltr' });
+    const prod0 = out.elements.find((e) => e.id === 'product-0')!;
+    expect(prod0.box).toEqual({ x: 340, y: 340, w: 400, h: 400 });
+    expect(prod0.scale).toBe(1);
+    expect(out.corrections.join(' ')).toMatch(/product-0: still overlaps product-1 after shrinking/);
   });
 
   it('moves text/logo clear of overlaps, including panel-nested text', () => {

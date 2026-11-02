@@ -2,26 +2,31 @@ import type OpenAI from 'openai';
 import { presetSafeRect, type Preset } from '../../shared/presets.js';
 import type { LayoutPlan, PlanBox, QAverdict, SourceAnalysis, TemplateSpec } from '../../shared/schemas.js';
 import { analyzeSource } from '../models/analyze.js';
-import { editImages, type ImageGenConfig } from '../models/muse-image.js';
+import { editImages, generateImage, type ImageGenConfig } from '../models/muse-image.js';
 import { qaOutput } from '../models/qa.js';
 import type { CostLedger } from '../models/costs.js';
 import type { WonderSizePlan } from '../models/wonder.js';
 import { clipMaskToPaddedBox, completeLogoMask, fillMaskHoles, maskFillInBox, segmentTargets } from '../repair/masks.js';
 import { buildBoxPromptText, segment } from '../models/sam.js';
 import {
+  debandFlatPlate,
   decodeRgba,
   defringeCut,
   drawContactShadow,
   exactSize,
+  findSurfaceEdge,
+  gapDrift,
   pasteWithFeather,
+  roundPanelCorners,
   scaleRgbaNearest,
+  trimFlatBorders,
   supportPoint,
   type RgbaImage,
 } from '../repair/composite.js';
 import { artifactDigest, elementProof, type ArtifactDigest, type ElementProof } from '../repair/proof.js';
 import { minLegiblePx, renderRebuiltPanel, renderTextBlock, rgbFromHex, RenderBlocker, type TextLine } from '../repair/render.js';
 import { maskBoundingBox, padBox, type PixelBox } from '../../shared/geometry.js';
-import { freeHeadlineSubtext, freeOtherTexts, planLayout } from './planner.js';
+import { freeHeadlineSubtext, freeOtherTexts, planLayout, tallProductCell } from './planner.js';
 import { panelComplexity, samplePanelColor, snapPanelRect } from './snap.js';
 import { loadCachedLayers, sourceDigest, storeCachedLayers } from './cache.js';
 import { enforceManifest, familyForPreset, manifestFromPlan, templateZonesPx, type ResolvedLayoutManifest } from './manifest.js';
@@ -527,7 +532,58 @@ export function buildPlatePrompt(req: OutputRequest, plan: LayoutPlan, qaNotes: 
   }
   const guide = layoutGuideForPlate(extra.manifest ?? null);
   if (guide) lines.push(`Layout guide — keep these regions clean and low-detail (percent of canvas): ${guide}.`);
+  const grounding = groundingLineForPlate(extra.manifest ?? null, a.background.type);
+  if (grounding) lines.push(grounding);
   lines.push('One seamless background across the whole canvas: no vignette traps; leave clean space where the product and text will be placed by code.');
+  for (const n of qaNotes) lines.push(`Fix from QA review: ${n}`);
+  return lines.join('\n');
+}
+
+/**
+ * Grounding line so pasted products stand ON the plate's surface instead of
+ * floating above it: photo backgrounds align their table/shelf line with the
+ * known product base; flat backgrounds stay unsplittable-seamless with no
+ * surface edge at all (a painted table edge the product doesn't touch is
+  what reads as floating).
+ */
+export function groundingLineForPlate(manifest: ResolvedLayoutManifest | null, bgType: string): string | null {
+  const products = manifest?.elements.filter((e) => e.kind === 'product') ?? [];
+  if (!manifest || products.length === 0) return null;
+  if (bgType === 'flat' || bgType === 'gradient') {
+    return 'Seamless studio background: NO table, NO horizon line, NO surface edge, NO shadow under where the product will sit (code draws the contact shadow) — one continuous field, so the pasted product reads as sitting in the scene, not floating above a table.';
+  }
+  const basePct = Math.round((Math.max(...products.map((p) => p.box.y + p.box.h)) / manifest.height) * 100);
+  // Geometry: the product stands ON the tabletop just in front of its BACK
+  // edge — so the back edge sits a few percent ABOVE the base line. Code
+  // verifies this after generation (findSurfaceEdge) and regens or shifts
+  // when the painter misses.
+  return `Grounding: the product will be pasted with its base at y≈${basePct}% of the canvas height — paint a table/shelf/counter whose BACK edge sits a few percent HIGHER (y≈${Math.max(0, basePct - 3)}%), so the product stands ON the tabletop just in front of its back edge. Never float the base above the surface, never sink it deep into it.`;
+}
+
+/**
+ * Text-only plate prompt for seam-defect regens: no source image anchor, so
+ * the style comes from words (background description + colors + art brief).
+ */
+export function buildPlatePromptTextOnly(
+  req: OutputRequest,
+  plan: LayoutPlan,
+  qaNotes: string[],
+  extra: { manifest?: ResolvedLayoutManifest | null; backgroundBrief?: string | null; allowSurface?: boolean } = {},
+): string {
+  const a = req.source.analysis;
+  const lines = [
+    `Clean advertising background, ${plan.width}x${plan.height} aspect, painted from scratch: ${a.background.description} (type: ${a.background.type}; colors: ${a.background.colors.join(', ') || 'soft neutrals matched to the brand'}).`,
+    'The output must be an empty background only: NO product, NO logo, NO text, NO letters, NO numbers, NO fake UI, NO inset border or frame edges, NO product shadows.',
+    extra.allowSurface
+      ? 'One table/shelf/counter surface is REQUIRED (see the Grounding line for its exact back-edge height) — otherwise one seamless field: NO bands, headers, footers, blocks or panels.'
+      : 'CONTINUOUS BACKGROUND ONLY: one seamless field edge to edge — NO bands, headers, footers, blocks, panels, or straight seams/splits of any kind.',
+  ];
+  if (extra.backgroundBrief) lines.push(`Art direction: ${extra.backgroundBrief}`);
+  if (req.template) lines.push(`Brand layout style for this size (background feel only, never bands): ${req.template.spec.background_style}.`);
+  const guide = layoutGuideForPlate(extra.manifest ?? null);
+  if (guide) lines.push(`Layout guide — keep these regions clean and low-detail (percent of canvas): ${guide}.`);
+  const grounding = groundingLineForPlate(extra.manifest ?? null, a.background.type);
+  if (grounding) lines.push(grounding);
   for (const n of qaNotes) lines.push(`Fix from QA review: ${n}`);
   return lines.join('\n');
 }
@@ -641,7 +697,42 @@ export async function compositeProtected(
     const scaled = defringeCut(scaleRgbaNearest(cut.rgba, scale), 2);
     // Center the scaled cut in its box (exact for fitCentered plans).
     const left = Math.round(dst.x + (dst.w - scaled.width) / 2);
-    const top = Math.round(dst.y + (dst.h - scaled.height) / 2);
+    let top = Math.round(dst.y + (dst.h - scaled.height) / 2);
+    // Near-miss grounding: when the plate's surface edge is close to the
+    // planned base (≤4% of canvas height), shift the paste onto it instead
+    // of leaving the product floating or sunk. Bigger misses fail the plate
+    // (the batch stage regens with an exact-y requirement). Photo plates
+    // only — flat/gradient/illustrated backgrounds are seamless by design.
+    if (a.background.type === 'photo') {
+      const sp0 = supportPoint(scaled, left, top);
+      const edge = sp0 ? findSurfaceEdge(canvas, left, left + scaled.width, sp0.y, Math.round(plan.height * 0.12)) : null;
+      // Below-base edges over a uniform gap are fabric folds, not air (the
+      // product already sits) — only shift down across a falling-off gap.
+      const airGap = !sp0 || !edge || edge.y <= sp0.y || gapDrift(canvas, left, left + scaled.width, sp0.y, edge.y) >= 10;
+      if (sp0 && edge && airGap) {
+        const target = edge.y + Math.max(6, Math.round(plan.height * 0.01));
+        const shift = target - sp0.y;
+        const maxShift = Math.round(plan.height * 0.04);
+        if (Math.abs(shift) > 8 && Math.abs(shift) <= maxShift) {
+          const newTop = top + shift;
+          const shifted = { x: left, y: newTop, w: scaled.width, h: scaled.height };
+          const clear = (manifest?.elements ?? []).every((o) => {
+            if (o.id === cut.id || o.kind === 'shadow' || o.kind === 'frame') return true;
+            return (
+              shifted.x + shifted.w + 8 <= o.box.x || o.box.x + o.box.w + 8 <= shifted.x ||
+              shifted.y + shifted.h + 8 <= o.box.y || o.box.y + o.box.h + 8 <= shifted.y
+            );
+          });
+          const safeBottom = plan.safe.y + plan.safe.h;
+          if (newTop >= plan.safe.y && newTop + scaled.height <= safeBottom && clear) {
+            top = newTop;
+            const el = manifest?.elements.find((e) => e.id === cut.id);
+            if (el) el.box = { ...el.box, y: el.box.y + shift };
+            notes.push(`${cut.id}: grounded on the plate surface (shifted ${shift > 0 ? '+' : ''}${shift}px to y=${target})`);
+          }
+        }
+      }
+    }
     const sp = supportPoint(scaled, left, top);
     // Floating products (no opaque pixel near the cut bottom third) get no
     // shadow; the plate was asked for no product shadows either.
@@ -750,7 +841,7 @@ export async function compositeProtected(
  * where the text stays legible, otherwise the paste is SKIPPED and flagged
  * (returns true) instead of rendering unreadable text.
  */
-async function pastePanelFallback(
+export async function pastePanelFallback(
   req: OutputRequest,
   panelDst: PlanBox,
   canvas: RgbaImage,
@@ -759,19 +850,23 @@ async function pastePanelFallback(
 ): Promise<boolean> {
   const cut = req.source.panel;
   if (!cut) return false;
-  const scale = Math.min(panelDst.w / cut.rgba.width, panelDst.h / cut.rgba.height);
+  // Loose rect cuts carry flat background (light strips/corner squares stamp
+  // on the plate). Trim + round BEFORE scaling: the proof compares the placed
+  // cut, so post-scale rounding would fail its zero-tolerance core check.
+  const cleaned: ElementCut = { ...cut, rgba: roundPanelCorners(trimFlatBorders(cut.rgba)) };
+  const scale = Math.min(panelDst.w / cleaned.rgba.width, panelDst.h / cleaned.rgba.height);
   // Biggest source line ≈ 35% of the panel height; pasted text must clear the floor.
   const floor = minLegiblePx(Math.min(panelDst.w, panelDst.h));
-  const estTextH = cut.rgba.height * 0.35 * scale;
+  const estTextH = cleaned.rgba.height * 0.35 * scale;
   if (estTextH < floor) {
     notes.push(`panel paste SKIPPED at ${scale.toFixed(2)}x (text ~${Math.round(estTextH)}px < ${floor}px floor) — needs review`);
     return true;
   }
-  const scaled = scaleRgbaNearest(cut.rgba, scale);
+  const scaled = scaleRgbaNearest(cleaned.rgba, scale);
   const left = Math.round(panelDst.x + (panelDst.w - scaled.width) / 2);
   const top = Math.round(panelDst.y + (panelDst.h - scaled.height) / 2);
   pasteWithFeather(canvas, scaled, left, top, 0);
-  placed.push({ id: 'panel', cut, left, top, scale, featherPx: 0 });
+  placed.push({ id: 'panel', cut: cleaned, left, top, scale, featherPx: 0 });
   notes.push(`panel pasted (complex) at ${scale.toFixed(2)}x`);
   return false;
 }
@@ -823,10 +918,32 @@ export function wonderToLayoutPlan(
   const spec = req.template?.spec ?? null;
   const mirrored = spec ? spec.direction !== req.source.analysis.direction : false;
   const zones = spec ? templateZonesPx(spec, W, H, mirrored) : {};
+  const notes = [`wonder: ${wonder.family}`, `wonder rationale: ${wonder.rationale.slice(0, 160)}`];
+  // Tall canvases: a small template product zone (top third) would strangle
+  // Wonder's boxes at binding time — expand it exactly like the code planner
+  // does, so both planners see the same room.
+  if (spec?.product_zone && zones['product_zone'] && H / W >= 1.5) {
+    const safe = presetSafeRect(req.preset);
+    const margin = Math.round(Math.min(W, H) * 0.02);
+    const neighbors = ['logo', 'headline_zone', 'subtext_zone', 'panel_zone']
+      .map((k) => zones[k])
+      .filter((z): z is PlanBox => !!z);
+    const expanded = tallProductCell(zones['product_zone'] as PlanBox, neighbors, safe, margin);
+    if (expanded !== zones['product_zone']) {
+      zones['product_zone'] = expanded;
+      notes.push('products: template zone expanded for 9:16 fill');
+    }
+  }
   // Bind one Wonder box to its template zone (null zone = no binding).
-  const bind = (box: PlanBox, zoneKey: string | null): { box: PlanBox; bound: boolean } => {
+  // Text zones are designed full-width lines: a Wonder text box covering less
+  // than half the zone area is a shrunk side note, never intent — use the
+  // full zone instead of the small intersection.
+  const bind = (box: PlanBox, zoneKey: string | null, isText = false): { box: PlanBox; bound: boolean } => {
     if (!zoneKey || !zones[zoneKey]) return { box, bound: false };
     const zone = zones[zoneKey] as PlanBox;
+    if (isText && (box.w * box.h) / Math.max(1, zone.w * zone.h) < 0.5) {
+      return { box: { ...zone }, bound: true };
+    }
     const frac = intersectArea(box, zone) / Math.max(1, box.w * box.h);
     if (frac >= 0.5) {
       const ix1 = Math.max(box.x, zone.x);
@@ -838,7 +955,6 @@ export function wonderToLayoutPlan(
     return { box: { ...zone }, bound: true };
   };
 
-  const notes = [`wonder: ${wonder.family}`, `wonder rationale: ${wonder.rationale.slice(0, 160)}`];
   const products: PlanBox[] = [];
   const productScales: number[] = [];
   // Template product zone splits across instances (same rule as the planner).
@@ -878,8 +994,8 @@ export function wonderToLayoutPlan(
   const logoFit = req.source.analysis.logo_bbox ? fitCut(wonder.boxes.logo, logoCut, spec?.logo ? 'logo' : null, 2, 'logo') : null;
   const panelFit = wonder.boxes.panel ? bind(denorm(wonder.boxes.panel, W, H), spec?.panel_zone ? 'panel_zone' : null) : null;
   if (panelFit?.bound) notes.push('panel: bound to template zone');
-  const headlineFit = wonder.boxes.headline ? bind(denorm(wonder.boxes.headline, W, H), spec?.headline_zone ? 'headline_zone' : null) : null;
-  const subtextFit = wonder.boxes.subtext ? bind(denorm(wonder.boxes.subtext, W, H), spec?.subtext_zone ? 'subtext_zone' : null) : null;
+  const headlineFit = wonder.boxes.headline ? bind(denorm(wonder.boxes.headline, W, H), spec?.headline_zone ? 'headline_zone' : null, true) : null;
+  const subtextFit = wonder.boxes.subtext ? bind(denorm(wonder.boxes.subtext, W, H), spec?.subtext_zone ? 'subtext_zone' : null, true) : null;
   const others = wonder.boxes.others.map((o) => denorm(o, W, H));
 
   const plan: LayoutPlan = {
@@ -899,16 +1015,49 @@ export function wonderToLayoutPlan(
     logo_scale: logoFit?.scale ?? null,
     notes,
   };
+  reconcileWonderSlots(plan, req, notes);
   return { plan, note: notes.join('; ') };
 }
 
 /**
- * Plan one size: Wonder conversion when a usable Wonder plan exists, else the
- * code planner. Always returns an ENFORCED manifest; the planner used is
- * recorded on the manifest and in the trace.
+ * Slot reconciliation: Wonder sometimes leaves named slots null or emits a
+ * wrong-sized others array (seen live on the no-template path: every named
+ * slot null plus 7 phantom others — the outputs rendered no text at all,
+ * because the compositor binds strings to the named slots and binds others
+ * positionally to the analysis other_texts). Every gap falls back to the
+ * code planner's box for that slot, so no element is ever silently dropped;
+ * each fallback is noted for the trace.
  */
-export function planForSize(req: OutputRequest, wonder: WonderSizePlan | null): PlannedSize {
-  const codePlan = planLayout({
+export function reconcileWonderSlots(plan: LayoutPlan, req: OutputRequest, notes: string[]): void {
+  const a = req.source.analysis;
+  let fallback: LayoutPlan | null = null;
+  const fb = (): LayoutPlan => (fallback ??= codePlanForRequest(req));
+  const fill = (slot: 'headline' | 'subtext' | 'panel' | 'logo', has: boolean): void => {
+    if (has && !plan[slot] && fb()[slot]) {
+      plan[slot] = fb()[slot];
+      if (slot === 'logo') plan.logo_scale = fb().logo_scale;
+      notes.push(`${slot}: wonder left it empty, code planner box used`);
+    }
+  };
+  fill('headline', !!a.headline);
+  fill('subtext', !!a.subtext);
+  fill('panel', !!a.panel);
+  fill('logo', !!a.logo_bbox && !!req.source.logo);
+  const wantOthers = freeOtherTexts(a).length;
+  const gotOthers = plan.other_texts.length;
+  if (gotOthers !== wantOthers) {
+    plan.other_texts = fb().other_texts;
+    notes.push(
+      wantOthers === 0
+        ? `others: ${gotOthers} wonder phantom boxes dropped (no other texts)`
+        : `others: wonder emitted ${gotOthers}, analysis needs ${wantOthers} — code planner boxes used`,
+    );
+  }
+}
+
+/** The deterministic code plan for a request — the planForSize default and the Wonder gap-filler. */
+export function codePlanForRequest(req: OutputRequest): LayoutPlan {
+  return planLayout({
     preset: req.preset,
     source: req.source.analysis,
     sourceWidth: req.source.width,
@@ -917,6 +1066,15 @@ export function planForSize(req: OutputRequest, wonder: WonderSizePlan | null): 
     logoCut: req.source.logo ? { w: req.source.logo.rgba.width, h: req.source.logo.rgba.height } : null,
     template: req.template ? { id: req.template.id, spec: req.template.spec } : null,
   });
+}
+
+/**
+ * Plan one size: Wonder conversion when a usable Wonder plan exists, else the
+ * code planner. Always returns an ENFORCED manifest; the planner used is
+ * recorded on the manifest and in the trace.
+ */
+export function planForSize(req: OutputRequest, wonder: WonderSizePlan | null): PlannedSize {
+  const codePlan = codePlanForRequest(req);
   const spec = req.template?.spec ?? null;
   const mirrored = spec ? spec.direction !== req.source.analysis.direction : false;
   const zones = spec ? templateZonesPx(spec, req.preset.width, req.preset.height, mirrored) : null;
@@ -938,6 +1096,7 @@ export function planForSize(req: OutputRequest, wonder: WonderSizePlan | null): 
         direction: req.source.analysis.direction,
       });
       recordDroppedElements(manifest, req, 'wonder');
+      stampSourceBoxes(manifest, req);
       return { plan: converted.plan, manifest, planner: 'wonder', logoOnBand: logoOnBandPlaced(manifest, zones, !!spec, converted.plan.notes) };
     }
   }
@@ -953,7 +1112,37 @@ export function planForSize(req: OutputRequest, wonder: WonderSizePlan | null): 
     direction: req.source.analysis.direction,
   });
   recordDroppedElements(manifest, req, 'code');
+  stampSourceBoxes(manifest, req);
   return { plan: codePlan, manifest, planner: 'code', logoOnBand: logoOnBandPlaced(manifest, zones, !!spec, codePlan.notes) };
+}
+
+/**
+ * Stamp source-frame boxes onto protected manifest elements (the detail page
+ * crops source-vs-output from these). Analysis bboxes are source pixels;
+ * re-rendered text keeps srcBox null. Runs after enforcement so it sees the
+ * final element set.
+ */
+export function stampSourceBoxes(manifest: ResolvedLayoutManifest, req: OutputRequest): void {
+  const a = req.source.analysis;
+  const W = req.source.width;
+  const H = req.source.height;
+  const clampBox = (b: { x: number; y: number; w: number; h: number }): PlanBox => ({
+    x: Math.max(0, Math.min(W - 1, Math.round(b.x))),
+    y: Math.max(0, Math.min(H - 1, Math.round(b.y))),
+    w: Math.max(1, Math.min(W, Math.round(b.w))),
+    h: Math.max(1, Math.min(H, Math.round(b.h))),
+  });
+  for (const e of manifest.elements) {
+    if (e.kind === 'product') {
+      const i = Number(e.id.split('-')[1]);
+      const p = Number.isInteger(i) ? a.products[i] : undefined;
+      e.srcBox = p ? clampBox(p.bbox) : null;
+    } else if (e.kind === 'logo') {
+      e.srcBox = a.logo_bbox ? clampBox(a.logo_bbox) : null;
+    } else {
+      e.srcBox = null;
+    }
+  }
 }
 
 /**
@@ -1035,28 +1224,67 @@ export async function generatePlate(
   req: OutputRequest,
   plan: LayoutPlan,
   manifest: ResolvedLayoutManifest,
-  opts: { qaNotes?: string[]; backgroundBrief?: string | null; logoOnBand?: boolean; forceContinuous?: boolean; ledger?: CostLedger | null } = {},
+  opts: { qaNotes?: string[]; backgroundBrief?: string | null; logoOnBand?: boolean; forceContinuous?: boolean; ledger?: CostLedger | null; textOnly?: boolean } = {},
   trace: TraceCollector,
 ): Promise<Buffer> {
   const genStart = Date.now();
-  const gen = await editImages(models.image, {
-    prompt: buildPlatePrompt(req, plan, opts.qaNotes ?? [], { manifest, logoOnBand: opts.logoOnBand, backgroundBrief: opts.backgroundBrief ?? null, forceContinuous: opts.forceContinuous }),
-    size: `${plan.width}x${plan.height}`,
-    images: [{ bytes: req.source.bytes, mimeType: req.source.mimeType }],
-    reasoningStrength: 'low',
-  });
+  // Seam-defect regens go text-only: the edit call anchors on the source
+  // layout and repaints the same band/split the review just rejected (seen on
+  // NOA). A pure generation from the style description breaks the anchor.
+  const textOnly = opts.textOnly === true;
+  // Grounding-miss regens break the source anchor (it misplaced the surface)
+  // but still need the table — allow the single back edge the Grounding line
+  // places instead of forcing a seamless field.
+  const allowSurface = textOnly && (opts.qaNotes ?? []).some((n) => /back edge/i.test(n));
+  const prompt = textOnly
+    ? buildPlatePromptTextOnly(req, plan, opts.qaNotes ?? [], { manifest, backgroundBrief: opts.backgroundBrief ?? null, allowSurface })
+    : buildPlatePrompt(req, plan, opts.qaNotes ?? [], { manifest, logoOnBand: opts.logoOnBand, backgroundBrief: opts.backgroundBrief ?? null, forceContinuous: opts.forceContinuous });
+  const size = `${plan.width}x${plan.height}`;
+  const gen = textOnly
+    ? await generateImage(models.image, prompt, size)
+    : await editImages(models.image, {
+      prompt,
+      size,
+      images: [{ bytes: req.source.bytes, mimeType: req.source.mimeType }],
+      reasoningStrength: 'low',
+    });
   opts.ledger?.record(models.image.model, { images: 1 }, `plate-${plan.preset}`);
   trace.emit({
     step: 'adfit_generate',
     tool_or_model: `model:${models.image.model}`,
-    input_summary: `protected plate ${plan.width}x${plan.height}${(opts.qaNotes?.length ?? 0) > 0 ? ' (retry)' : ''}`,
+    input_summary: `protected plate ${plan.width}x${plan.height}${(opts.qaNotes?.length ?? 0) > 0 ? ' (retry)' : ''}${textOnly ? ' text-only' : ''}`,
     output_summary: `wire bytes=${gen.returnedBytes}`,
     duration_ms: Date.now() - genStart,
     evidence_ids: ['out:plate'],
     next_state: 'adfit_composite',
     cached: false,
   });
-  return exactSize(gen.png, plan.width, plan.height);
+  const sized = await exactSize(gen.png, plan.width, plan.height);
+  // Flat-design plates band at the edges (the painter's flat fills stripe);
+  // equalize footer/header strips back into the field, in code, every time.
+  const bgType = req.source.analysis.background.type;
+  if (bgType === 'flat' || bgType === 'other') {
+    try {
+      const canvas = await decodeRgba(sized);
+      const deband = debandFlatPlate(canvas);
+      if (deband.corrected) {
+        trace.emit({
+          step: 'adfit_generate',
+          tool_or_model: 'code:deband',
+          input_summary: `plate ${plan.width}x${plan.height}`,
+          output_summary: `debanded ${deband.rows} edge rows into the field`,
+          duration_ms: 0,
+          evidence_ids: [],
+          next_state: 'adfit_composite',
+          cached: false,
+        });
+        return await rgbaToPng(canvas);
+      }
+    } catch {
+      // An unreadable plate keeps flowing (the plate check fails closed).
+    }
+  }
+  return sized;
 }
 
 /** Per-element proof with trace. Shared by runOutput and the batch engine. */

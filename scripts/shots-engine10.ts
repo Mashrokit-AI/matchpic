@@ -168,17 +168,12 @@ async function main(): Promise<void> {
     });
   };
 
-  const SINGLE = process.env.UI_SHOTS_SINGLE_PROCESS === '1';
-  // Sandboxed shells flakily SIGTRAP Chromium helpers; retry the launch.
-  // Exactly ONE page total: single-process headless shell dies on the second
-  // newPage here, so the proof-of-life page becomes the shots page.
+  // Plain Playwright Chromium only: never system Chrome, never --single-process.
   let browser: Browser | null = null;
   let page: Page | null = null;
   for (let attempt = 1; attempt <= 4 && !browser; attempt++) {
     try {
-      const b = await chromium.launch(
-        SINGLE ? { args: ['--single-process', '--no-sandbox', '--disable-gpu'] } : undefined,
-      );
+      const b = await chromium.launch();
       const probe = await b.newPage({ viewport: { width: 1440, height: 900 } });
       await probe.goto('about:blank');
       browser = b;

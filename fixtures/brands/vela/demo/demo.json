@@ -1,0 +1,2148 @@
+{
+  "brand": "vela",
+  "mode": "protected",
+  "finishedAt": "2026-11-02T10:35:29.262Z",
+  "modelCalls": 19,
+  "imageCalls": 6,
+  "firstPreviewMs": 191721,
+  "totalMs": 557837,
+  "outputs": [
+    {
+      "source": "demo-src-vela",
+      "sourceLabel": "source-en.png",
+      "preset": "ig-feed-45",
+      "mode": "protected",
+      "status": "pass",
+      "image": "ig-feed-45.png",
+      "before": null,
+      "plan": {
+        "preset": "ig-feed-45",
+        "width": 1080,
+        "height": 1350,
+        "from_template": false,
+        "template_id": null,
+        "safe": {
+          "x": 43,
+          "y": 54,
+          "w": 994,
+          "h": 1215
+        },
+        "logo": {
+          "x": 65,
+          "y": 84,
+          "w": 245,
+          "h": 54
+        },
+        "products": [
+          {
+            "x": 259,
+            "y": 446,
+            "w": 186,
+            "h": 485
+          },
+          {
+            "x": 510,
+            "y": 654,
+            "w": 300,
+            "h": 300
+          }
+        ],
+        "headline": {
+          "x": 65,
+          "y": 176,
+          "w": 950,
+          "h": 117
+        },
+        "subtext": {
+          "x": 65,
+          "y": 317,
+          "w": 713,
+          "h": 53
+        },
+        "panel": {
+          "x": 65,
+          "y": 1019,
+          "w": 950,
+          "h": 209
+        },
+        "other_texts": [],
+        "product_scales": [
+          1.1071428571428572,
+          1.1538461538461537
+        ],
+        "logo_scale": 0.914179104477612,
+        "notes": [
+          "wonder: portrait_stack",
+          "wonder rationale: Portrait stack with left-aligned text, centered proportionate products and panel filling the lower safe area."
+        ],
+        "manifest": {
+          "preset": "ig-feed-45",
+          "width": 1080,
+          "height": 1350,
+          "family": "portrait_stack",
+          "planner": "wonder",
+          "safe": {
+            "x": 43,
+            "y": 54,
+            "w": 994,
+            "h": 1215
+          },
+          "elements": [
+            {
+              "id": "product-0",
+              "kind": "product",
+              "box": {
+                "x": 259,
+                "y": 446,
+                "w": 186,
+                "h": 485
+              },
+              "group": "products",
+              "z": 20,
+              "align": null,
+              "scale": 1.1071428571428572,
+              "source": "default",
+              "srcBox": {
+                "x": 257,
+                "y": 303,
+                "w": 145,
+                "h": 442
+              }
+            },
+            {
+              "id": "product-1",
+              "kind": "product",
+              "box": {
+                "x": 510,
+                "y": 654,
+                "w": 300,
+                "h": 300
+              },
+              "group": "products",
+              "z": 21,
+              "align": null,
+              "scale": 1.1538461538461537,
+              "source": "default",
+              "srcBox": {
+                "x": 586,
+                "y": 484,
+                "w": 234,
+                "h": 260
+              }
+            },
+            {
+              "id": "panel",
+              "kind": "panel",
+              "box": {
+                "x": 65,
+                "y": 1019,
+                "w": 950,
+                "h": 209
+              },
+              "group": "offer",
+              "z": 10,
+              "align": "left",
+              "scale": null,
+              "source": "default",
+              "srcBox": null
+            },
+            {
+              "id": "headline",
+              "kind": "headline",
+              "box": {
+                "x": 65,
+                "y": 176,
+                "w": 950,
+                "h": 117
+              },
+              "group": "text",
+              "z": 30,
+              "align": "left",
+              "scale": null,
+              "source": "default",
+              "srcBox": null
+            },
+            {
+              "id": "subtext",
+              "kind": "subtext",
+              "box": {
+                "x": 65,
+                "y": 317,
+                "w": 713,
+                "h": 53
+              },
+              "group": "text",
+              "z": 31,
+              "align": "left",
+              "scale": null,
+              "source": "default",
+              "srcBox": null
+            },
+            {
+              "id": "logo",
+              "kind": "logo",
+              "box": {
+                "x": 65,
+                "y": 84,
+                "w": 245,
+                "h": 54
+              },
+              "group": "logo",
+              "z": 40,
+              "align": null,
+              "scale": 0.914179104477612,
+              "source": "default",
+              "srcBox": {
+                "x": 57,
+                "y": 50,
+                "w": 245,
+                "h": 60
+              }
+            }
+          ],
+          "templateZones": null,
+          "corrections": [
+            "text group: 2 boxes share the left edge"
+          ],
+          "rationale": "Portrait stack with left-aligned text, centered proportionate products and panel filling the lower safe area."
+        }
+      },
+      "proof": {
+        "product-0": {
+          "scale": 1.1071428571428572,
+          "core_differ": 0,
+          "core_total": 74869,
+          "feather_total": 2788,
+          "coverage": 0.9640985358692713,
+          "pass": true
+        },
+        "product-1": {
+          "scale": 1.1538461538461537,
+          "core_differ": 0,
+          "core_total": 82753,
+          "feather_total": 2554,
+          "coverage": 0.970061073534411,
+          "pass": true
+        },
+        "logo": {
+          "scale": 0.914179104477612,
+          "core_differ": 0,
+          "core_total": 3252,
+          "feather_total": 1525,
+          "coverage": 0.6807619845091062,
+          "pass": true
+        },
+        "panel": {
+          "scale": 1.0555555555555556,
+          "core_differ": 0,
+          "core_total": 190950,
+          "feather_total": 0,
+          "coverage": 1,
+          "pass": true
+        }
+      },
+      "qa": null,
+      "retries": 0,
+      "modelCalls": 0,
+      "imageCalls": 1,
+      "latencyMs": 21808,
+      "trace": [
+        {
+          "step": "adfit_analyze",
+          "tool_or_model": "model:muse-spark-1.3",
+          "input_summary": "source 1080x1080",
+          "output_summary": "lang=en products=2 logo=yes headline=\"Morning glow, bottled\" panel=opaque bg=photo coords=pixels",
+          "duration_ms": 18592,
+          "evidence_ids": [
+            "src:analysis"
+          ],
+          "next_state": "adfit_masks",
+          "cached": true,
+          "seq": 1
+        },
+        {
+          "step": "adfit_masks",
+          "tool_or_model": "model:sam-3.1",
+          "input_summary": "product-0[bottle] product-1[jar] logo[logo]",
+          "output_summary": "ok: product-0,product-1,logo coverage: products 2/2; product-0 clipped to its box (removed 50% cross-coverage); product-1 holes filled (+4710px)",
+          "duration_ms": 21256,
+          "evidence_ids": [
+            "src:product-0",
+            "src:product-1",
+            "src:logo"
+          ],
+          "next_state": "adfit_plan",
+          "cached": true,
+          "seq": 2
+        },
+        {
+          "step": "adfit_plan",
+          "tool_or_model": "model:muse-wonder-1.0",
+          "input_summary": "ig-feed-45 protected no-template family=portrait_stack",
+          "output_summary": "wonder: portrait_stack; wonder rationale: Portrait stack with left-aligned text, centered proportionate products and panel filling the lower safe area. | corrections: text group: 2 boxes share the left edge",
+          "duration_ms": 0,
+          "evidence_ids": [
+            "out:plan"
+          ],
+          "next_state": "adfit_generate",
+          "cached": false,
+          "seq": 3
+        },
+        {
+          "step": "adfit_generate",
+          "tool_or_model": "model:muse-image-1.0",
+          "input_summary": "protected plate 1080x1350",
+          "output_summary": "wire bytes=2273257",
+          "duration_ms": 21297,
+          "evidence_ids": [
+            "out:plate"
+          ],
+          "next_state": "adfit_composite",
+          "cached": false,
+          "seq": 4
+        },
+        {
+          "step": "adfit_composite",
+          "tool_or_model": "code:composite+chromium",
+          "input_summary": "plate + product-0@1.107x product-1@1.154x logo@0.914x panel@1.056x + text(headline,subtext)",
+          "output_summary": "1080x1350 product-0: contact shadow at support y=930; product-1: contact shadow at support y=953; panel pasted (complex) at 1.06x",
+          "duration_ms": 345,
+          "evidence_ids": [
+            "out:product-0",
+            "out:product-1",
+            "out:logo",
+            "out:panel"
+          ],
+          "next_state": "adfit_proof",
+          "cached": false,
+          "seq": 5
+        },
+        {
+          "step": "adfit_proof",
+          "tool_or_model": "code:elementProof",
+          "input_summary": "4 pasted elements",
+          "output_summary": "product-0:0/74869 (96% compared) product-1:0/82753 (97% compared) logo:0/3252 (68% compared) panel:0/190950 (100% compared) feather outside core only",
+          "duration_ms": 71,
+          "evidence_ids": [
+            "out:product-0",
+            "out:product-1",
+            "out:logo",
+            "out:panel"
+          ],
+          "next_state": "adfit_review",
+          "cached": false,
+          "seq": 6
+        },
+        {
+          "step": "adfit_wonder_plan",
+          "tool_or_model": "model:muse-wonder-1.0",
+          "input_summary": "1 source x 4 sizes",
+          "output_summary": "families: ig-feed-45=portrait_stack ig-story-916=portrait_stack fb-link=landscape_split yt-thumb=landscape_split",
+          "duration_ms": 155982,
+          "evidence_ids": [
+            "out:plan"
+          ],
+          "next_state": "adfit_generate",
+          "cached": false,
+          "seq": 7
+        },
+        {
+          "step": "adfit_plate_check",
+          "tool_or_model": "model:muse-spark-1.3",
+          "input_summary": "4 plates",
+          "output_summary": "dirty (regenerate once): fb-link: the product base sits at y≈85% but the painted table back edge is at y≈76% — repaint with the back edge just above the base (edge y≈84% for base y≈85%) | yt-thumb: the product base sits at y≈82% but the painted table back edge is at y≈70% — repaint with the back edge just above the base (edge y≈81% for base y≈82%)",
+          "duration_ms": 21252,
+          "evidence_ids": [
+            "out:plate"
+          ],
+          "next_state": "adfit_review",
+          "cached": false,
+          "seq": 8
+        },
+        {
+          "step": "adfit_text_check",
+          "tool_or_model": "model:muse-spark-1.3",
+          "input_summary": "4 outputs with re-rendered text",
+          "output_summary": "all exact",
+          "duration_ms": 33353,
+          "evidence_ids": [
+            "out:text"
+          ],
+          "next_state": "adfit_review",
+          "cached": false,
+          "seq": 9
+        },
+        {
+          "step": "adfit_review",
+          "tool_or_model": "model:muse-wonder-1.0",
+          "input_summary": "source + 4 outputs + deterministic findings",
+          "output_summary": "7 defects: ig-story-916/logo, ig-story-916/subtext, ig-story-916/product-0, ig-story-916/product-1, ig-story-916/panel, fb-link/product-1, yt-thumb/product-1",
+          "duration_ms": 131302,
+          "evidence_ids": [
+            "out:review"
+          ],
+          "next_state": "adfit_repair",
+          "cached": false,
+          "seq": 10
+        },
+        {
+          "step": "adfit_repair",
+          "tool_or_model": "code:recompose",
+          "input_summary": "3 sizes with defects",
+          "output_summary": "1 recomposed from cached layers (before kept)",
+          "duration_ms": 0,
+          "evidence_ids": [
+            "out:repair"
+          ],
+          "next_state": "done",
+          "cached": false,
+          "seq": 11
+        },
+        {
+          "step": "adfit_review_retry",
+          "tool_or_model": "model:muse-wonder-1.0",
+          "input_summary": "second chance for 3 reverted size(s)",
+          "output_summary": "9 re-proposed defects: ig-story-916/logo, ig-story-916/headline, ig-story-916/subtext, fb-link/product-0, fb-link/product-1, fb-link/product-1, yt-thumb/product-1, yt-thumb/product-1, yt-thumb/product-0",
+          "duration_ms": 102894,
+          "evidence_ids": [
+            "out:review"
+          ],
+          "next_state": "adfit_repair",
+          "cached": false,
+          "seq": 12
+        }
+      ],
+      "error": null,
+      "checks": {
+        "protected_pixels": {
+          "status": "passed",
+          "detail": "Protected core matches the resized source (68% compared)"
+        },
+        "text": {
+          "status": "passed",
+          "detail": "re-rendered text verified exact"
+        },
+        "layout_review": {
+          "status": "passed",
+          "detail": "deterministic + Wonder review passed"
+        },
+        "repaired": null
+      }
+    },
+    {
+      "source": "demo-src-vela",
+      "sourceLabel": "source-en.png",
+      "preset": "ig-story-916",
+      "mode": "protected",
+      "status": "pass",
+      "image": "ig-story-916.png",
+      "before": "before-ig-story-916.png",
+      "plan": {
+        "preset": "ig-story-916",
+        "width": 1080,
+        "height": 1920,
+        "from_template": true,
+        "template_id": "tpl-vela-story",
+        "safe": {
+          "x": 54,
+          "y": 269,
+          "w": 972,
+          "h": 1267
+        },
+        "logo": {
+          "x": 65,
+          "y": 64,
+          "w": 221,
+          "h": 49
+        },
+        "products": [
+          {
+            "x": 297,
+            "y": 440,
+            "w": 184,
+            "h": 480
+          },
+          {
+            "x": 540,
+            "y": 649,
+            "w": 292,
+            "h": 292
+          }
+        ],
+        "headline": {
+          "x": 65,
+          "y": 150,
+          "w": 929,
+          "h": 115
+        },
+        "subtext": {
+          "x": 65,
+          "y": 280,
+          "w": 650,
+          "h": 48
+        },
+        "panel": {
+          "x": 90,
+          "y": 1290,
+          "w": 900,
+          "h": 221
+        },
+        "other_texts": [],
+        "product_scales": [
+          1.0952380952380953,
+          1.123076923076923
+        ],
+        "logo_scale": 0.8246268656716418,
+        "notes": [
+          "wonder: portrait_stack",
+          "wonder rationale: All elements placed inside the binding template zones with the tallest product filling the product zone height.",
+          "products: template zone expanded for 9:16 fill",
+          "product-0: bound to template zone",
+          "product-1: bound to template zone",
+          "logo: bound to template zone",
+          "panel: bound to template zone"
+        ],
+        "manifest": {
+          "preset": "ig-story-916",
+          "width": 1080,
+          "height": 1920,
+          "family": "portrait_stack",
+          "planner": "wonder",
+          "safe": {
+            "x": 54,
+            "y": 269,
+            "w": 972,
+            "h": 1267
+          },
+          "elements": [
+            {
+              "id": "product-0",
+              "kind": "product",
+              "box": {
+                "x": 280,
+                "y": 549,
+                "w": 218,
+                "h": 570
+              },
+              "group": "products",
+              "z": 20,
+              "align": null,
+              "scale": 1.2976190476190477,
+              "source": "corrected",
+              "srcBox": {
+                "x": 257,
+                "y": 303,
+                "w": 145,
+                "h": 442
+              }
+            },
+            {
+              "id": "product-1",
+              "kind": "product",
+              "box": {
+                "x": 516,
+                "y": 779,
+                "w": 340,
+                "h": 340
+              },
+              "group": "products",
+              "z": 21,
+              "align": null,
+              "scale": 1.3076923076923077,
+              "source": "corrected",
+              "srcBox": {
+                "x": 586,
+                "y": 484,
+                "w": 234,
+                "h": 260
+              }
+            },
+            {
+              "id": "panel",
+              "kind": "panel",
+              "box": {
+                "x": 90,
+                "y": 1315,
+                "w": 900,
+                "h": 221
+              },
+              "group": "offer",
+              "z": 10,
+              "align": "left",
+              "scale": null,
+              "source": "corrected",
+              "srcBox": null
+            },
+            {
+              "id": "headline",
+              "kind": "headline",
+              "box": {
+                "x": 65,
+                "y": 269,
+                "w": 929,
+                "h": 115
+              },
+              "group": "text",
+              "z": 30,
+              "align": "left",
+              "scale": null,
+              "source": "corrected",
+              "srcBox": null
+            },
+            {
+              "id": "subtext",
+              "kind": "subtext",
+              "box": {
+                "x": 65,
+                "y": 1200,
+                "w": 650,
+                "h": 48
+              },
+              "group": "text",
+              "z": 31,
+              "align": "left",
+              "scale": null,
+              "source": "corrected",
+              "srcBox": null
+            },
+            {
+              "id": "logo",
+              "kind": "logo",
+              "box": {
+                "x": 65,
+                "y": 1135,
+                "w": 221,
+                "h": 49
+              },
+              "group": "logo",
+              "z": 40,
+              "align": null,
+              "scale": 0.8246268656716418,
+              "source": "corrected",
+              "srcBox": {
+                "x": 57,
+                "y": 50,
+                "w": 245,
+                "h": 60
+              }
+            }
+          ],
+          "templateZones": {
+            "logo": {
+              "x": 56,
+              "y": 60,
+              "w": 230,
+              "h": 60
+            },
+            "product_zone": {
+              "x": 210,
+              "y": 399,
+              "w": 710,
+              "h": 561
+            },
+            "headline_zone": {
+              "x": 65,
+              "y": 150,
+              "w": 950,
+              "h": 115
+            },
+            "subtext_zone": {
+              "x": 65,
+              "y": 280,
+              "w": 650,
+              "h": 48
+            },
+            "panel_zone": {
+              "x": 90,
+              "y": 1290,
+              "w": 900,
+              "h": 221
+            }
+          },
+          "corrections": [
+            "headline: clamped into safe area + 6% margin",
+            "logo: clamped into safe area + 6% margin",
+            "product-0: grew toward 45% safe-height floor (218x570)",
+            "product-1: grew toward 45% safe-height floor (340x340)",
+            "text group: 2 boxes share the left edge",
+            "subtext: pushed clear of headline",
+            "logo: pushed clear of headline",
+            "subtext: pushed clear of product-0",
+            "logo: pushed clear of product-0",
+            "subtext: pushed clear of logo",
+            "product-1: below size floor but blocked from growing — needs review",
+            "text group: 2 boxes share the left edge",
+            "logo: pushed clear of product-0",
+            "product-1: below size floor but blocked from growing — needs review",
+            "text group: 2 boxes share the left edge",
+            "subtext: pushed clear of product-0",
+            "subtext: pushed clear of logo",
+            "product-1: below size floor but blocked from growing — needs review",
+            "repair reverted for headline (would touch product-0) (separation < 16px)",
+            "text group: 2 boxes share the left edge",
+            "logo: pushed clear of product-0",
+            "subtext: pushed clear of product-0",
+            "subtext: pushed clear of logo",
+            "product-1: below size floor but blocked from growing — needs review",
+            "text group: 2 boxes share the left edge",
+            "product-1: below size floor but blocked from growing — needs review",
+            "text group: 2 boxes share the left edge",
+            "product-1: below size floor but blocked from growing — needs review",
+            "text group: 2 boxes share the left edge",
+            "logo: pushed clear of product-0",
+            "product-1: below size floor but blocked from growing — needs review",
+            "text group: 2 boxes share the left edge",
+            "product-1: below size floor but blocked from growing — needs review",
+            "text group: 2 boxes share the left edge",
+            "subtext: pushed clear of product-0",
+            "subtext: pushed clear of logo",
+            "product-1: below size floor but blocked from growing — needs review"
+          ],
+          "rationale": "All elements placed inside the binding template zones with the tallest product filling the product zone height."
+        }
+      },
+      "proof": {
+        "product-0": {
+          "scale": 1.2976190476190477,
+          "core_differ": 0,
+          "core_total": 103426,
+          "feather_total": 3256,
+          "coverage": 0.9694793873380702,
+          "pass": true
+        },
+        "product-1": {
+          "scale": 1.3076923076923077,
+          "core_differ": 0,
+          "core_total": 106785,
+          "feather_total": 2890,
+          "coverage": 0.973649418737178,
+          "pass": true
+        },
+        "logo": {
+          "scale": 0.8246268656716418,
+          "core_differ": 0,
+          "core_total": 2475,
+          "feather_total": 1366,
+          "coverage": 0.6443634470190055,
+          "pass": true
+        },
+        "panel": {
+          "scale": 1,
+          "core_differ": 0,
+          "core_total": 171000,
+          "feather_total": 0,
+          "coverage": 1,
+          "pass": true
+        }
+      },
+      "qa": null,
+      "retries": 0,
+      "modelCalls": 0,
+      "imageCalls": 1,
+      "latencyMs": 17669,
+      "trace": [
+        {
+          "step": "adfit_analyze",
+          "tool_or_model": "model:muse-spark-1.3",
+          "input_summary": "source 1080x1080",
+          "output_summary": "lang=en products=2 logo=yes headline=\"Morning glow, bottled\" panel=opaque bg=photo coords=pixels",
+          "duration_ms": 18592,
+          "evidence_ids": [
+            "src:analysis"
+          ],
+          "next_state": "adfit_masks",
+          "cached": true,
+          "seq": 1
+        },
+        {
+          "step": "adfit_masks",
+          "tool_or_model": "model:sam-3.1",
+          "input_summary": "product-0[bottle] product-1[jar] logo[logo]",
+          "output_summary": "ok: product-0,product-1,logo coverage: products 2/2; product-0 clipped to its box (removed 50% cross-coverage); product-1 holes filled (+4710px)",
+          "duration_ms": 21256,
+          "evidence_ids": [
+            "src:product-0",
+            "src:product-1",
+            "src:logo"
+          ],
+          "next_state": "adfit_plan",
+          "cached": true,
+          "seq": 2
+        },
+        {
+          "step": "adfit_plan",
+          "tool_or_model": "model:muse-wonder-1.0",
+          "input_summary": "ig-story-916 protected template=tpl-vela-story family=portrait_stack",
+          "output_summary": "wonder: portrait_stack; wonder rationale: All elements placed inside the binding template zones with the tallest product filling the product zone height.; products: template zone expanded for 9:16 fill; product-0: bound to template zone; product-1: bound to template zone; logo: bound to template zone; panel: bound to template zone | corrections: headline: clamped into safe area + 6% margin; logo: clamped into safe area + 6% margin; product-0: grew toward 45% safe-height floor (218x570); product-1: grew toward 45% safe-height floor (340x340); text group: 2 boxes share the left edge; subtext: pushed clear of headline; logo: pushed clear of he",
+          "duration_ms": 0,
+          "evidence_ids": [
+            "out:plan"
+          ],
+          "next_state": "adfit_generate",
+          "cached": false,
+          "seq": 3
+        },
+        {
+          "step": "adfit_generate",
+          "tool_or_model": "model:muse-image-1.0",
+          "input_summary": "protected plate 1080x1920",
+          "output_summary": "wire bytes=2084716",
+          "duration_ms": 17043,
+          "evidence_ids": [
+            "out:plate"
+          ],
+          "next_state": "adfit_composite",
+          "cached": false,
+          "seq": 4
+        },
+        {
+          "step": "adfit_composite",
+          "tool_or_model": "code:composite+chromium",
+          "input_summary": "plate + product-0@1.298x product-1@1.308x logo@0.825x panel@1.000x + text(headline,subtext)",
+          "output_summary": "1080x1920 product-0: contact shadow at support y=963; product-1: contact shadow at support y=964; panel pasted (complex) at 1.00x",
+          "duration_ms": 418,
+          "evidence_ids": [
+            "out:product-0",
+            "out:product-1",
+            "out:logo",
+            "out:panel"
+          ],
+          "next_state": "adfit_proof",
+          "cached": false,
+          "seq": 5
+        },
+        {
+          "step": "adfit_proof",
+          "tool_or_model": "code:elementProof",
+          "input_summary": "4 pasted elements",
+          "output_summary": "product-0:0/103426 (97% compared) product-1:0/106785 (97% compared) logo:0/2475 (64% compared) panel:0/171000 (100% compared) feather outside core only",
+          "duration_ms": 94,
+          "evidence_ids": [
+            "out:product-0",
+            "out:product-1",
+            "out:logo",
+            "out:panel"
+          ],
+          "next_state": "adfit_review",
+          "cached": false,
+          "seq": 6
+        },
+        {
+          "step": "adfit_repair",
+          "tool_or_model": "code:recompose",
+          "input_summary": "move:logo, move:subtext, move:headline, move:product-0, move:product-1, move:panel",
+          "output_summary": "applied: logo: move (0,-288); subtext: move (0,-288); product-0: move (0,154); product-1: move (0,154); panel: move (0,96)",
+          "duration_ms": 0,
+          "evidence_ids": [
+            "out:repair"
+          ],
+          "next_state": "done",
+          "cached": false,
+          "seq": 7
+        },
+        {
+          "step": "adfit_composite",
+          "tool_or_model": "code:composite+chromium",
+          "input_summary": "plate + product-0@1.298x product-1@1.308x logo@0.825x panel@1.000x + text(headline,subtext)",
+          "output_summary": "1080x1920 product-0: contact shadow at support y=1117; product-1: contact shadow at support y=1118; panel pasted (complex) at 1.00x",
+          "duration_ms": 815,
+          "evidence_ids": [
+            "out:product-0",
+            "out:product-1",
+            "out:logo",
+            "out:panel"
+          ],
+          "next_state": "adfit_proof",
+          "cached": false,
+          "seq": 8
+        },
+        {
+          "step": "adfit_proof",
+          "tool_or_model": "code:elementProof",
+          "input_summary": "4 pasted elements",
+          "output_summary": "product-0:0/103426 (97% compared) product-1:0/106785 (97% compared) logo:0/2475 (64% compared) panel:0/171000 (100% compared) feather outside core only",
+          "duration_ms": 88,
+          "evidence_ids": [
+            "out:product-0",
+            "out:product-1",
+            "out:logo",
+            "out:panel"
+          ],
+          "next_state": "adfit_review",
+          "cached": false,
+          "seq": 9
+        },
+        {
+          "step": "adfit_repair",
+          "tool_or_model": "code:recompose",
+          "input_summary": "retry: move:logo, move:headline, move:subtext",
+          "output_summary": "applied: logo: move (0,-288); headline: move (0,-288); subtext: move (0,-288)",
+          "duration_ms": 0,
+          "evidence_ids": [
+            "out:repair"
+          ],
+          "next_state": "done",
+          "cached": false,
+          "seq": 10
+        },
+        {
+          "step": "adfit_composite",
+          "tool_or_model": "code:composite+chromium",
+          "input_summary": "plate + product-0@1.298x product-1@1.308x logo@0.825x panel@1.000x + text(headline,subtext)",
+          "output_summary": "1080x1920 product-0: contact shadow at support y=1117; product-1: contact shadow at support y=1118; panel pasted (complex) at 1.00x",
+          "duration_ms": 814,
+          "evidence_ids": [
+            "out:product-0",
+            "out:product-1",
+            "out:logo",
+            "out:panel"
+          ],
+          "next_state": "adfit_proof",
+          "cached": false,
+          "seq": 11
+        },
+        {
+          "step": "adfit_proof",
+          "tool_or_model": "code:elementProof",
+          "input_summary": "4 pasted elements",
+          "output_summary": "product-0:0/103426 (97% compared) product-1:0/106785 (97% compared) logo:0/2475 (64% compared) panel:0/171000 (100% compared) feather outside core only",
+          "duration_ms": 90,
+          "evidence_ids": [
+            "out:product-0",
+            "out:product-1",
+            "out:logo",
+            "out:panel"
+          ],
+          "next_state": "adfit_review",
+          "cached": false,
+          "seq": 12
+        },
+        {
+          "step": "adfit_wonder_plan",
+          "tool_or_model": "model:muse-wonder-1.0",
+          "input_summary": "1 source x 4 sizes",
+          "output_summary": "families: ig-feed-45=portrait_stack ig-story-916=portrait_stack fb-link=landscape_split yt-thumb=landscape_split",
+          "duration_ms": 155982,
+          "evidence_ids": [
+            "out:plan"
+          ],
+          "next_state": "adfit_generate",
+          "cached": true,
+          "seq": 13
+        },
+        {
+          "step": "adfit_plate_check",
+          "tool_or_model": "model:muse-spark-1.3",
+          "input_summary": "4 plates",
+          "output_summary": "dirty (regenerate once): fb-link: the product base sits at y≈85% but the painted table back edge is at y≈76% — repaint with the back edge just above the base (edge y≈84% for base y≈85%) | yt-thumb: the product base sits at y≈82% but the painted table back edge is at y≈70% — repaint with the back edge just above the base (edge y≈81% for base y≈82%)",
+          "duration_ms": 21252,
+          "evidence_ids": [
+            "out:plate"
+          ],
+          "next_state": "adfit_review",
+          "cached": true,
+          "seq": 14
+        },
+        {
+          "step": "adfit_text_check",
+          "tool_or_model": "model:muse-spark-1.3",
+          "input_summary": "4 outputs with re-rendered text",
+          "output_summary": "all exact",
+          "duration_ms": 33353,
+          "evidence_ids": [
+            "out:text"
+          ],
+          "next_state": "adfit_review",
+          "cached": true,
+          "seq": 15
+        },
+        {
+          "step": "adfit_review",
+          "tool_or_model": "model:muse-wonder-1.0",
+          "input_summary": "source + 4 outputs + deterministic findings",
+          "output_summary": "7 defects: ig-story-916/logo, ig-story-916/subtext, ig-story-916/product-0, ig-story-916/product-1, ig-story-916/panel, fb-link/product-1, yt-thumb/product-1",
+          "duration_ms": 131302,
+          "evidence_ids": [
+            "out:review"
+          ],
+          "next_state": "adfit_repair",
+          "cached": true,
+          "seq": 16
+        },
+        {
+          "step": "adfit_repair",
+          "tool_or_model": "code:recompose",
+          "input_summary": "3 sizes with defects",
+          "output_summary": "1 recomposed from cached layers (before kept)",
+          "duration_ms": 0,
+          "evidence_ids": [
+            "out:repair"
+          ],
+          "next_state": "done",
+          "cached": true,
+          "seq": 17
+        },
+        {
+          "step": "adfit_review_retry",
+          "tool_or_model": "model:muse-wonder-1.0",
+          "input_summary": "second chance for 3 reverted size(s)",
+          "output_summary": "9 re-proposed defects: ig-story-916/logo, ig-story-916/headline, ig-story-916/subtext, fb-link/product-0, fb-link/product-1, fb-link/product-1, yt-thumb/product-1, yt-thumb/product-1, yt-thumb/product-0",
+          "duration_ms": 102894,
+          "evidence_ids": [
+            "out:review"
+          ],
+          "next_state": "adfit_repair",
+          "cached": true,
+          "seq": 18
+        }
+      ],
+      "error": null,
+      "checks": {
+        "protected_pixels": {
+          "status": "passed",
+          "detail": "Protected core matches the resized source (64% compared)"
+        },
+        "text": {
+          "status": "fixed",
+          "detail": "re-rendered text verified exact after repair"
+        },
+        "layout_review": {
+          "status": "fixed",
+          "detail": "repaired: logo: move (0,-288); subtext: move (0,-288); product-0: move (0,154)"
+        },
+        "repaired": {
+          "before": "fixtures/brands/vela/demo/before-ig-story-916.png",
+          "patches": [
+            "logo: move (0,-288)",
+            "subtext: move (0,-288)",
+            "product-0: move (0,154)",
+            "product-1: move (0,154)",
+            "panel: move (0,96)",
+            "logo: move (0,-288)",
+            "headline: move (0,-288)",
+            "subtext: move (0,-288)"
+          ]
+        }
+      }
+    },
+    {
+      "source": "demo-src-vela",
+      "sourceLabel": "source-en.png",
+      "preset": "fb-link",
+      "mode": "protected",
+      "status": "pass",
+      "image": "fb-link.png",
+      "before": "before-fb-link.png",
+      "plan": {
+        "preset": "fb-link",
+        "width": 1200,
+        "height": 628,
+        "from_template": true,
+        "template_id": "tpl-vela-fb-link",
+        "safe": {
+          "x": 48,
+          "y": 25,
+          "w": 1104,
+          "h": 578
+        },
+        "logo": {
+          "x": 70,
+          "y": 53,
+          "w": 228,
+          "h": 50
+        },
+        "products": [
+          {
+            "x": 792,
+            "y": 105,
+            "w": 161,
+            "h": 420
+          },
+          {
+            "x": 960,
+            "y": 329,
+            "w": 175,
+            "h": 175
+          }
+        ],
+        "headline": {
+          "x": 70,
+          "y": 130,
+          "w": 480,
+          "h": 130
+        },
+        "subtext": {
+          "x": 70,
+          "y": 272,
+          "w": 420,
+          "h": 38
+        },
+        "panel": {
+          "x": 70,
+          "y": 398,
+          "w": 520,
+          "h": 170
+        },
+        "other_texts": [],
+        "product_scales": [
+          0.9583333333333334,
+          0.6730769230769231
+        ],
+        "logo_scale": 0.8507462686567164,
+        "notes": [
+          "wonder: landscape_split",
+          "wonder rationale: Landscape split inside template zones: left-aligned text column opposite tall products with the jar overlapping in front as in the template.",
+          "product-0: bound to template zone",
+          "product-1: bound to template zone",
+          "logo: bound to template zone",
+          "panel: bound to template zone"
+        ],
+        "manifest": {
+          "preset": "fb-link",
+          "width": 1200,
+          "height": 628,
+          "family": "landscape_split",
+          "planner": "wonder",
+          "safe": {
+            "x": 48,
+            "y": 25,
+            "w": 1104,
+            "h": 578
+          },
+          "elements": [
+            {
+              "id": "product-0",
+              "kind": "product",
+              "box": {
+                "x": 776,
+                "y": 114,
+                "w": 169,
+                "h": 440
+              },
+              "group": "products",
+              "z": 20,
+              "align": null,
+              "scale": 1.005952380952381,
+              "source": "corrected",
+              "srcBox": {
+                "x": 257,
+                "y": 303,
+                "w": 145,
+                "h": 442
+              }
+            },
+            {
+              "id": "product-1",
+              "kind": "product",
+              "box": {
+                "x": 960,
+                "y": 314,
+                "w": 175,
+                "h": 175
+              },
+              "group": "products",
+              "z": 21,
+              "align": null,
+              "scale": 0.6730769230769231,
+              "source": "default",
+              "srcBox": {
+                "x": 586,
+                "y": 484,
+                "w": 234,
+                "h": 260
+              }
+            },
+            {
+              "id": "panel",
+              "kind": "panel",
+              "box": {
+                "x": 70,
+                "y": 398,
+                "w": 520,
+                "h": 170
+              },
+              "group": "offer",
+              "z": 10,
+              "align": "left",
+              "scale": null,
+              "source": "template",
+              "srcBox": null
+            },
+            {
+              "id": "headline",
+              "kind": "headline",
+              "box": {
+                "x": 70,
+                "y": 130,
+                "w": 480,
+                "h": 130
+              },
+              "group": "text",
+              "z": 30,
+              "align": "left",
+              "scale": null,
+              "source": "default",
+              "srcBox": null
+            },
+            {
+              "id": "subtext",
+              "kind": "subtext",
+              "box": {
+                "x": 70,
+                "y": 273,
+                "w": 420,
+                "h": 38
+              },
+              "group": "text",
+              "z": 31,
+              "align": "left",
+              "scale": null,
+              "source": "corrected",
+              "srcBox": null
+            },
+            {
+              "id": "logo",
+              "kind": "logo",
+              "box": {
+                "x": 70,
+                "y": 53,
+                "w": 228,
+                "h": 50
+              },
+              "group": "logo",
+              "z": 40,
+              "align": null,
+              "scale": 0.8507462686567164,
+              "source": "template",
+              "srcBox": {
+                "x": 57,
+                "y": 50,
+                "w": 245,
+                "h": 60
+              }
+            }
+          ],
+          "templateZones": {
+            "logo": {
+              "x": 70,
+              "y": 50,
+              "w": 230,
+              "h": 56
+            },
+            "product_zone": {
+              "x": 780,
+              "y": 70,
+              "w": 360,
+              "h": 490
+            },
+            "headline_zone": {
+              "x": 70,
+              "y": 130,
+              "w": 480,
+              "h": 130
+            },
+            "subtext_zone": {
+              "x": 70,
+              "y": 272,
+              "w": 420,
+              "h": 38
+            },
+            "panel_zone": {
+              "x": 70,
+              "y": 398,
+              "w": 520,
+              "h": 170
+            }
+          },
+          "corrections": [
+            "product-0: grew toward 70% canvas-height floor (169x440)",
+            "product-1: below size floor but blocked from growing — needs review",
+            "text group: 2 boxes share the left edge",
+            "text group: tight stack with 13px gaps",
+            "product-1: below size floor but blocked from growing — needs review",
+            "product-1: below size floor but blocked from growing — needs review",
+            "text group: 2 boxes share the left edge",
+            "text group: tight stack with 13px gaps",
+            "product-1: below size floor but blocked from growing — needs review",
+            "repair reverted for product-1 (would touch product-0) (separation < 9px)",
+            "repair reverted for product-0 (would touch product-1) (separation < 9px)"
+          ],
+          "rationale": "Landscape split inside template zones: left-aligned text column opposite tall products with the jar overlapping in front as in the template."
+        }
+      },
+      "proof": {
+        "product-0": {
+          "scale": 1.005952380952381,
+          "core_differ": 0,
+          "core_total": 61445,
+          "feather_total": 2533,
+          "coverage": 0.960408265341211,
+          "pass": true
+        },
+        "product-1": {
+          "scale": 0.6730769230769231,
+          "core_differ": 0,
+          "core_total": 27605,
+          "feather_total": 1471,
+          "coverage": 0.9494084468289998,
+          "pass": true
+        },
+        "logo": {
+          "scale": 0.8507462686567164,
+          "core_differ": 0,
+          "core_total": 2705,
+          "feather_total": 1414,
+          "coverage": 0.6567127943675649,
+          "pass": true
+        },
+        "panel": {
+          "scale": 0.5777777777777777,
+          "core_differ": 0,
+          "core_total": 57200,
+          "feather_total": 0,
+          "coverage": 1,
+          "pass": true
+        }
+      },
+      "qa": null,
+      "retries": 0,
+      "modelCalls": 0,
+      "imageCalls": 2,
+      "latencyMs": 19315,
+      "trace": [
+        {
+          "step": "adfit_analyze",
+          "tool_or_model": "model:muse-spark-1.3",
+          "input_summary": "source 1080x1080",
+          "output_summary": "lang=en products=2 logo=yes headline=\"Morning glow, bottled\" panel=opaque bg=photo coords=pixels",
+          "duration_ms": 18592,
+          "evidence_ids": [
+            "src:analysis"
+          ],
+          "next_state": "adfit_masks",
+          "cached": true,
+          "seq": 1
+        },
+        {
+          "step": "adfit_masks",
+          "tool_or_model": "model:sam-3.1",
+          "input_summary": "product-0[bottle] product-1[jar] logo[logo]",
+          "output_summary": "ok: product-0,product-1,logo coverage: products 2/2; product-0 clipped to its box (removed 50% cross-coverage); product-1 holes filled (+4710px)",
+          "duration_ms": 21256,
+          "evidence_ids": [
+            "src:product-0",
+            "src:product-1",
+            "src:logo"
+          ],
+          "next_state": "adfit_plan",
+          "cached": true,
+          "seq": 2
+        },
+        {
+          "step": "adfit_plan",
+          "tool_or_model": "model:muse-wonder-1.0",
+          "input_summary": "fb-link protected template=tpl-vela-fb-link family=landscape_split",
+          "output_summary": "wonder: landscape_split; wonder rationale: Landscape split inside template zones: left-aligned text column opposite tall products with the jar overlapping in front as in the template.; product-0: bound to template zone; product-1: bound to template zone; logo: bound to template zone; panel: bound to template zone | corrections: product-0: grew toward 70% canvas-height floor (169x440); product-1: below size floor but blocked from growing — needs review; text group: 2 boxes share the left edge; text group: tight stack with 13px gaps; product-1: below size floor but blocked from growing — needs review",
+          "duration_ms": 0,
+          "evidence_ids": [
+            "out:plan"
+          ],
+          "next_state": "adfit_generate",
+          "cached": false,
+          "seq": 3
+        },
+        {
+          "step": "adfit_generate",
+          "tool_or_model": "model:muse-image-1.0",
+          "input_summary": "protected plate 1200x628",
+          "output_summary": "wire bytes=2008187",
+          "duration_ms": 18915,
+          "evidence_ids": [
+            "out:plate"
+          ],
+          "next_state": "adfit_composite",
+          "cached": false,
+          "seq": 4
+        },
+        {
+          "step": "adfit_composite",
+          "tool_or_model": "code:composite+chromium",
+          "input_summary": "plate + product-0@1.006x product-1@0.673x logo@0.851x panel@0.578x + text(headline,subtext)",
+          "output_summary": "1200x628 product-0: contact shadow at support y=535; product-1: contact shadow at support y=503; panel pasted (complex) at 0.58x",
+          "duration_ms": 292,
+          "evidence_ids": [
+            "out:product-0",
+            "out:product-1",
+            "out:logo",
+            "out:panel"
+          ],
+          "next_state": "adfit_proof",
+          "cached": false,
+          "seq": 5
+        },
+        {
+          "step": "adfit_proof",
+          "tool_or_model": "code:elementProof",
+          "input_summary": "4 pasted elements",
+          "output_summary": "product-0:0/61445 (96% compared) product-1:0/27605 (95% compared) logo:0/2705 (66% compared) panel:0/57200 (100% compared) feather outside core only",
+          "duration_ms": 37,
+          "evidence_ids": [
+            "out:product-0",
+            "out:product-1",
+            "out:logo",
+            "out:panel"
+          ],
+          "next_state": "adfit_review",
+          "cached": false,
+          "seq": 6
+        },
+        {
+          "step": "adfit_generate",
+          "tool_or_model": "model:muse-image-1.0",
+          "input_summary": "protected plate 1200x628 (retry) text-only",
+          "output_summary": "wire bytes=2128508",
+          "duration_ms": 26068,
+          "evidence_ids": [
+            "out:plate"
+          ],
+          "next_state": "adfit_composite",
+          "cached": false,
+          "seq": 7
+        },
+        {
+          "step": "adfit_composite",
+          "tool_or_model": "code:composite+chromium",
+          "input_summary": "plate + product-0@1.006x product-1@0.673x logo@0.851x panel@0.578x + text(headline,subtext)",
+          "output_summary": "1200x628 product-0: contact shadow at support y=535; product-1: contact shadow at support y=503; panel pasted (complex) at 0.58x",
+          "duration_ms": 405,
+          "evidence_ids": [
+            "out:product-0",
+            "out:product-1",
+            "out:logo",
+            "out:panel"
+          ],
+          "next_state": "adfit_proof",
+          "cached": false,
+          "seq": 8
+        },
+        {
+          "step": "adfit_proof",
+          "tool_or_model": "code:elementProof",
+          "input_summary": "4 pasted elements",
+          "output_summary": "product-0:0/61445 (96% compared) product-1:0/27605 (95% compared) logo:0/2705 (66% compared) panel:0/57200 (100% compared) feather outside core only",
+          "duration_ms": 47,
+          "evidence_ids": [
+            "out:product-0",
+            "out:product-1",
+            "out:logo",
+            "out:panel"
+          ],
+          "next_state": "adfit_review",
+          "cached": false,
+          "seq": 9
+        },
+        {
+          "step": "adfit_repair",
+          "tool_or_model": "code:recompose",
+          "input_summary": "move:product-1, move:product-0",
+          "output_summary": "flagged: product-1 (would touch product-0): patch reverted, needs human review; product-0 (would touch product-1): patch reverted, needs human review",
+          "duration_ms": 0,
+          "evidence_ids": [
+            "out:repair"
+          ],
+          "next_state": "done",
+          "cached": false,
+          "seq": 10
+        },
+        {
+          "step": "adfit_repair",
+          "tool_or_model": "code:recompose",
+          "input_summary": "retry: move:product-0, move:product-1, scale:product-1, scale:product-0",
+          "output_summary": "applied: product-0: move (-12,19)",
+          "duration_ms": 0,
+          "evidence_ids": [
+            "out:repair"
+          ],
+          "next_state": "done",
+          "cached": false,
+          "seq": 11
+        },
+        {
+          "step": "adfit_composite",
+          "tool_or_model": "code:composite+chromium",
+          "input_summary": "plate + product-0@1.006x product-1@0.673x logo@0.851x panel@0.578x + text(headline,subtext)",
+          "output_summary": "1200x628 product-0: contact shadow at support y=554; product-1: grounded on the plate surface (shifted -15px to y=488); product-1: contact shadow at support y=488; panel pasted (complex) at 0.58x",
+          "duration_ms": 315,
+          "evidence_ids": [
+            "out:product-0",
+            "out:product-1",
+            "out:logo",
+            "out:panel"
+          ],
+          "next_state": "adfit_proof",
+          "cached": false,
+          "seq": 12
+        },
+        {
+          "step": "adfit_proof",
+          "tool_or_model": "code:elementProof",
+          "input_summary": "4 pasted elements",
+          "output_summary": "product-0:0/61445 (96% compared) product-1:0/27605 (95% compared) logo:0/2705 (66% compared) panel:0/57200 (100% compared) feather outside core only",
+          "duration_ms": 44,
+          "evidence_ids": [
+            "out:product-0",
+            "out:product-1",
+            "out:logo",
+            "out:panel"
+          ],
+          "next_state": "adfit_review",
+          "cached": false,
+          "seq": 13
+        },
+        {
+          "step": "adfit_wonder_plan",
+          "tool_or_model": "model:muse-wonder-1.0",
+          "input_summary": "1 source x 4 sizes",
+          "output_summary": "families: ig-feed-45=portrait_stack ig-story-916=portrait_stack fb-link=landscape_split yt-thumb=landscape_split",
+          "duration_ms": 155982,
+          "evidence_ids": [
+            "out:plan"
+          ],
+          "next_state": "adfit_generate",
+          "cached": true,
+          "seq": 14
+        },
+        {
+          "step": "adfit_plate_check",
+          "tool_or_model": "model:muse-spark-1.3",
+          "input_summary": "4 plates",
+          "output_summary": "dirty (regenerate once): fb-link: the product base sits at y≈85% but the painted table back edge is at y≈76% — repaint with the back edge just above the base (edge y≈84% for base y≈85%) | yt-thumb: the product base sits at y≈82% but the painted table back edge is at y≈70% — repaint with the back edge just above the base (edge y≈81% for base y≈82%)",
+          "duration_ms": 21252,
+          "evidence_ids": [
+            "out:plate"
+          ],
+          "next_state": "adfit_review",
+          "cached": true,
+          "seq": 15
+        },
+        {
+          "step": "adfit_text_check",
+          "tool_or_model": "model:muse-spark-1.3",
+          "input_summary": "4 outputs with re-rendered text",
+          "output_summary": "all exact",
+          "duration_ms": 33353,
+          "evidence_ids": [
+            "out:text"
+          ],
+          "next_state": "adfit_review",
+          "cached": true,
+          "seq": 16
+        },
+        {
+          "step": "adfit_review",
+          "tool_or_model": "model:muse-wonder-1.0",
+          "input_summary": "source + 4 outputs + deterministic findings",
+          "output_summary": "7 defects: ig-story-916/logo, ig-story-916/subtext, ig-story-916/product-0, ig-story-916/product-1, ig-story-916/panel, fb-link/product-1, yt-thumb/product-1",
+          "duration_ms": 131302,
+          "evidence_ids": [
+            "out:review"
+          ],
+          "next_state": "adfit_repair",
+          "cached": true,
+          "seq": 17
+        },
+        {
+          "step": "adfit_repair",
+          "tool_or_model": "code:recompose",
+          "input_summary": "3 sizes with defects",
+          "output_summary": "1 recomposed from cached layers (before kept)",
+          "duration_ms": 0,
+          "evidence_ids": [
+            "out:repair"
+          ],
+          "next_state": "done",
+          "cached": true,
+          "seq": 18
+        },
+        {
+          "step": "adfit_review_retry",
+          "tool_or_model": "model:muse-wonder-1.0",
+          "input_summary": "second chance for 3 reverted size(s)",
+          "output_summary": "9 re-proposed defects: ig-story-916/logo, ig-story-916/headline, ig-story-916/subtext, fb-link/product-0, fb-link/product-1, fb-link/product-1, yt-thumb/product-1, yt-thumb/product-1, yt-thumb/product-0",
+          "duration_ms": 102894,
+          "evidence_ids": [
+            "out:review"
+          ],
+          "next_state": "adfit_repair",
+          "cached": true,
+          "seq": 19
+        }
+      ],
+      "error": null,
+      "checks": {
+        "protected_pixels": {
+          "status": "passed",
+          "detail": "Protected core matches the resized source (66% compared)"
+        },
+        "text": {
+          "status": "fixed",
+          "detail": "re-rendered text verified exact after repair"
+        },
+        "layout_review": {
+          "status": "fixed",
+          "detail": "repaired: product-0: move (-12,19)"
+        },
+        "repaired": {
+          "before": "fixtures/brands/vela/demo/before-fb-link.png",
+          "patches": [
+            "product-0: move (-12,19)"
+          ]
+        }
+      }
+    },
+    {
+      "source": "demo-src-vela",
+      "sourceLabel": "source-en.png",
+      "preset": "yt-thumb",
+      "mode": "protected",
+      "status": "pass",
+      "image": "yt-thumb.png",
+      "before": "before-yt-thumb.png",
+      "plan": {
+        "preset": "yt-thumb",
+        "width": 1280,
+        "height": 720,
+        "from_template": false,
+        "template_id": null,
+        "safe": {
+          "x": 51,
+          "y": 29,
+          "w": 1178,
+          "h": 662
+        },
+        "logo": {
+          "x": 77,
+          "y": 54,
+          "w": 269,
+          "h": 59
+        },
+        "products": [
+          {
+            "x": 800,
+            "y": 126,
+            "w": 177,
+            "h": 461
+          },
+          {
+            "x": 902,
+            "y": 326,
+            "w": 285,
+            "h": 285
+          }
+        ],
+        "headline": {
+          "x": 77,
+          "y": 148,
+          "w": 691,
+          "h": 86
+        },
+        "subtext": {
+          "x": 77,
+          "y": 252,
+          "w": 640,
+          "h": 48
+        },
+        "panel": {
+          "x": 77,
+          "y": 382,
+          "w": 691,
+          "h": 173
+        },
+        "other_texts": [],
+        "product_scales": [
+          1.0535714285714286,
+          1.0961538461538463
+        ],
+        "logo_scale": 1.0037313432835822,
+        "notes": [
+          "wonder: landscape_split",
+          "wonder rationale: Landscape split with dominant left headline, shared left alignment and tallest product at 75% of canvas height on the right."
+        ],
+        "manifest": {
+          "preset": "yt-thumb",
+          "width": 1280,
+          "height": 720,
+          "family": "landscape_split",
+          "planner": "wonder",
+          "safe": {
+            "x": 51,
+            "y": 29,
+            "w": 1178,
+            "h": 662
+          },
+          "elements": [
+            {
+              "id": "product-0",
+              "kind": "product",
+              "box": {
+                "x": 792,
+                "y": 105,
+                "w": 193,
+                "h": 504
+              },
+              "group": "products",
+              "z": 20,
+              "align": null,
+              "scale": 1.148809523809524,
+              "source": "corrected",
+              "srcBox": {
+                "x": 257,
+                "y": 303,
+                "w": 145,
+                "h": 442
+              }
+            },
+            {
+              "id": "product-1",
+              "kind": "product",
+              "box": {
+                "x": 1004,
+                "y": 391,
+                "w": 176,
+                "h": 176
+              },
+              "group": "products",
+              "z": 21,
+              "align": null,
+              "scale": 0.6769230769230768,
+              "source": "corrected",
+              "srcBox": {
+                "x": 586,
+                "y": 484,
+                "w": 234,
+                "h": 260
+              }
+            },
+            {
+              "id": "panel",
+              "kind": "panel",
+              "box": {
+                "x": 77,
+                "y": 382,
+                "w": 691,
+                "h": 173
+              },
+              "group": "offer",
+              "z": 10,
+              "align": "left",
+              "scale": null,
+              "source": "default",
+              "srcBox": null
+            },
+            {
+              "id": "headline",
+              "kind": "headline",
+              "box": {
+                "x": 77,
+                "y": 148,
+                "w": 691,
+                "h": 86
+              },
+              "group": "text",
+              "z": 30,
+              "align": "left",
+              "scale": null,
+              "source": "default",
+              "srcBox": null
+            },
+            {
+              "id": "subtext",
+              "kind": "subtext",
+              "box": {
+                "x": 77,
+                "y": 248,
+                "w": 640,
+                "h": 48
+              },
+              "group": "text",
+              "z": 31,
+              "align": "left",
+              "scale": null,
+              "source": "corrected",
+              "srcBox": null
+            },
+            {
+              "id": "logo",
+              "kind": "logo",
+              "box": {
+                "x": 77,
+                "y": 54,
+                "w": 269,
+                "h": 59
+              },
+              "group": "logo",
+              "z": 40,
+              "align": null,
+              "scale": 1.0037313432835822,
+              "source": "default",
+              "srcBox": {
+                "x": 57,
+                "y": 50,
+                "w": 245,
+                "h": 60
+              }
+            }
+          ],
+          "templateZones": null,
+          "corrections": [
+            "product-0: below size floor but blocked from growing — needs review",
+            "product-1: below size floor but blocked from growing — needs review",
+            "text group: 2 boxes share the left edge",
+            "text group: tight stack with 14px gaps",
+            "product-0: below size floor but blocked from growing — needs review",
+            "product-1: below size floor but blocked from growing — needs review",
+            "product-0: still overlaps product-1 after shrinking — needs review",
+            "product-1: shrunk to clear overlap",
+            "product-0: grew toward 70% canvas-height floor (193x504)",
+            "product-1: grew toward 70% canvas-height floor (176x176)",
+            "text group: 2 boxes share the left edge",
+            "text group: tight stack with 14px gaps",
+            "product-1: below size floor but blocked from growing — needs review",
+            "repair reverted for product-0 (would touch product-1) (separation < 11px)",
+            "repair reverted for product-1 (would touch product-0) (separation < 11px)"
+          ],
+          "rationale": "Landscape split with dominant left headline, shared left alignment and tallest product at 75% of canvas height on the right."
+        }
+      },
+      "proof": {
+        "product-0": {
+          "scale": 1.148809523809524,
+          "core_differ": 0,
+          "core_total": 80635,
+          "feather_total": 2888,
+          "coverage": 0.9654226979394898,
+          "pass": true
+        },
+        "product-1": {
+          "scale": 0.6769230769230768,
+          "core_differ": 0,
+          "core_total": 27944,
+          "feather_total": 1476,
+          "coverage": 0.9498300475866758,
+          "pass": true
+        },
+        "logo": {
+          "scale": 1.0037313432835822,
+          "core_differ": 0,
+          "core_total": 3983,
+          "feather_total": 1703,
+          "coverage": 0.7004924375659515,
+          "pass": true
+        },
+        "panel": {
+          "scale": 0.7677777777777778,
+          "core_differ": 0,
+          "core_total": 100886,
+          "feather_total": 0,
+          "coverage": 1,
+          "pass": true
+        }
+      },
+      "qa": null,
+      "retries": 0,
+      "modelCalls": 0,
+      "imageCalls": 2,
+      "latencyMs": 16166,
+      "trace": [
+        {
+          "step": "adfit_analyze",
+          "tool_or_model": "model:muse-spark-1.3",
+          "input_summary": "source 1080x1080",
+          "output_summary": "lang=en products=2 logo=yes headline=\"Morning glow, bottled\" panel=opaque bg=photo coords=pixels",
+          "duration_ms": 18592,
+          "evidence_ids": [
+            "src:analysis"
+          ],
+          "next_state": "adfit_masks",
+          "cached": true,
+          "seq": 1
+        },
+        {
+          "step": "adfit_masks",
+          "tool_or_model": "model:sam-3.1",
+          "input_summary": "product-0[bottle] product-1[jar] logo[logo]",
+          "output_summary": "ok: product-0,product-1,logo coverage: products 2/2; product-0 clipped to its box (removed 50% cross-coverage); product-1 holes filled (+4710px)",
+          "duration_ms": 21256,
+          "evidence_ids": [
+            "src:product-0",
+            "src:product-1",
+            "src:logo"
+          ],
+          "next_state": "adfit_plan",
+          "cached": true,
+          "seq": 2
+        },
+        {
+          "step": "adfit_plan",
+          "tool_or_model": "model:muse-wonder-1.0",
+          "input_summary": "yt-thumb protected no-template family=landscape_split",
+          "output_summary": "wonder: landscape_split; wonder rationale: Landscape split with dominant left headline, shared left alignment and tallest product at 75% of canvas height on the right. | corrections: product-0: below size floor but blocked from growing — needs review; product-1: below size floor but blocked from growing — needs review; text group: 2 boxes share the left edge; text group: tight stack with 14px gaps; product-0: below size floor but blocked from growing — needs review; product-1: b",
+          "duration_ms": 0,
+          "evidence_ids": [
+            "out:plan"
+          ],
+          "next_state": "adfit_generate",
+          "cached": false,
+          "seq": 3
+        },
+        {
+          "step": "adfit_generate",
+          "tool_or_model": "model:muse-image-1.0",
+          "input_summary": "protected plate 1280x720",
+          "output_summary": "wire bytes=2129159",
+          "duration_ms": 15361,
+          "evidence_ids": [
+            "out:plate"
+          ],
+          "next_state": "adfit_composite",
+          "cached": false,
+          "seq": 4
+        },
+        {
+          "step": "adfit_composite",
+          "tool_or_model": "code:composite+chromium",
+          "input_summary": "plate + product-0@1.054x product-1@0.515x logo@1.004x panel@0.768x + text(headline,subtext)",
+          "output_summary": "1280x720 product-0: contact shadow at support y=586; product-1: contact shadow at support y=537; panel pasted (complex) at 0.77x",
+          "duration_ms": 679,
+          "evidence_ids": [
+            "out:product-0",
+            "out:product-1",
+            "out:logo",
+            "out:panel"
+          ],
+          "next_state": "adfit_proof",
+          "cached": false,
+          "seq": 5
+        },
+        {
+          "step": "adfit_proof",
+          "tool_or_model": "code:elementProof",
+          "input_summary": "4 pasted elements",
+          "output_summary": "product-0:0/67604 (96% compared) product-1:0/15911 (93% compared) logo:0/3983 (70% compared) panel:0/100886 (100% compared) feather outside core only",
+          "duration_ms": 47,
+          "evidence_ids": [
+            "out:product-0",
+            "out:product-1",
+            "out:logo",
+            "out:panel"
+          ],
+          "next_state": "adfit_review",
+          "cached": false,
+          "seq": 6
+        },
+        {
+          "step": "adfit_generate",
+          "tool_or_model": "model:muse-image-1.0",
+          "input_summary": "protected plate 1280x720 (retry) text-only",
+          "output_summary": "wire bytes=2382412",
+          "duration_ms": 28895,
+          "evidence_ids": [
+            "out:plate"
+          ],
+          "next_state": "adfit_composite",
+          "cached": false,
+          "seq": 7
+        },
+        {
+          "step": "adfit_composite",
+          "tool_or_model": "code:composite+chromium",
+          "input_summary": "plate + product-0@1.054x product-1@0.515x logo@1.004x panel@0.768x + text(headline,subtext)",
+          "output_summary": "1280x720 product-0: contact shadow at support y=586; product-1: contact shadow at support y=537; panel pasted (complex) at 0.77x",
+          "duration_ms": 284,
+          "evidence_ids": [
+            "out:product-0",
+            "out:product-1",
+            "out:logo",
+            "out:panel"
+          ],
+          "next_state": "adfit_proof",
+          "cached": false,
+          "seq": 8
+        },
+        {
+          "step": "adfit_proof",
+          "tool_or_model": "code:elementProof",
+          "input_summary": "4 pasted elements",
+          "output_summary": "product-0:0/67604 (96% compared) product-1:0/15911 (93% compared) logo:0/3983 (70% compared) panel:0/100886 (100% compared) feather outside core only",
+          "duration_ms": 41,
+          "evidence_ids": [
+            "out:product-0",
+            "out:product-1",
+            "out:logo",
+            "out:panel"
+          ],
+          "next_state": "adfit_review",
+          "cached": false,
+          "seq": 9
+        },
+        {
+          "step": "adfit_repair",
+          "tool_or_model": "code:recompose",
+          "input_summary": "move:product-1, move:product-0",
+          "output_summary": "flagged: product-1 (would touch product-0): patch reverted, needs human review; product-0 (would touch product-1): patch reverted, needs human review",
+          "duration_ms": 0,
+          "evidence_ids": [
+            "out:repair"
+          ],
+          "next_state": "done",
+          "cached": false,
+          "seq": 10
+        },
+        {
+          "step": "adfit_repair",
+          "tool_or_model": "code:recompose",
+          "input_summary": "retry: move:product-1, move:product-0, scale:product-1, scale:product-0",
+          "output_summary": "applied: product-1: move (45,29)",
+          "duration_ms": 0,
+          "evidence_ids": [
+            "out:repair"
+          ],
+          "next_state": "done",
+          "cached": false,
+          "seq": 11
+        },
+        {
+          "step": "adfit_composite",
+          "tool_or_model": "code:composite+chromium",
+          "input_summary": "plate + product-0@1.149x product-1@0.677x logo@1.004x panel@0.768x + text(headline,subtext)",
+          "output_summary": "1280x720 product-0: contact shadow at support y=608; product-1: grounded on the plate surface (shifted -21px to y=566); product-1: contact shadow at support y=566; panel pasted (complex) at 0.77x",
+          "duration_ms": 299,
+          "evidence_ids": [
+            "out:product-0",
+            "out:product-1",
+            "out:logo",
+            "out:panel"
+          ],
+          "next_state": "adfit_proof",
+          "cached": false,
+          "seq": 12
+        },
+        {
+          "step": "adfit_proof",
+          "tool_or_model": "code:elementProof",
+          "input_summary": "4 pasted elements",
+          "output_summary": "product-0:0/80635 (97% compared) product-1:0/27944 (95% compared) logo:0/3983 (70% compared) panel:0/100886 (100% compared) feather outside core only",
+          "duration_ms": 55,
+          "evidence_ids": [
+            "out:product-0",
+            "out:product-1",
+            "out:logo",
+            "out:panel"
+          ],
+          "next_state": "adfit_review",
+          "cached": false,
+          "seq": 13
+        },
+        {
+          "step": "adfit_wonder_plan",
+          "tool_or_model": "model:muse-wonder-1.0",
+          "input_summary": "1 source x 4 sizes",
+          "output_summary": "families: ig-feed-45=portrait_stack ig-story-916=portrait_stack fb-link=landscape_split yt-thumb=landscape_split",
+          "duration_ms": 155982,
+          "evidence_ids": [
+            "out:plan"
+          ],
+          "next_state": "adfit_generate",
+          "cached": true,
+          "seq": 14
+        },
+        {
+          "step": "adfit_plate_check",
+          "tool_or_model": "model:muse-spark-1.3",
+          "input_summary": "4 plates",
+          "output_summary": "dirty (regenerate once): fb-link: the product base sits at y≈85% but the painted table back edge is at y≈76% — repaint with the back edge just above the base (edge y≈84% for base y≈85%) | yt-thumb: the product base sits at y≈82% but the painted table back edge is at y≈70% — repaint with the back edge just above the base (edge y≈81% for base y≈82%)",
+          "duration_ms": 21252,
+          "evidence_ids": [
+            "out:plate"
+          ],
+          "next_state": "adfit_review",
+          "cached": true,
+          "seq": 15
+        },
+        {
+          "step": "adfit_text_check",
+          "tool_or_model": "model:muse-spark-1.3",
+          "input_summary": "4 outputs with re-rendered text",
+          "output_summary": "all exact",
+          "duration_ms": 33353,
+          "evidence_ids": [
+            "out:text"
+          ],
+          "next_state": "adfit_review",
+          "cached": true,
+          "seq": 16
+        },
+        {
+          "step": "adfit_review",
+          "tool_or_model": "model:muse-wonder-1.0",
+          "input_summary": "source + 4 outputs + deterministic findings",
+          "output_summary": "7 defects: ig-story-916/logo, ig-story-916/subtext, ig-story-916/product-0, ig-story-916/product-1, ig-story-916/panel, fb-link/product-1, yt-thumb/product-1",
+          "duration_ms": 131302,
+          "evidence_ids": [
+            "out:review"
+          ],
+          "next_state": "adfit_repair",
+          "cached": true,
+          "seq": 17
+        },
+        {
+          "step": "adfit_repair",
+          "tool_or_model": "code:recompose",
+          "input_summary": "3 sizes with defects",
+          "output_summary": "1 recomposed from cached layers (before kept)",
+          "duration_ms": 0,
+          "evidence_ids": [
+            "out:repair"
+          ],
+          "next_state": "done",
+          "cached": true,
+          "seq": 18
+        },
+        {
+          "step": "adfit_review_retry",
+          "tool_or_model": "model:muse-wonder-1.0",
+          "input_summary": "second chance for 3 reverted size(s)",
+          "output_summary": "9 re-proposed defects: ig-story-916/logo, ig-story-916/headline, ig-story-916/subtext, fb-link/product-0, fb-link/product-1, fb-link/product-1, yt-thumb/product-1, yt-thumb/product-1, yt-thumb/product-0",
+          "duration_ms": 102894,
+          "evidence_ids": [
+            "out:review"
+          ],
+          "next_state": "adfit_repair",
+          "cached": true,
+          "seq": 19
+        }
+      ],
+      "error": null,
+      "checks": {
+        "protected_pixels": {
+          "status": "passed",
+          "detail": "Protected core matches the resized source (70% compared)"
+        },
+        "text": {
+          "status": "fixed",
+          "detail": "re-rendered text verified exact after repair"
+        },
+        "layout_review": {
+          "status": "fixed",
+          "detail": "repaired: product-1: move (45,29)"
+        },
+        "repaired": {
+          "before": "fixtures/brands/vela/demo/before-yt-thumb.png",
+          "patches": [
+            "product-1: move (45,29)"
+          ]
+        }
+      }
+    }
+  ]
+}

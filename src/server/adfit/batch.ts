@@ -20,8 +20,9 @@ import {
   type SourceInput,
 } from './pipeline.js';
 import { storeCachedLayers } from './cache.js';
+import { decodeRgba, findSurfaceEdge, gapDrift, textContrastRatio } from '../repair/composite.js';
 import { artifactDigest, type ElementProof } from '../repair/proof.js';
-import { measureTextLines, type MeasuredText } from '../repair/render.js';
+import { measureTextLines, rgbFromHex, type MeasuredText } from '../repair/render.js';
 import type { CostLedger } from '../models/costs.js';
 import {
   checkPlatesWithSpark,
@@ -197,6 +198,119 @@ export interface PatchApplication {
   recompose: boolean;
 }
 
+/** True when a plate-defect reason describes a seam/split/band: those regens go text-only (no source anchor). */
+export function isSeamDefect(reason: string): boolean {
+  return /seam|band|strip|split|horizon|ledge|shelf|block|continuous/i.test(reason);
+}
+
+/**
+ * True when a plate-defect reason describes foreground content the painter
+ * copied from the source anchor (a miniature copy of the ad, duplicate
+ * logo/text/product, or named objects like foliage, cups, headphones baked
+ * into the background — seen live on ZAZO, TODA and NOA): the edit call's
+ * source anchor IS the defect, so those regens go text-only. Only dirty
+ * verdicts reach this classifier, so naming an object always means the
+ * painter put it there; style/tone mismatches stay edit-anchored.
+ */
+export function isAnchorDefect(reason: string): boolean {
+  return /miniature|duplicat|\bcopy\b|copies|copied|ghost|residual|baked-in|illustrated|\b(vase|foliage|leaves|branch|cups?|bread|headphones?|bottles?|jars?|bags?|sunglasses|products?|logos?|texts?|lettering|words?)\b/i.test(reason);
+}
+
+/** True when a plate-defect reason is a grounding miss (deterministic surface check): the source anchor is what misplaced the surface, so these regens go text-only too. */
+export function isGroundingMiss(reason: string): boolean {
+  return /back edge/i.test(reason);
+}
+
+/**
+ * Deterministic grounding verdict: null when the plate's surface back edge
+ * sits just above the product base (or when the plate is seamless / the
+ * background is not a photo), else the regen/flag reason. Pure except the
+ * PNG decode; shared by the plate stage and the regen recheck.
+ */
+export async function groundingMissFor(
+  plateBytes: Buffer,
+  manifest: ResolvedLayoutManifest,
+  bgType: string,
+  H: number,
+): Promise<string | null> {
+  if (bgType !== 'photo') return null;
+  const prods = manifest.elements.filter((e) => e.kind === 'product');
+  if (prods.length === 0) return null;
+  try {
+    const canvas = await decodeRgba(plateBytes);
+    const base = Math.max(...prods.map((p) => p.box.y + p.box.h));
+    const x0 = Math.min(...prods.map((p) => p.box.x));
+    const x1 = Math.max(...prods.map((p) => p.box.x + p.box.w));
+    const edge = findSurfaceEdge(canvas, x0, x1, base, Math.round(H * 0.12));
+    if (!edge) return null;
+    // Below-base edges need two gates: a uniform gap is a fold in the
+    // support fabric, not air (the product already sits); and an edge more
+    // than 6% below the base is background shading, not this product's
+    // surface (its support is the seamless field + shadow). Only a close
+    // edge across a falling-off gap reads as floating (NOA story).
+    if (edge.y > base && (gapDrift(canvas, x0, x1, base, edge.y) < 10 || edge.y - base > Math.round(H * 0.06))) return null;
+    const target = edge.y + Math.max(6, Math.round(H * 0.01));
+    if (Math.abs(target - base) <= Math.round(H * 0.04)) return null;
+    return `the product base sits at y≈${Math.round((base / H) * 100)}% but the painted table back edge is at y≈${Math.round((edge.y / H) * 100)}% — repaint with the back edge just above the base (edge y≈${Math.round(((base - Math.max(6, Math.round(H * 0.01))) / H) * 100)}% for base y≈${Math.round((base / H) * 100)}%)`;
+  } catch {
+    return null;
+  }
+}
+
+/** True when a plate-defect reason is an unreadable-text miss (deterministic contrast check): the regen repaints from words so the painter is free to clear the region. */
+export function isContrastMiss(reason: string): boolean {
+  return /unreadable/i.test(reason);
+}
+
+/** Any dirty-plate regen whose defect is seam-, anchor-, grounding- or contrast-class goes text-only. */
+export function regenGoesTextOnly(reason: string): boolean {
+  return isSeamDefect(reason) || isAnchorDefect(reason) || isGroundingMiss(reason) || isContrastMiss(reason);
+}
+
+/**
+ * Legibility floor for large display type on the plate. Below ~2.0 parts of
+ * glyphs vanish (seen live at 1.07-1.85); WCAG AA-large is 3.0, too strict
+ * for ad creative (good outputs score 2.4+).
+ */
+export const TEXT_CONTRAST_FLOOR = 2.0;
+
+/**
+ * Deterministic text-contrast verdict: null when every re-rendered text box
+ * clears the floor against the plate behind it, else the regen/flag reason
+ * (panels carry their own background and are skipped). Pure except the PNG
+ * decode; shared by the plate stage and the regen recheck.
+ */
+export async function contrastMissFor(
+  plateBytes: Buffer,
+  manifest: ResolvedLayoutManifest,
+  analysis: SourceAnalysis,
+  W: number,
+  H: number,
+): Promise<string | null> {
+  const colors = new Map<string, string>();
+  if (analysis.headline) colors.set('headline', analysis.headline.color);
+  if (analysis.subtext) colors.set('subtext', analysis.subtext.color);
+  analysis.other_texts.forEach((t, i) => colors.set(`other-${i}`, t.color));
+  if (colors.size === 0) return null;
+  try {
+    const canvas = await decodeRgba(plateBytes);
+    let worst: { id: string; ratio: number; dark: boolean; box: { x: number; y: number; w: number; h: number } } | null = null;
+    for (const e of manifest.elements) {
+      const hex = colors.get(e.id);
+      if (!hex || (e.kind !== 'headline' && e.kind !== 'subtext' && e.kind !== 'other_text')) continue;
+      const { ratio, textLum } = textContrastRatio(canvas, e.box, rgbFromHex(hex));
+      if (ratio >= TEXT_CONTRAST_FLOOR) continue;
+      if (!worst || ratio < worst.ratio) worst = { id: e.id, ratio, dark: textLum < 0.2, box: e.box };
+    }
+    if (!worst) return null;
+    const w = worst as NonNullable<typeof worst>;
+    const region = `x${Math.round((w.box.x / W) * 100)} y${Math.round((w.box.y / H) * 100)} w${Math.round((w.box.w / W) * 100)} h${Math.round((w.box.h / H) * 100)}`;
+    return `${w.id} unreadable on the plate (contrast ${w.ratio.toFixed(2)} < ${TEXT_CONTRAST_FLOOR.toFixed(1)}) — repaint with a smooth ${w.dark ? 'bright' : 'dark'} field behind ${region}`;
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Consolidate one size's patches before applying. Group selectors are expanded
  * to element ids against the manifest (an {element:headline} patch and a
@@ -294,7 +408,8 @@ export function applyPatchesToManifest(
     clone.elements.filter((e) => (p.element && e.id === p.element) || (p.group && e.group === p.group));
   // Do-no-harm: a 1px gap reads as a collision (seen live: logo moved to 1px
   // above the panel). Same-group text stacks keep a 4px floor instead — tight
-  // line gaps are the design there.
+  // line gaps are the design there. Same formula as enforcement's minGap: the
+  // settled base state must already satisfy this floor.
   const minGap = Math.max(8, Math.round(Math.min(clone.width, clone.height) * 0.015));
   const gapBetween = (a: PlanBox, b: PlanBox): number => {
     const dx = Math.max(0, Math.max(a.x - (b.x + b.w), b.x - (a.x + a.w)));
@@ -551,6 +666,7 @@ export async function planBatchWithWonder(
     analysis,
     elementBoxes,
     measuredText,
+    freeOthers: freeOtherTexts(analysis).map((t) => t.text),
     sizes: planSizes,
     ledger: opts.ledger ?? null,
   });
@@ -726,6 +842,37 @@ export async function runProtectedBatch(opts: BatchOptions): Promise<BatchResult
     const { dirty, reasons } = res.ok
       ? dirtyPlates(platesForCheck.map((p) => p.preset), res.parsed?.sizes)
       : { dirty: new Set<string>(), reasons: [] as string[] };
+    // Deterministic grounding check (photo plates only): when the painted
+    // surface edge is far from the product base (>4% of canvas height), the
+    // plate regens with an exact-y requirement — a sunk or floating product
+    // is a plate defect, not a layout one. Near-misses were already shifted
+    // onto the surface by the compositor.
+    for (const o of good) {
+      if (dirty.has(o.preset.id) || !o.plan || !o.manifest) continue;
+      const plateBytes = plates.get(o.preset.id);
+      if (!plateBytes) continue;
+      const miss = await groundingMissFor(plateBytes, o.manifest, opts.source.analysis.background.type, o.preset.height);
+      if (miss) {
+        dirty.add(o.preset.id);
+        reasons.push(`${o.preset.id}: ${miss}`);
+      }
+    }
+    // Deterministic text-contrast check: unreadable text is a plate defect
+    // (the painter ignored the keep-clean guide) — same one-regen treatment.
+    // A size can fail both deterministic checks; every reason rides along so
+    // the single regen sees the whole defect (NOA square: sunk surface AND a
+    // band behind the headline).
+    for (const o of good) {
+      if (!o.plan || !o.manifest) continue;
+      if (reasons.some((r) => r.startsWith(`${o.preset.id}: `) && /unreadable/.test(r))) continue;
+      const plateBytes = plates.get(o.preset.id);
+      if (!plateBytes) continue;
+      const miss = await contrastMissFor(plateBytes, o.manifest, opts.source.analysis, o.preset.width, o.preset.height);
+      if (miss) {
+        dirty.add(o.preset.id);
+        reasons.push(`${o.preset.id}: ${miss}`);
+      }
+    }
     sharedRows.push({
       step: 'adfit_plate_check',
       tool_or_model: `model:${opts.models.extractModel}`,
@@ -740,7 +887,18 @@ export async function runProtectedBatch(opts: BatchOptions): Promise<BatchResult
       if (!dirty.has(o.preset.id) || !o.plan || !o.manifest) continue;
       try {
         const req = { source: opts.source, preset: o.preset, mode: 'protected' as const, template: opts.sizes.find((s) => s.preset.id === o.preset.id)?.template ?? null, framePng: opts.sizes.find((s) => s.preset.id === o.preset.id)?.framePng ?? null, brandName: opts.brandName };
-        const plate = await generatePlate(opts.models, req, o.plan, o.manifest, { qaNotes: ['previous plate contained foreground content: regenerate a strictly empty background'], backgroundBrief: o.brief, logoOnBand: o.logoOnBand, forceContinuous: true, ledger }, o.trace);
+        const dirtyReason = reasons.filter((r) => r.startsWith(o.preset.id)).join(' | ');
+        // Grounding misses keep the table (repositioned), so they skip the
+        // continuous-field override and get their own lead note; dirty plates
+        // get the strict-empty-background treatment.
+        const groundingMiss = dirtyReason.includes('back edge');
+        const contrastMiss = !groundingMiss && dirtyReason.includes('unreadable');
+        const leadNote = groundingMiss
+          ? 'previous plate was clean but the table surface missed the product base: repaint the same style with the surface in the right place'
+          : contrastMiss
+            ? 'previous plate left text unreadable: repaint the same style with a smooth contrasting field behind the text region'
+            : 'previous plate contained foreground content: regenerate a strictly empty background';
+        const plate = await generatePlate(opts.models, req, o.plan, o.manifest, { qaNotes: [leadNote, dirtyReason].filter(Boolean), backgroundBrief: o.brief, logoOnBand: o.logoOnBand, forceContinuous: !groundingMiss, textOnly: regenGoesTextOnly(dirtyReason), ledger }, o.trace);
         o.imageCalls++;
         plates.set(o.preset.id, plate);
         o.plate = plate;
@@ -790,17 +948,21 @@ export async function runProtectedBatch(opts: BatchOptions): Promise<BatchResult
   const patchesBySize = new Map<string, WonderPatch[]>();
   let reviewRan = false;
   if (wonderAllowed && !opts.skipReview && good.length > 0) {
-    const reviewOutputs = [];
-    for (const o of good) {
-      if (!o.png || !o.manifest) continue;
-      reviewOutputs.push({
-        preset: o.preset.id,
-        imageBytes: await labelReviewImage(o.png, o.preset.id),
-        mimeType: 'image/png',
-        manifestJson: JSON.stringify({ preset: o.manifest.preset, family: o.manifest.family, planner: o.manifest.planner, elements: o.manifest.elements, corrections: o.manifest.corrections }),
-        checks: o.findings,
-      });
-    }
+    const buildReviewOutputs = async (): Promise<Array<{ preset: string; imageBytes: Buffer; mimeType: string; manifestJson: string; checks: GeometryFinding[] }>> => {
+      const outs = [];
+      for (const o of good) {
+        if (!o.png || !o.manifest) continue;
+        outs.push({
+          preset: o.preset.id,
+          imageBytes: await labelReviewImage(o.png, o.preset.id),
+          mimeType: 'image/png',
+          manifestJson: JSON.stringify({ preset: o.manifest.preset, family: o.manifest.family, planner: o.manifest.planner, elements: o.manifest.elements, corrections: o.manifest.corrections }),
+          checks: o.findings,
+        });
+      }
+      return outs;
+    };
+    const reviewOutputs = await buildReviewOutputs();
     const res = await reviewWithWonder(opts.models.client, {
       model: opts.models.wonderModel,
       sourceBytes: await smallForModel(opts.source.bytes),
@@ -832,6 +994,71 @@ export async function runProtectedBatch(opts: BatchOptions): Promise<BatchResult
     // Repair pass: recompose from cached layers (new plate only for background defects).
     let repairedCount = 0;
     const regenChecks: Array<{ preset: string; plate: Buffer }> = [];
+    const revertedBySize = new Map<string, string[]>();
+    const regenned = new Set<string>();
+    /**
+     * Shared recompose used by the repair pass and the retry: optional plate
+     * regen (once per size across both passes — a second regen for the same
+     * size is declined by the caller), then composite + findings + books.
+     */
+    const recomposeSize = async (
+      o: SizeOutcome,
+      patched: ResolvedLayoutManifest,
+      result: PatchApplication,
+      patches: WonderPatch[],
+      mapFinding: (f: string) => GeometryFinding,
+      priorFindings: GeometryFinding[],
+    ): Promise<void> => {
+      const beforePng = o.repaired?.beforePng ?? o.png;
+      if (!beforePng || !o.plan) {
+        o.findings = [...priorFindings, { code: 'repair_failed', severity: 'fail' as const, element: null, detail: 'repair recompose failed, keeping previous' }];
+        return;
+      }
+      try {
+        const size = opts.sizes.find((s) => s.preset.id === o.preset.id);
+        const req = { source: opts.source, preset: o.preset, mode: 'protected' as const, template: size?.template ?? null, framePng: size?.framePng ?? null, brandName: opts.brandName };
+        let plate = plates.get(o.preset.id) as Buffer;
+        if (result.needsPlate) {
+          // The defect reasons ride along (a band the template style mandated
+          // survives a generic regen — seen live on the NOA story), and the
+          // defect overrules the template style (forceContinuous). Seam-class
+          // and duplicated-content defects regenerate text-only (the edit
+          // call would repaint the same anchored split or miniature copy).
+          const defectReasons = patches.filter((p) => p.action === 'regenerate_plate').map((p) => p.reason.slice(0, 200));
+          const seam = defectReasons.some(regenGoesTextOnly);
+          plate = await generatePlate(opts.models, req, o.plan, patched, {
+            qaNotes: ['previous background was defective, paint it clean this time', ...defectReasons],
+            backgroundBrief: o.brief,
+            logoOnBand: o.logoOnBand,
+            forceContinuous: true,
+            textOnly: seam,
+            ledger,
+          }, o.trace);
+          o.imageCalls++;
+          plates.set(o.preset.id, plate);
+          regenChecks.push({ preset: o.preset.id, plate });
+          regenned.add(o.preset.id);
+        }
+        const comp = await compositeProtected(req, o.plan, plate, o.trace, patched);
+        o.manifest = patched;
+        o.png = comp.png;
+        if (result.needsPlate) o.plate = plate;
+        o.textSizes = comp.textSizes;
+        o.panelFlagged = comp.panelFlagged;
+        o.proofs = comp.placed.length > 0 ? await provePlaced(comp.png, comp.placed, o.trace) : {};
+        o.findings = [
+          ...checkManifestGeometry(patched, opts.source.analysis, comp.textSizes),
+          ...result.unfixed.map(mapFinding),
+        ];
+        o.repaired = { beforePng, patches: [...(o.repaired?.patches ?? []), ...result.applied] };
+        repairedCount++;
+        // The text verdict is NOT flipped after repair: only a pixel re-read
+        // could clear it, and the repair pass gets no second model round.
+      } catch {
+        o.findings = [...priorFindings, { code: 'repair_failed', severity: 'fail' as const, element: null, detail: 'repair recompose failed, keeping previous' }];
+      }
+    };
+    const failFinding = (f: string): GeometryFinding => ({ code: 'wonder_flag', severity: 'fail', element: null, detail: f });
     for (const o of good) {
       const patches = consolidatePatches(patchesBySize.get(o.preset.id) ?? [], (o.manifest?.elements ?? []).map((e) => ({ id: e.id, group: e.group })));
       if (patches.length === 0 || !o.png || !o.manifest || !o.plan) continue;
@@ -846,49 +1073,15 @@ export async function runProtectedBatch(opts: BatchOptions): Promise<BatchResult
         next_state: 'done',
         cached: false,
       });
+      // Reverted patches get one second chance below (re-propose); pure
+      // flags and unknown targets fail honestly with no retry.
+      const revertedEarly = result.unfixed.filter((f) => f.includes('patch reverted'));
+      if (revertedEarly.length > 0) revertedBySize.set(o.preset.id, revertedEarly);
       if (!result.recompose) {
-        o.findings = [...o.findings, ...result.flagged.map((f) => ({ code: 'wonder_flag', severity: 'fail' as const, element: null, detail: f }))];
+        o.findings = [...o.findings, ...result.flagged.map(failFinding)];
         continue;
       }
-      try {
-        const size = opts.sizes.find((s) => s.preset.id === o.preset.id);
-        const req = { source: opts.source, preset: o.preset, mode: 'protected' as const, template: size?.template ?? null, framePng: size?.framePng ?? null, brandName: opts.brandName };
-        let plate = plates.get(o.preset.id) as Buffer;
-        if (result.needsPlate) {
-          // The defect reasons ride along (a band the template style mandated
-          // survives a generic regen — seen live on the NOA story), and the
-          // defect overrules the template style (forceContinuous).
-          const defectReasons = patches.filter((p) => p.action === 'regenerate_plate').map((p) => p.reason.slice(0, 200));
-          plate = await generatePlate(opts.models, req, o.plan, patched, {
-            qaNotes: ['previous background was defective, paint it clean this time', ...defectReasons],
-            backgroundBrief: o.brief,
-            logoOnBand: o.logoOnBand,
-            forceContinuous: true,
-            ledger,
-          }, o.trace);
-          o.imageCalls++;
-          plates.set(o.preset.id, plate);
-          regenChecks.push({ preset: o.preset.id, plate });
-        }
-        const beforePng = o.png;
-        const comp = await compositeProtected(req, o.plan, plate, o.trace, patched);
-        o.manifest = patched;
-        o.png = comp.png;
-        if (result.needsPlate) o.plate = plate;
-        o.textSizes = comp.textSizes;
-        o.panelFlagged = comp.panelFlagged;
-        o.proofs = comp.placed.length > 0 ? await provePlaced(comp.png, comp.placed, o.trace) : {};
-        o.findings = [
-          ...checkManifestGeometry(patched, opts.source.analysis, comp.textSizes),
-          ...result.unfixed.map((f) => ({ code: 'wonder_flag', severity: 'fail' as const, element: null, detail: f })),
-        ];
-        o.repaired = { beforePng, patches: result.applied };
-        repairedCount++;
-        // The text verdict is NOT flipped after repair: only a pixel re-read
-        // could clear it, and the repair pass gets no second model round.
-      } catch {
-        o.findings = [...o.findings, { code: 'repair_failed', severity: 'fail' as const, element: null, detail: 'repair recompose failed, keeping original' }];
-      }
+      await recomposeSize(o, patched, result, patches, failFinding, o.findings);
     }
     // Re-check regened plates: the repair pass must not trust a regen blind
     // (seen live: a re-seamed landscape accepted as fixed). One batched Spark
@@ -906,6 +1099,20 @@ export async function runProtectedBatch(opts: BatchOptions): Promise<BatchResult
       for (const o of good) {
         if (dirty.has(o.preset.id)) {
           o.findings = [...o.findings, { code: 'plate_dirty', severity: 'fail' as const, element: null, detail: `regened plate still dirty: ${reasons.find((r) => r.startsWith(o.preset.id)) ?? 'see trace'}` }];
+        }
+      }
+      // Deterministic grounding re-verification on the regened plates: a
+      // regen that still misplaces the surface fails honestly (no 2nd regen).
+      for (const r of regenChecks) {
+        const o = good.find((g) => g.preset.id === r.preset);
+        if (!o?.manifest) continue;
+        const miss = await groundingMissFor(r.plate, o.manifest, opts.source.analysis.background.type, o.preset.height);
+        if (miss) {
+          o.findings = [...o.findings, { code: 'surface_misaligned', severity: 'fail' as const, element: null, detail: `regened plate surface still misaligned: ${miss.slice(0, 220)}` }];
+        }
+        const cmiss = await contrastMissFor(r.plate, o.manifest, opts.source.analysis, o.preset.width, o.preset.height);
+        if (cmiss) {
+          o.findings = [...o.findings, { code: 'text_contrast', severity: 'fail' as const, element: null, detail: `regened plate text still unreadable: ${cmiss.slice(0, 220)}` }];
         }
       }
       sharedRows.push({
@@ -927,6 +1134,135 @@ export async function runProtectedBatch(opts: BatchOptions): Promise<BatchResult
         output_summary: `${repairedCount} recomposed from cached layers (before kept)`,
         duration_ms: 0,
         evidence_ids: ['out:repair'],
+        next_state: 'done',
+        cached: false,
+      });
+    }
+
+    // Second chance: sizes whose patches were reverted on separation get ONE
+    // more Wonder call with the revert context (inside the ledger cap), so a
+    // surviving "Needs review" means a real problem, not first-draft noise.
+    // One plate regen per size across both passes (tracked in `regenned`).
+    const recheckedRegens = regenChecks.length;
+    if (revertedBySize.size > 0 && !ledger?.wonderStopped()) {
+      const retryOutputs = await buildReviewOutputs();
+      const context = [...revertedBySize.entries()]
+        .map(([preset, msgs]) => `${preset}: ${msgs.join(' | ').slice(0, 300)} — code reverted these patches because the target would end within the separation gap of another element; propose alternatives that keep full clearance, or flag as unfixable`)
+        .join(' || ')
+        .slice(0, 1200);
+      const retry = await reviewWithWonder(opts.models.client, {
+        model: opts.models.wonderModel,
+        sourceBytes: await smallForModel(opts.source.bytes),
+        sourceMime: opts.source.mimeType,
+        analysis: opts.source.analysis,
+        outputs: retryOutputs,
+        extraContext: context,
+        ledger,
+      });
+      batchModelCalls += retry.attempts.length;
+      const retryPatches = new Map<string, WonderPatch[]>();
+      if (retry.ok && retry.parsed) {
+        for (const d of retry.parsed.defects) {
+          const list = retryPatches.get(d.size) ?? [];
+          list.push(d);
+          retryPatches.set(d.size, list);
+        }
+      }
+      sharedRows.push({
+        step: 'adfit_review_retry',
+        tool_or_model: `model:${opts.models.wonderModel}`,
+        input_summary: `second chance for ${revertedBySize.size} reverted size(s)`,
+        output_summary: retry.ok ? (`${retry.parsed?.defects.length ?? 0} re-proposed defects` + ((retry.parsed?.defects.length ?? 0) > 0 ? `: ${(retry.parsed?.defects ?? []).map((d) => `${d.size}/${d.element ?? d.group ?? d.action}`).join(', ').slice(0, 300)}` : ' (all clear)')) : retry.reason,
+        duration_ms: retry.totalLatencyMs,
+        evidence_ids: ['out:review'],
+        next_state: 'adfit_repair',
+        cached: false,
+      });
+      // Wonder looked again and cleared a size: the first-draft reverts were
+      // noise — strip the stale revert findings (only on a successful call).
+      if (retry.ok) {
+        for (const o of good) {
+          if (!revertedBySize.has(o.preset.id) || (retryPatches.get(o.preset.id) ?? []).length > 0) continue;
+          o.findings = o.findings.filter((f) => !(f.code === 'wonder_flag' && f.detail.includes('patch reverted')));
+          o.trace.emit({
+            step: 'adfit_repair',
+            tool_or_model: `model:${opts.models.wonderModel}`,
+            input_summary: 'retry: second look',
+            output_summary: 're-propose found nothing further; stale revert findings cleared',
+            duration_ms: 0,
+            evidence_ids: ['out:review'],
+            next_state: 'done',
+            cached: false,
+          });
+        }
+      }
+      // Retry reverts are second-order noise (Wonder's second draft also found
+      // no room): they warn, they don't fail. An explicit flag still fails —
+      // that is Wonder saying a human must look.
+      const retryFinding = (f: string): GeometryFinding => ({
+        code: 'wonder_flag',
+        severity: f.includes('patch reverted') ? 'warn' : 'fail',
+        element: null,
+        detail: f,
+      });
+      for (const o of good) {
+        const patches = consolidatePatches(retryPatches.get(o.preset.id) ?? [], (o.manifest?.elements ?? []).map((e) => ({ id: e.id, group: e.group })));
+        if (patches.length === 0 || !o.png || !o.manifest || !o.plan) continue;
+        const { manifest: patched, result } = applyPatchesToManifest(o.manifest, patches, opts.source.analysis.direction);
+        // One plate regen per size across both passes: the retry honors a
+        // first-time regen (a background defect found on second look is real),
+        // and only declines when the first pass already regenned this size.
+        if (result.needsPlate && regenned.has(o.preset.id)) {
+          result.needsPlate = false;
+          result.recompose = result.applied.length > 0;
+          const msg = 'second-chance plate regen declined (one regen per size max): needs human review';
+          result.flagged.push(msg);
+          result.unfixed.push(msg);
+        }
+        o.trace.emit({
+          step: 'adfit_repair',
+          tool_or_model: 'code:recompose',
+          input_summary: `retry: ${patches.map((p) => `${p.action}:${p.element ?? p.group ?? ''}`).join(', ')}`,
+          output_summary: result.applied.length > 0 ? `applied: ${result.applied.join('; ').slice(0, 300)}` : `flagged: ${result.flagged.join('; ').slice(0, 300)}`,
+          duration_ms: 0,
+          evidence_ids: ['out:repair'],
+          next_state: 'done',
+          cached: false,
+        });
+        // A re-proposed fix clears the stale revert findings it supersedes;
+        // anything still unfixed is recorded fresh below.
+        const kept = o.findings.filter((f) => !(f.code === 'wonder_flag' && f.detail.includes('patch reverted')));
+        if (!result.recompose) {
+          o.findings = [...kept, ...result.flagged.map(retryFinding)];
+          continue;
+        }
+        await recomposeSize(o, patched, result, patches, retryFinding, kept);
+      }
+    }
+    // Re-check plates the retry regenned (same one-shot honesty as above).
+    const retryRegens = regenChecks.slice(recheckedRegens);
+    if (retryRegens.length > 0) {
+      const res = await checkPlatesWithSpark(opts.models.client, {
+        model: opts.models.extractModel,
+        plates: retryRegens.map((r) => ({ preset: r.preset, imageBytes: r.plate, mimeType: 'image/png' })),
+        ledger,
+      });
+      batchModelCalls += res.attempts.length;
+      const { dirty, reasons } = res.ok
+        ? dirtyPlates(retryRegens.map((r) => r.preset), res.parsed?.sizes)
+        : { dirty: new Set<string>(), reasons: [] as string[] };
+      for (const o of good) {
+        if (dirty.has(o.preset.id)) {
+          o.findings = [...o.findings, { code: 'plate_dirty', severity: 'fail' as const, element: null, detail: `retry-regened plate still dirty: ${reasons.find((r) => r.startsWith(o.preset.id)) ?? 'see trace'}` }];
+        }
+      }
+      sharedRows.push({
+        step: 'adfit_plate_recheck',
+        tool_or_model: `model:${opts.models.extractModel}`,
+        input_summary: `${retryRegens.length} retry-regened plates`,
+        output_summary: res.ok ? (dirty.size > 0 ? `still dirty: ${reasons.join(' | ').slice(0, 300)}` : 'all clean after retry regen') : res.reason,
+        duration_ms: res.totalLatencyMs,
+        evidence_ids: ['out:plate'],
         next_state: 'done',
         cached: false,
       });
@@ -976,6 +1312,67 @@ export interface BatchSourceOptions {
   onPreview?: BatchOptions['onPreview'];
   textMeasurer?: BatchOptions['textMeasurer'];
   skipReview?: boolean;
+  /** Shared-preparation progress (analyze → masks ∥ plan) for the live step line. */
+  onStage?: (step: 'analyze' | 'masks' | 'plan', state: 'start' | 'done', ms?: number, detail?: string) => void;
+  /** User-confirmed detected text (setup flow): replaces strings only, never geometry. */
+  textOverrides?: TextOverrides | null;
+}
+
+/**
+ * Confirmed text strings from the setup flow. Overrides replace what the
+ * text renderer prints — boxes, masks and protected pixels are untouched, and
+ * text that isn't in the analysis can never be added (no new strings).
+ */
+export interface TextOverrides {
+  headline?: string;
+  subtext?: string;
+  panel?: string[];
+  others?: string[];
+}
+
+/** Apply user-confirmed strings onto a source analysis (pure string swap). */
+export function applyTextOverrides(analysis: SourceAnalysis, overrides: TextOverrides | null | undefined): number {
+  if (!overrides) return 0;
+  let n = 0;
+  const clean = (s: string): string => s.replace(/\s+/g, ' ').trim().slice(0, 300);
+  if (typeof overrides.headline === 'string' && analysis.headline) {
+    const t = clean(overrides.headline);
+    if (t && t !== analysis.headline.text) {
+      analysis.headline.text = t;
+      n++;
+    }
+  }
+  if (typeof overrides.subtext === 'string' && analysis.subtext) {
+    const t = clean(overrides.subtext);
+    if (t && t !== analysis.subtext.text) {
+      analysis.subtext.text = t;
+      n++;
+    }
+  }
+  if (Array.isArray(overrides.panel) && analysis.panel && overrides.panel.length === analysis.panel.texts.length) {
+    overrides.panel.forEach((s, i) => {
+      if (typeof s !== 'string') return;
+      const t = clean(s);
+      const slot = (analysis.panel as NonNullable<SourceAnalysis['panel']>).texts[i] as string;
+      if (t && t !== slot) {
+        (analysis.panel as NonNullable<SourceAnalysis['panel']>).texts[i] = t;
+        n++;
+      }
+    });
+  }
+  if (Array.isArray(overrides.others)) {
+    overrides.others.forEach((s, i) => {
+      if (typeof s !== 'string') return;
+      const slot = analysis.other_texts[i];
+      if (!slot) return;
+      const t = clean(s);
+      if (t && t !== slot.text) {
+        slot.text = t;
+        n++;
+      }
+    });
+  }
+  return n;
 }
 
 /**
@@ -988,13 +1385,41 @@ export async function runBatchSource(
 ): Promise<BatchResult & { source: PreparedSource; prepareTrace: TraceCollector }> {
   const t0 = Date.now();
   const trace = opts.prepareTrace ?? new TraceCollector();
+  const stage = opts.onStage ?? ((): void => undefined);
+  stage('analyze', 'start');
+  const tAnalyze = Date.now();
   const analyzed = await runAnalysisStage(opts.models, opts.input, trace, { repoRoot: opts.repoRoot, ledger: opts.ledger });
+  stage('analyze', 'done', Date.now() - tAnalyze);
+  const overridden = applyTextOverrides(analyzed.analysis, opts.textOverrides);
+  if (overridden > 0) {
+    trace.emit({
+      step: 'adfit_text_confirm',
+      tool_or_model: 'code:text-overrides',
+      input_summary: 'user-confirmed detected text',
+      output_summary: `${overridden} string(s) replaced for the text renderer (geometry untouched)`,
+      duration_ms: 0,
+      evidence_ids: ['out:text'],
+      next_state: 'adfit_masks',
+      cached: false,
+    });
+  }
   const wonderAllowed = opts.wonderAllowed !== false && !(opts.ledger?.wonderStopped() ?? false);
+  stage('masks', 'start');
+  stage('plan', 'start');
+  const tMasks = Date.now();
+  const tPlan = Date.now();
   const [seg, pre] = await Promise.all([
-    runMasksStage(opts.models, opts.input, analyzed.analysis, trace, { repoRoot: opts.repoRoot, ledger: opts.ledger, digest: analyzed.digest }),
-    wonderAllowed && !opts.skipReview
+    runMasksStage(opts.models, opts.input, analyzed.analysis, trace, { repoRoot: opts.repoRoot, ledger: opts.ledger, digest: analyzed.digest }).then((r) => {
+      stage('masks', 'done', Date.now() - tMasks);
+      return r;
+    }),
+    (wonderAllowed && !opts.skipReview
       ? planBatchWithWonder(opts.models, opts.input, analyzed.analysis, opts.sizes, { ledger: opts.ledger, textMeasurer: opts.textMeasurer })
-      : Promise.resolve(skippedPreplanned(opts.models.wonderModel, opts.sizes.length, opts.skipReview ? 'skipped (skipReview)' : 'skipped (daily wonder cap) — code planner')),
+      : Promise.resolve(skippedPreplanned(opts.models.wonderModel, opts.sizes.length, opts.skipReview ? 'skipped (skipReview)' : 'skipped (daily wonder cap) — code planner'))
+    ).then((r) => {
+      stage('plan', 'done', Date.now() - tPlan, `${opts.sizes.length} layouts`);
+      return r;
+    }),
   ]);
   if (opts.repoRoot && !analyzed.cached) {
     await storeCachedLayers(opts.repoRoot, {

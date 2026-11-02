@@ -26,6 +26,8 @@ export const manifestElementSchema = z.object({
   /** Uniform scale applied to source pixels (null for re-rendered text). */
   scale: z.number().nullable(),
   source: z.enum(['template', 'wonder', 'default', 'corrected']),
+  /** Source-frame box in source pixels (protected pixels only; null when unknown or re-rendered). */
+  srcBox: planBoxSchema.nullable().optional(),
 });
 
 export type ManifestElement = z.infer<typeof manifestElementSchema>;
@@ -172,6 +174,10 @@ export function enforceManifest(input: EnforceInput): ResolvedLayoutManifest {
   const safe = m.safe;
   const tall = H / W >= 1.5;
   const wide = W / H > 1.3;
+  // Separation floor shared with the repair validator (same formula in
+  // applyPatchesToManifest): every settled box keeps this clearance, so a
+  // valid Wonder patch is never reverted for the base state's own crowding.
+  const minGap = Math.max(8, Math.round(Math.min(W, H) * 0.015));
 
   const clampInto = (b: PlanBox, outer: PlanBox): PlanBox => {
     const w = Math.min(b.w, outer.w);
@@ -206,13 +212,19 @@ export function enforceManifest(input: EnforceInput): ResolvedLayoutManifest {
   }
 
   // 2. Product size floors: ≥45% of safe height on 9:16, ≥70% of canvas height on landscape.
-  for (const e of m.elements) {
-    if (e.kind !== 'product') continue;
-    const targetH = tall ? Math.round(safe.h * 0.45) : wide ? Math.round(H * 0.7) : 0;
-    if (targetH > 0 && e.box.h < targetH) {
-      // Grow toward the target, keeping center, without covering the panel/logo/text.
-      const others = m.elements.filter((o) => o !== e && o.kind !== 'shadow' && o.kind !== 'frame');
+  // On tall canvases text never blocks growth — the text push below re-settles
+  // around the grown products (text blocking growth stranded small products in
+  // the top third while the subtext sat underneath them).
+  const growProductsTowardFloor = (ignoreText: boolean, pass: string): void => {
+    for (const e of m.elements) {
+      if (e.kind !== 'product') continue;
+      const targetH = tall ? Math.round(safe.h * 0.45) : wide ? Math.round(H * 0.7) : 0;
+      if (targetH <= 0 || e.box.h >= targetH) continue;
+      const others = m.elements.filter(
+        (o) => o !== e && o.kind !== 'shadow' && o.kind !== 'frame' && (!ignoreText || o.group !== 'text'),
+      );
       const startH = e.box.h;
+      const startW = e.box.w;
       let h = e.box.h;
       let w = e.box.w;
       const cx = e.box.x + e.box.w / 2;
@@ -222,19 +234,29 @@ export function enforceManifest(input: EnforceInput): ResolvedLayoutManifest {
         const nw = Math.round((w * nh) / Math.max(1, h));
         const cand: PlanBox = { x: Math.round(cx - nw / 2), y: Math.round(cy - nh / 2), w: nw, h: nh };
         const clamped = clampInto(cand, BB);
+        // Aspect-locked growth: the compositor pastes the cut at e.scale,
+        // which follows the WIDTH — when the width is squeezed by the canvas
+        // bounds, the visual cannot grow, so the box must stop too. Growing
+        // height alone inflates empty collision area that squeezes text into
+        // unresolvable overlaps (seen live: ZAZO story subtext/panel).
+        if (clamped.w < nw) break;
         if (others.some((o) => overlaps(clamped, o.box) && !nestedIn(clamped, o.box) && !nestedIn(o.box, clamped))) break;
         w = clamped.w;
         h = clamped.h;
         e.box = clamped;
       }
       if (e.box.h !== startH) {
-        corrections.push(`${e.id}: grew toward ${tall ? '45% safe-height' : '70% canvas-height'} floor (${e.box.w}x${e.box.h})`);
+        // The compositor pastes cut pixels at e.scale — a grown box with a
+        // stale scale renders small and centered (the "shrunk products" bug).
+        if (e.scale !== null) e.scale = (e.scale * e.box.w) / Math.max(1, startW);
+        corrections.push(`${e.id}: grew toward ${tall ? '45% safe-height' : '70% canvas-height'} floor (${e.box.w}x${e.box.h})${pass}`);
         e.source = 'corrected';
-      } else {
+      } else if (!ignoreText) {
         corrections.push(`${e.id}: below size floor but blocked from growing — needs review`);
       }
     }
-  }
+  };
+  growProductsTowardFloor(tall, '');
 
   // 3. Text group: one shared alignment edge (right for RTL, left for LTR).
   const wantAlign = input.direction === 'rtl' ? 'right' : 'left';
@@ -275,6 +297,78 @@ export function enforceManifest(input: EnforceInput): ResolvedLayoutManifest {
       }
     }
     corrections.push(`text group: ${texts.length} boxes share the ${wantAlign} edge`);
+  }
+
+  // Headline dominance (tall/square): the source headline is the hero — a
+  // Wonder box shrunk to a side note (seen on NOA) is grown back toward a
+  // full-width line taller than the subtext. The overlap push below re-settles
+  // it when the grown box collides.
+  const headlineEl = m.elements.find((e) => e.id === 'headline') ?? null;
+  const subtextEl = m.elements.find((e) => e.id === 'subtext') ?? null;
+  if (headlineEl && (tall || !wide)) {
+    const targetW = Math.round(safe.w * 0.55);
+    if (headlineEl.box.w < targetW) {
+      const grown: PlanBox = wantAlign === 'right'
+        ? { x: headlineEl.box.x + headlineEl.box.w - targetW, y: headlineEl.box.y, w: targetW, h: headlineEl.box.h }
+        : { x: headlineEl.box.x, y: headlineEl.box.y, w: targetW, h: headlineEl.box.h };
+      const clamped = clampInto(grown, BB);
+      if (clamped.w > headlineEl.box.w) {
+        headlineEl.box = clamped;
+        headlineEl.source = 'corrected';
+        corrections.push(`headline: grew toward full-width dominance (${headlineEl.box.w}x${headlineEl.box.h})`);
+      }
+    }
+    if (subtextEl) {
+      const targetH = Math.ceil(subtextEl.box.h * 1.25);
+      if (headlineEl.box.h < targetH) {
+        const grown = clampInto({ ...headlineEl.box, h: targetH }, BB);
+        if (grown.h > headlineEl.box.h) {
+          headlineEl.box = grown;
+          headlineEl.source = 'corrected';
+          corrections.push(`headline: grew taller than the subtext (${headlineEl.box.w}x${headlineEl.box.h})`);
+        }
+      }
+    }
+  }
+
+  // Landscape text cohesion: headline/subtext/others form one tight vertical
+  // stack with a uniform gap, anchored at the topmost text box (a subline
+  // stranded far below the headline reads detached). All or nothing: when any
+  // stacked box would collide with a non-text element or leave the bound, the
+  // whole stack is skipped and the boxes keep their positions.
+  if (wide) {
+    const stack = m.elements.filter((e) => e.group === 'text').sort((a, b) => a.box.y - b.box.y);
+    if (stack.length >= 2) {
+      const gap = Math.min(24, Math.max(minGap, Math.round(H * 0.02)));
+      const solids = m.elements.filter((e) => e.group !== 'text' && e.kind !== 'shadow' && e.kind !== 'frame');
+      const gapBetween = (a: PlanBox, b: PlanBox): number => {
+        const dx = Math.max(0, Math.max(a.x - (b.x + b.w), b.x - (a.x + a.w)));
+        const dy = Math.max(0, Math.max(a.y - (b.y + b.h), b.y - (a.y + a.h)));
+        return Math.hypot(dx, dy);
+      };
+      const desired = new Map<string, PlanBox>();
+      let cursor = (stack[0] as ManifestElement).box.y;
+      let ok = true;
+      for (const t of stack) {
+        const cand = clampInto({ ...t.box, y: cursor }, BB);
+        if (cand.y !== cursor || solids.some((o) => gapBetween(cand, o.box) < minGap)) {
+          ok = false;
+          break;
+        }
+        desired.set(t.id, cand);
+        cursor = cand.y + cand.h + gap;
+      }
+      if (ok) {
+        for (const t of stack) {
+          const next = desired.get(t.id);
+          if (next && (next.y !== t.box.y)) {
+            t.box = next;
+            t.source = 'corrected';
+          }
+        }
+        corrections.push(`text group: tight stack with ${gap}px gaps`);
+      }
+    }
   }
 
   // 4. Logo legibility floor: a lockup below this is unreadable (seen live:
@@ -318,11 +412,11 @@ export function enforceManifest(input: EnforceInput): ResolvedLayoutManifest {
         lower = e;
         upper = hit;
       }
-      const ny = upper.box.y + upper.box.h + 8;
+      const ny = upper.box.y + upper.box.h + minGap;
       const cand = clampInto({ ...lower.box, y: ny }, BB);
       if (cand.y === lower.box.y || overlaps(cand, upper.box)) {
         // No room below: try above the upper box.
-        const above = clampInto({ ...lower.box, y: upper.box.y - lower.box.h - 8 }, BB);
+        const above = clampInto({ ...lower.box, y: upper.box.y - lower.box.h - minGap }, BB);
         if (above.y === lower.box.y || overlaps(above, upper.box)) continue;
         lower.box = above;
       } else {
@@ -337,15 +431,67 @@ export function enforceManifest(input: EnforceInput): ResolvedLayoutManifest {
     if (iter === 7) corrections.push('text overlaps persist after pushing — needs review');
   }
 
+  // 5b. Second growth pass: text blocked the first pass on wide/square
+  // canvases (and crowded tall ones) — now that text has settled, products
+  // grow into the freed space. Then the single-product fill: one product on a
+  // tall canvas grows past the floor toward 60% of the safe height while free
+  // space allows (capped at 1.5x source scale so raster cuts stay sharp),
+  // filling the middle band instead of stranding a thumbnail up top.
+  growProductsTowardFloor(false, ' (second pass)');
+  if (tall) {
+    const singles = m.elements.filter((e) => e.kind === 'product');
+    if (singles.length === 1) {
+      const e = singles[0] as ManifestElement;
+      const targetH = Math.round(safe.h * 0.6);
+      if (e.box.h < targetH) {
+        const others = m.elements.filter((o) => o !== e && o.kind !== 'shadow' && o.kind !== 'frame');
+        const startW = e.box.w;
+        const startScale = e.scale ?? 1;
+        let h = e.box.h;
+        let w = e.box.w;
+        const cx = e.box.x + e.box.w / 2;
+        const cy = e.box.y + e.box.h / 2;
+        for (let step = 0; step < 24 && h < targetH; step++) {
+          const nh = Math.min(targetH, h + Math.round(targetH / 12));
+          const nw = Math.round((w * nh) / Math.max(1, h));
+          if (startScale * (nw / Math.max(1, startW)) > 1.5) break;
+          const cand: PlanBox = { x: Math.round(cx - nw / 2), y: Math.round(cy - nh / 2), w: nw, h: nh };
+          const clamped = clampInto(cand, BB);
+          // Aspect-locked like the floor growth above: a width squeezed by
+          // the bounds means the visual cannot grow — stop, don't inflate.
+          if (clamped.w < nw) break;
+          if (others.some((o) => overlaps(clamped, o.box) && !nestedIn(clamped, o.box) && !nestedIn(o.box, clamped))) break;
+          w = clamped.w;
+          h = clamped.h;
+          e.box = clamped;
+        }
+        if (e.box.h > Math.round(safe.h * 0.45) && e.box.w !== startW) {
+          if (e.scale !== null) e.scale = (e.scale * e.box.w) / Math.max(1, startW);
+          e.source = 'corrected';
+          corrections.push(`${e.id}: filled toward 60% safe-height (${e.box.w}x${e.box.h})`);
+        }
+      }
+    }
+  }
+
   // 6. Remaining overlaps: shrink the product/logo until clear, never below
-  // the legibility floors (text never shrinks).
+  // the legibility floors (text never shrinks). When shrinking cannot clear
+  // the overlap, the pre-shrink size is restored and the overlap is flagged:
+  // a full-size element with an honest flag beats a shrunk-to-a-sliver one
+  // with the same flag (seen live: VELA's bottle at 23px wide on fb-link).
   for (const e of m.elements) {
     if (e.kind !== 'product' && e.kind !== 'logo') continue;
-    const startW = e.box.w;
+    const startBox = { ...e.box };
+    const startScale = e.scale;
     const floorH = e.kind === 'logo' ? minLogoH : minProductH;
+    let cleared = true;
     for (let iter = 0; iter < 12; iter++) {
       const hit = m.elements.find((o) => o !== e && o.kind !== 'shadow' && o.kind !== 'frame' && overlaps(e.box, o.box));
-      if (!hit) break;
+      if (!hit) {
+        cleared = true;
+        break;
+      }
+      cleared = false;
       const nw = Math.round(e.box.w * 0.92);
       const nh = Math.round(e.box.h * 0.92);
       if (nh < floorH || nw < 8) {
@@ -360,7 +506,11 @@ export function enforceManifest(input: EnforceInput): ResolvedLayoutManifest {
       e.source = 'corrected';
       if (iter === 11) corrections.push(`${e.id}: still overlaps ${hit.id} after shrinking — needs review`);
     }
-    if (e.box.w !== startW && !corrections.some((c) => c.startsWith(`${e.id}: still overlaps`))) {
+    if (!cleared && e.box.w !== startBox.w) {
+      e.box = startBox;
+      e.scale = startScale;
+    }
+    if (e.box.w !== startBox.w && !corrections.some((c) => c.startsWith(`${e.id}: still overlaps`))) {
       corrections.push(`${e.id}: shrunk to clear overlap`);
     }
   }
