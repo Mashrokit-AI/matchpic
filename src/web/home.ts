@@ -170,7 +170,8 @@ export function renderHome(root: HTMLElement, lang: Lang, route: Route): void {
 
   const genBtn = el({ tag: 'button', cls: 'btn', text: t(lang, 'btn_generate'), attrs: { type: 'button' } }) as HTMLButtonElement;
   const genHint = el({ tag: 'div', cls: 'gen-hint' });
-  setupHost.append(el({ tag: 'div', cls: 'gen-block', children: [genBtn, genHint] }));
+  const genBlock = el({ tag: 'div', cls: 'gen-block', children: [genBtn, genHint] });
+  setupHost.append(genBlock);
   const sticky = el({
     tag: 'div', cls: 'sticky-gen', children: [
       el({ tag: 'button', cls: 'btn', text: t(lang, 'btn_generate'), attrs: { type: 'button' } }),
@@ -180,6 +181,16 @@ export function renderHome(root: HTMLElement, lang: Lang, route: Route): void {
   setupHost.append(sticky);
   const stickyBtn = sticky.children[0] as HTMLButtonElement;
   const stickyHint = sticky.children[1] as HTMLElement;
+  // The sticky bar is a shortcut for after the main button scrolls away:
+  // showing both at once reads as a duplicated button.
+  if (typeof IntersectionObserver !== 'undefined') {
+    new IntersectionObserver(
+      (entries) => sticky.classList.toggle('show', !(entries[0]?.isIntersecting ?? true)),
+      { threshold: 0 },
+    ).observe(genBlock);
+  } else {
+    sticky.classList.add('show');
+  }
 
   for (const m of ['protected', 'fast'] as const) {
     const b = el({ tag: 'button', text: m === 'protected' ? t(lang, 'mode_protected') : t(lang, 'mode_fast'), attrs: { type: 'button', 'aria-pressed': String(m === state.mode) } });

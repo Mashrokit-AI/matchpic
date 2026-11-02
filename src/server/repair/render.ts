@@ -101,6 +101,34 @@ export function fontStackFor(lang: AdLanguage): string {
     : '"Noto Sans","Noto Sans Hebrew",sans-serif';
 }
 
+/** WCAG relative luminance (0 black, 1 white). */
+export function luminance(c: Rgb): number {
+  const f = (v: number): number => {
+    const s = v / 255;
+    return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);
+  };
+  return 0.2126 * f(c.r) + 0.7152 * f(c.g) + 0.0722 * f(c.b);
+}
+
+/** WCAG contrast ratio between two colors (1..21). */
+export function contrastRatio(a: Rgb, b: Rgb): number {
+  const la = luminance(a);
+  const lb = luminance(b);
+  return (Math.max(la, lb) + 0.05) / (Math.min(la, lb) + 0.05);
+}
+
+/**
+ * Guarantee readable text on a sampled fill: when the brand text color
+ * fails 4.5:1 against the fill (seen live: LUMA white "Shop now" on a
+ * white button), fall back to whichever of black/white reads better.
+ */
+export function ensureTextContrast(fill: Rgb, text: Rgb): Rgb {
+  if (contrastRatio(fill, text) >= 4.5) return text;
+  const black: Rgb = { r: 0, g: 0, b: 0 };
+  const white: Rgb = { r: 255, g: 255, b: 255 };
+  return contrastRatio(fill, black) >= contrastRatio(fill, white) ? black : white;
+}
+
 export function cssColor(c: Rgb): string {
   return `rgb(${c.r},${c.g},${c.b})`;
 }

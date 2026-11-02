@@ -351,3 +351,13 @@ describe('layout planner', () => {
     expect(freeHeadlineSubtext(analysis(), { headline: {}, subtext: null, panel: null }).headline).toBe(true);
   });
 });
+
+describe('shiftBoxAbovePanel', () => {
+  it('moves an overlapping text box above the panel, keeps a clear box untouched', async () => {
+    const { shiftBoxAbovePanel } = await import('../src/server/adfit/planner.js');
+    const panel = { x: 100, y: 800, w: 800, h: 200 };
+    expect(shiftBoxAbovePanel({ x: 100, y: 850, w: 800, h: 60 }, panel)).toEqual({ x: 100, y: 728, w: 800, h: 60 });
+    expect(shiftBoxAbovePanel({ x: 100, y: 100, w: 800, h: 60 }, panel)).toEqual({ x: 100, y: 100, w: 800, h: 60 });
+    expect(shiftBoxAbovePanel({ x: 100, y: 850, w: 800, h: 900 }, panel)).toBeNull();
+  });
+});

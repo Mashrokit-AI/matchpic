@@ -154,6 +154,21 @@ describe('read API', () => {
     expect(demo.id).toBe(DEMO_JOB_ID);
   });
 
+  it('lists saved examples in the fixed demo order, not run-time order', async () => {
+    const root = repoRoot();
+    const { app, dbPath } = testApp(root);
+    // Seeded in scrambled order on purpose: the strip must still show
+    // LUMA, STRIDE, NORTHBEAN (EN) then the Hebrew demos.
+    await seedJob(root, dbPath, 'demo-sheket', 's-sheket');
+    await seedJob(root, dbPath, 'demo-northbean', 's-northbean');
+    await seedJob(root, dbPath, 'demo-luma', 's-luma');
+    await seedJob(root, dbPath, 'demo-stride', 's-stride');
+    const body = (await (await app.request('/api/examples')).json()) as { examples: Array<{ jobId: string }> };
+    expect(body.examples.map((e) => e.jobId)).toEqual(['demo-luma', 'demo-stride', 'demo-northbean', 'demo-sheket']);
+    const demo = (await (await app.request('/api/demo')).json()) as { id: string };
+    expect(demo.id).toBe('demo-luma');
+  });
+
   it('404s unknown records with an i18n key and no stack', async () => {
     const root = repoRoot();
     const { app } = testApp(root);
@@ -193,6 +208,24 @@ describe('media', () => {
     expect((await app.request('/media/mask/s1/product-0')).status).toBe(200);
     expect((await app.request('/media/mask/s1/nope')).status).toBe(404);
     expect((await app.request('/media/mask/s1/..')).status).toBe(404);
+  });
+
+  it('re-derives a thumb when the underlying image bytes change', async () => {
+    const root = repoRoot();
+    const { app, dbPath } = testApp(root);
+    const oid = await seedJob(root, dbPath);
+    const first = await app.request(`/media/thumb/${oid}`);
+    expect(first.status).toBe(200);
+    const firstMeta = await sharp(Buffer.from(await first.arrayBuffer())).metadata();
+    expect(firstMeta.width).toBe(32);
+    // Same output id, new pixels on disk (e.g. a repaired image): the cached
+    // derivative must not keep serving the old image.
+    writeRel(root, 'data/outputs/j1/0-ig-feed-11.png', await png(64, 48));
+    const second = await app.request(`/media/thumb/${oid}`);
+    expect(second.status).toBe(200);
+    const secondMeta = await sharp(Buffer.from(await second.arrayBuffer())).metadata();
+    expect(secondMeta.width).toBe(64);
+    expect(secondMeta.height).toBe(48);
   });
 
   it('serves example thumbs and 404s unknown thumb records', async () => {

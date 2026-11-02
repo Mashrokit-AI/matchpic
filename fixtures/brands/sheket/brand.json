@@ -8,5 +8,13 @@
   ],
   "fonts": [],
   "logo": null,
-  "templates": []
+  "templates": [],
+  "examples": [
+    {
+      "id": "ex-sheket-general",
+      "scope": "general",
+      "image": "source-he.png"
+    }
+  ],
+  "prompt": "prompt.json"
 }

@@ -26,10 +26,11 @@ interface DemoDef {
 }
 
 const DEMOS: DemoDef[] = [
-  { key: 'luma', brand: 'luma', outDir: 'artifacts/demo-nb/luma', sourceFile: 'source-en.png', sizes: ['ig-feed-45', 'ig-story-916', 'fb-link'] },
+  { key: 'luma', brand: 'luma', outDir: 'artifacts/demo-v3/luma', sourceFile: 'source-en.png', sizes: ['ig-feed-45', 'ig-story-916', 'fb-link'] },
   { key: 'stride', brand: 'stride', outDir: 'artifacts/demo-nb/stride', sourceFile: 'source-en.png', sizes: ['ig-feed-11', 'ig-feed-45', 'fb-link'] },
-  { key: 'northbean', brand: 'northbean', outDir: 'artifacts/demo-nb/northbean', sourceFile: 'source-en.png', sizes: ['ig-feed-11', 'ig-feed-45'] },
-  { key: 'sheket', brand: 'sheket', outDir: 'artifacts/demo-nb/sheket', sourceFile: 'source-he.png', sizes: ['ig-feed-11', 'ig-feed-45'] },
+  { key: 'northbean', brand: 'northbean', outDir: 'artifacts/demo-v3/northbean', sourceFile: 'source-en.png', sizes: ['ig-feed-11', 'ig-feed-45', 'ig-story-916'] },
+  { key: 'teva', brand: 'teva', outDir: 'artifacts/demo-v3/teva', sourceFile: 'source-he.png', sizes: ['ig-feed-11', 'ig-feed-45'] },
+  { key: 'sheket', brand: 'sheket', outDir: 'artifacts/demo-v3/sheket2', sourceFile: 'source-he.png', sizes: ['ig-feed-11', 'ig-feed-45'] },
 ];
 
 async function exists(path: string): Promise<boolean> {

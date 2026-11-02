@@ -1,6 +1,7 @@
 import { GENERAL_SCOPE, parseBrandColors, renderBrandPromptText, storedBrandPromptSchema, type BrandColor, type StoredBrandPrompt } from '../../shared/brand-prompt.js';
 import { PRESETS } from '../../shared/presets.js';
 import { Store, type BrandRow, type JobRow, type OutputRow, type TemplateRow } from '../store/db.js';
+import { DEMO_JOB_ORDER } from '../adfit/seed.js';
 
 export interface TemplateDto {
   id: string;
@@ -336,8 +337,13 @@ export function buildExamples(s: Store): ExampleDto[] {
       finishedAt: j.finished_at,
     });
   }
-  // English examples first, Hebrew after (stable within each language).
-  return out.sort((a, b) => (a.lang === 'he' ? 1 : 0) - (b.lang === 'he' ? 1 : 0));
+  // Fixed demo order (LUMA, STRIDE, NORTHBEAN, then the Hebrew demos);
+  // unknown demo jobs fall back to English-first.
+  const rank = (e: ExampleDto): number => {
+    const i = DEMO_JOB_ORDER.indexOf(e.jobId);
+    return i >= 0 ? i : DEMO_JOB_ORDER.length + (e.lang === 'he' ? 1 : 0);
+  };
+  return out.sort((a, b) => rank(a) - rank(b));
 }
 
 export function buildJob(s: Store, id: string): JobDto | null {

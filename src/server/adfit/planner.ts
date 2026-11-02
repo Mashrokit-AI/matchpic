@@ -85,6 +85,15 @@ export function tallProductCell(zoneBox: PlanBox, neighbors: PlanBox[], safe: Pl
 
 type BoxLike = { x: number; y: number; w: number; h: number };
 
+/** Move a free-text box above the panel when it would collide with it. */
+export function shiftBoxAbovePanel(dst: PlanBox, panel: PlanBox, gap = 12): PlanBox | null {
+  if (!overlaps(dst, panel)) return dst;
+  const y = panel.y - dst.h - gap;
+  if (y < 0) return null;
+  const moved = { ...dst, y };
+  return overlaps(moved, panel) ? null : moved;
+}
+
 /** True when a text bbox travels with pasted element pixels (never re-render). */
 export function travelsWithPixels(source: SourceAnalysis, bbox: BoxLike): boolean {
   if (source.panel && centerIn(bbox, source.panel.bbox)) return true;

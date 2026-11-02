@@ -1,5 +1,6 @@
-import { mkdir, readFile, realpath, rm } from 'node:fs/promises';
-import { existsSync } from 'node:fs';
+import { mkdir, readFile, readdir, realpath, rm } from 'node:fs/promises';
+import { existsSync, statSync } from 'node:fs';
+import { createHash } from 'node:crypto';
 import { extname, isAbsolute, join, relative, resolve } from 'node:path';
 import sharp from 'sharp';
 import { Store } from '../store/db.js';
@@ -70,13 +71,19 @@ function contentTypeFor(path: string): string | null {
   return null;
 }
 
-function thumbPath(repoRoot: string, key: string): string {
+function thumbPath(repoRoot: string, key: string, srcFile?: string): string {
   const safe = key.replace(/[^a-zA-Z0-9_-]+/g, '-');
-  return join(repoRoot, 'artifacts', 'web-cache', `thumb2-${safe}.webp`);
+  if (!srcFile) return join(repoRoot, 'artifacts', 'web-cache', `thumb2-${safe}.webp`);
+  // Key the cache by the source bytes (path + size + mtime), not by record id
+  // alone: ids repeat across databases, so an id-only key served another
+  // brand's image after a fresh reseed.
+  const st = statSync(srcFile);
+  const sig = createHash('sha1').update(`${srcFile}|${st.size}|${st.mtimeMs}`).digest('hex').slice(0, 10);
+  return join(repoRoot, 'artifacts', 'web-cache', `thumb2-${safe}-${sig}.webp`);
 }
 
 async function ensureThumb(repoRoot: string, key: string, srcFile: string): Promise<string> {
-  const out = thumbPath(repoRoot, key);
+  const out = thumbPath(repoRoot, key, srcFile);
   if (!existsSync(out)) {
     await mkdir(join(repoRoot, 'artifacts', 'web-cache'), { recursive: true });
     await sharp(srcFile)
@@ -87,9 +94,16 @@ async function ensureThumb(repoRoot: string, key: string, srcFile: string): Prom
   return out;
 }
 
-/** Drop a cached derivative (output bytes change in place on repair). */
+/** Drop every cached derivative for a key (output bytes change in place on repair). */
 export async function invalidateThumb(repoRoot: string, key: string): Promise<void> {
-  await rm(thumbPath(repoRoot, key), { force: true }).catch(() => undefined);
+  const dir = join(repoRoot, 'artifacts', 'web-cache');
+  const safe = key.replace(/[^a-zA-Z0-9_-]+/g, '-');
+  const names = await readdir(dir).catch(() => [] as string[]);
+  await Promise.all(
+    names
+      .filter((n) => n === `thumb2-${safe}.webp` || n.startsWith(`thumb2-${safe}-`))
+      .map((n) => rm(join(dir, n), { force: true }).catch(() => undefined)),
+  );
 }
 
 /** Numeric ids address outputs; string ids address sources/templates/brands. */

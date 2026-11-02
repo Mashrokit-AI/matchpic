@@ -1,0 +1,64 @@
+{
+  "general": [
+    "Only when the source shows the white STRIDE wordmark at the top centre over the blue-grey background, keep it centred with its top edge at about 5% of the canvas height and a width of about 28% of the canvas width; otherwise keep the source structure.",
+    "Only when the source shows a centred white headline above a smaller sub-line and price, keep that vertical stack centred in the upper third with the headline at about 82% of the canvas width; otherwise keep the source structure.",
+    "Only when the source shows a single orange shoe floating in the centre, keep it centred at about 55% of the canvas width above the floor shadow and let extra height or width go to the blue-grey background and floor, which are the flexible elements; otherwise keep the source structure.",
+    "Only when the source shows a single rounded-rectangle CTA button at the bottom centre, keep it centred at about 34% of the canvas width and 6% of the canvas height with its bottom edge at about 8% of the canvas height; otherwise keep the source structure.",
+    "Only when the source uses the blue-grey gradient background and grey floor, keep text and the wordmark in #ffffff, the product colour as shown in #ff6a1a, and the CTA fill in #5f7d93 tones without recolouring fixed elements; otherwise keep the source structure."
+  ],
+  "perPreset": {},
+  "never": [
+    "Never add extra logos or wordmarks beyond the single STRIDE wordmark shown in the source.",
+    "Never add extra buttons, badges, tabs, bands, panels, or frames not shown in the source.",
+    "Never add extra products, shoes, people, or props not shown in the source.",
+    "Never add extra headlines, price lines, or promotional text not shown in the source."
+  ],
+  "proportions": [
+    {
+      "element": "STRIDE wordmark",
+      "dimension": "width",
+      "pct": 28
+    },
+    {
+      "element": "headline",
+      "dimension": "width",
+      "pct": 82
+    },
+    {
+      "element": "product shoe",
+      "dimension": "width",
+      "pct": 55
+    },
+    {
+      "element": "CTA button",
+      "dimension": "width",
+      "pct": 34
+    },
+    {
+      "element": "CTA button",
+      "dimension": "height",
+      "pct": 6
+    },
+    {
+      "element": "floor area",
+      "dimension": "height",
+      "pct": 32
+    }
+  ],
+  "text": [
+    "English Latin script only, with all headline, sub-line, price, and CTA text centre-aligned as shown.",
+    "STRIDE wordmark is uppercase, bold, and italic in white, smaller than the headline.",
+    "Headline is bold white and about twice the height of the sub-line and price lines, which are regular weight and similar in size to each other.",
+    "CTA text is regular white sentence case centred inside the single rounded button."
+  ],
+  "version": 1,
+  "generatedBy": "muse-wonder-1.0",
+  "generatedAt": "2026-11-02T15:24:58.357Z",
+  "editedByUser": false,
+  "colors": [
+    "#ff6a1a",
+    "#5f7d93",
+    "#ffffff"
+  ],
+  "fonts": []
+}

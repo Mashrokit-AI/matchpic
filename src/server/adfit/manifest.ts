@@ -211,6 +211,20 @@ export function enforceManifest(input: EnforceInput): ResolvedLayoutManifest {
     }
   }
 
+  // 1b. Panel cap: a CTA/panel never takes more than a quarter of the canvas
+  // height (seen live on teva: a giant white panel swallowing the bottom
+  // half, its text clipped). Shrink toward the bottom edge, keep centered.
+  for (const e of m.elements) {
+    if (e.kind !== 'panel') continue;
+    const maxH = Math.round(H * 0.25);
+    if (e.box.h > maxH) {
+      const bottom = e.box.y + e.box.h;
+      e.box = clampInto({ ...e.box, y: bottom - maxH, h: maxH }, BB);
+      e.source = 'corrected';
+      corrections.push(`panel: capped at 25% of canvas height (${e.box.w}x${e.box.h})`);
+    }
+  }
+
   // 2. Product size floors: ≥45% of safe height on 9:16, ≥70% of canvas height on landscape.
   // On tall canvases text never blocks growth — the text push below re-settles
   // around the grown products (text blocking growth stranded small products in
@@ -512,6 +526,39 @@ export function enforceManifest(input: EnforceInput): ResolvedLayoutManifest {
     }
     if (e.box.w !== startBox.w && !corrections.some((c) => c.startsWith(`${e.id}: still overlaps`))) {
       corrections.push(`${e.id}: shrunk to clear overlap`);
+    }
+  }
+
+  // 6b. Final text restack: the push loop gives up when clamping leaves no
+  // room, which shipped overlapping headline/subtext near story bottoms.
+  // Deterministically stack the text group: forward pass pushes each box
+  // below the previous, backward pass pulls the stack up if it overflows.
+  {
+    const stack = m.elements.filter((e) => e.group === 'text').sort((a, b) => a.box.y - b.box.y);
+    if (stack.length >= 2 && stack.some((t, i) => i > 0 && overlaps(t.box, (stack[i - 1] as ManifestElement).box))) {
+      for (let i = 1; i < stack.length; i++) {
+        const prev = stack[i - 1] as ManifestElement;
+        const cur = stack[i] as ManifestElement;
+        if (cur.box.y < prev.box.y + prev.box.h + minGap) {
+          cur.box = { ...cur.box, y: prev.box.y + prev.box.h + minGap };
+          cur.source = 'corrected';
+        }
+      }
+      const last = stack[stack.length - 1] as ManifestElement;
+      const overflow = last.box.y + last.box.h - (BB.y + BB.h);
+      if (overflow > 0) {
+        for (let i = stack.length - 1; i >= 0; i--) {
+          const cur = stack[i] as ManifestElement;
+          cur.box = { ...cur.box, y: cur.box.y - overflow };
+          if (i > 0) {
+            const above = stack[i - 1] as ManifestElement;
+            const maxY = cur.box.y - minGap - above.box.h;
+            if (above.box.y > maxY) above.box = { ...above.box, y: maxY };
+          }
+        }
+      }
+      for (const t of stack) t.box = clampInto(t.box, BB);
+      corrections.push('text group: final restack separated overlapping text');
     }
   }
 

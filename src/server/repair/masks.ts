@@ -283,6 +283,60 @@ export function fillMaskHoles(mask: Uint8Array, W: number, H: number): number {
   return filled;
 }
 
+/**
+ * Instance separation for identical products: the SAM phrase prompt matches
+ * EVERY instance ("can" finds all three cans), and clipping to the padded
+ * Spark box still keeps detached slivers of a neighbour that fall inside the
+ * margin (seen live on NORTHBEAN: thin can fragments beside each can).
+ * Keep only the connected component with the largest overlap with the
+ * target's own box; drop every detached component. Touching/occluding
+ * instances stay merged in one component and are kept whole.
+ * Returns dropped pixel count.
+ */
+export function keepInstanceComponent(mask: Uint8Array, W: number, H: number, box: PixelBox): number {
+  const seen = new Uint8Array(W * H);
+  const comps: Array<{ px: number[]; overlap: number }> = [];
+  for (let s = 0; s < W * H; s++) {
+    if (!mask[s] || seen[s]) continue;
+    const comp: number[] = [];
+    const queue = [s];
+    seen[s] = 1;
+    let head = 0;
+    while (head < queue.length) {
+      const i = queue[head++] as number;
+      comp.push(i);
+      const x = i % W;
+      const y = Math.floor(i / W);
+      if (x > 0 && mask[i - 1] && !seen[i - 1]) { seen[i - 1] = 1; queue.push(i - 1); }
+      if (x < W - 1 && mask[i + 1] && !seen[i + 1]) { seen[i + 1] = 1; queue.push(i + 1); }
+      if (y > 0 && mask[i - W] && !seen[i - W]) { seen[i - W] = 1; queue.push(i - W); }
+      if (y < H - 1 && mask[i + W] && !seen[i + W]) { seen[i + W] = 1; queue.push(i + W); }
+    }
+    let overlap = 0;
+    for (const i of comp) {
+      const x = i % W;
+      const y = Math.floor(i / W);
+      if (x >= box.x && x < box.x + box.w && y >= box.y && y < box.y + box.h) overlap++;
+    }
+    comps.push({ px: comp, overlap });
+  }
+  if (comps.length <= 1) return 0;
+  const best = comps.reduce((a, b) => (b.overlap * 100000 + b.px.length > a.overlap * 100000 + a.px.length ? b : a));
+  let dropped = 0;
+  for (const c of comps) {
+    if (c === best) continue;
+    // Drop only true slivers: small fragments that barely touch the target
+    // box. A large component overlapping the box belongs to the product
+    // itself (seen live: headphones whose thin headband split the mask —
+    // the far earcup was deleted as a "neighbour").
+    const sliver = c.px.length < best.px.length * 0.35 && c.overlap < c.px.length * 0.25;
+    if (!sliver) continue;
+    dropped += c.px.length;
+    for (const i of c.px) mask[i] = 0;
+  }
+  return dropped;
+}
+
 /** Fill ratio of a mask within its own bounding box (1 = solid). */
 export function maskFillInBox(mask: Uint8Array, W: number, H: number): number {
   const box = maskBoundingBox(mask, W, H);

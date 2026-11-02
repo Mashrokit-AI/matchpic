@@ -1,0 +1,59 @@
+{
+  "general": [
+    "Only when the source shows a full-bleed pale pink #f3dcd4 background with sage-green #8aa597 headphones on the left, keep the background full-bleed and assign any extra width or height to the background around the product, otherwise keep the source structure.",
+    "Only when the source shows the product on the left and a text stack on the right, keep the product in the left 55% of the canvas and the text stack in the right 45% of the canvas, otherwise keep the source structure.",
+    "Only when the source shows the headphones uncropped and fully visible, keep them at approximately 37% of the canvas width and 72% of the canvas height centred in the left zone, otherwise keep the source structure.",
+    "Only when the source shows a vertical text stack, keep its order as brand word on top, two-line headline below it, price below the headline, and sage-green CTA rectangle below the price, otherwise keep the source structure.",
+    "Only when the source shows a sage-green #8aa597 CTA rectangle, keep it fixed at approximately 19% of the canvas width and 11% of the canvas height below the price and do not stretch it with the canvas, otherwise keep the source structure.",
+    "Only when the source shows black #1d1d1d text on the pale pink background, keep all copy black except the white CTA label and introduce no other text colours, otherwise keep the source structure."
+  ],
+  "perPreset": {},
+  "never": [
+    "Never add a logo, badge, sticker, discount burst, or additional price element not visible in the source.",
+    "Never add extra bands, tabs, panels, frames, borders, or background shapes behind the product or text.",
+    "Never add additional buttons, icons, or English copy not visible in the source."
+  ],
+  "proportions": [
+    {
+      "element": "headphones product",
+      "dimension": "width",
+      "pct": 37
+    },
+    {
+      "element": "headphones product",
+      "dimension": "height",
+      "pct": 72
+    },
+    {
+      "element": "right text block",
+      "dimension": "width",
+      "pct": 38
+    },
+    {
+      "element": "CTA button",
+      "dimension": "width",
+      "pct": 19
+    },
+    {
+      "element": "CTA button",
+      "dimension": "height",
+      "pct": 11
+    }
+  ],
+  "text": [
+    "All visible copy is Hebrew in RTL order, centre-aligned within the right-hand text block.",
+    "Headline is the largest bold black #1d1d1d text, set over two lines below the smaller bold brand word.",
+    "Price is smaller bold black text below the headline, above the CTA.",
+    "CTA label is smaller white Hebrew text centred inside the sage-green #8aa597 rectangle."
+  ],
+  "version": 1,
+  "generatedBy": "muse-wonder-1.0",
+  "generatedAt": "2026-11-02T15:26:34.395Z",
+  "editedByUser": false,
+  "colors": [
+    "#8aa597",
+    "#f3dcd4",
+    "#1d1d1d"
+  ],
+  "fonts": []
+}

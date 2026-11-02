@@ -13,7 +13,7 @@ import {
 import { loadModelConfig } from '../../shared/config.js';
 import { PRESETS, presetById } from '../../shared/presets.js';
 import { templateSpecSchema } from '../../shared/schemas.js';
-import { DEMO_JOB_ID } from '../adfit/seed.js';
+import { DEMO_JOB_ID, DEMO_JOB_ORDER } from '../adfit/seed.js';
 import { prepareSource, runAnalysisStage, runOutput, runPool, type FitMode, type OutputTemplate, type PreparedSource } from '../adfit/pipeline.js';
 import { rowStatusFromChecks, runBatchSource, type TextOverrides } from '../adfit/batch.js';
 import { CostLedger } from '../models/costs.js';
@@ -727,7 +727,12 @@ export function createApp(deps: AppDeps): Hono {
   inner.get('/api/demo', (c) => {
     const dto = withStore((s) => {
       const demos = s.demoJobs();
-      return buildJob(s, demos[0]?.id ?? DEMO_JOB_ID);
+      const first = [...demos].sort((a, b) => {
+        const ia = DEMO_JOB_ORDER.indexOf(a.id);
+        const ib = DEMO_JOB_ORDER.indexOf(b.id);
+        return (ia < 0 ? DEMO_JOB_ORDER.length : ia) - (ib < 0 ? DEMO_JOB_ORDER.length : ib);
+      })[0];
+      return buildJob(s, first?.id ?? DEMO_JOB_ID);
     });
     if (!dto) return err(c, 404, 'err_not_found');
     return c.json(dto);

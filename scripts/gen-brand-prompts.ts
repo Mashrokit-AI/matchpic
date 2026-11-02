@@ -50,7 +50,7 @@ async function main(): Promise<void> {
   const client = createModelClient(cfg);
   const ledger = new CostLedger(6);
   const brandsDir = join(REPO_ROOT, 'fixtures', 'brands');
-  const ids = ['gali', 'noa', 'vela', 'dafna', 'zazo', 'toda'].filter((id) => !onlyBrand || id === onlyBrand);
+  const ids = ['gali', 'noa', 'vela', 'dafna', 'zazo', 'toda', 'luma', 'stride', 'northbean', 'teva', 'sheket'].filter((id) => !onlyBrand || id === onlyBrand);
   if (ids.length === 0) throw new Error(`unknown brand: ${onlyBrand}`);
   for (const id of ids) {
     const outPath = join(brandsDir, id, 'prompt.json');

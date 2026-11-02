@@ -1,0 +1,80 @@
+{
+  "general": [
+    "Only when the source shows an off-white panel inset on a #f4ead8 cream surround, keep the panel at approximately 90% of the canvas width and let the cream surround absorb extra canvas space; otherwise keep the source structure.",
+    "Only when the source shows a product photo on the right inside the panel, keep the photo at approximately 54% of the canvas width and 63% of the canvas height anchored to the top-right and let the photo absorb size changes before fixed-size text elements; otherwise keep the source structure.",
+    "Only when the source shows a headline in the left column slightly overlapping the left edge of the photo, keep the headline left-aligned at an approximately 10% left inset within an approximately 32% wide column; otherwise keep the source structure.",
+    "Only when the source shows the LUMA wordmark at the top-left above the headline, keep it at approximately 11% of the canvas width aligned to the same left edge as the headline; otherwise keep the source structure.",
+    "Only when the source shows a gold #c9a24a CTA button below the photo, keep the button at approximately 36% of the canvas width and 7% of the canvas height centered within the panel; otherwise keep the source structure.",
+    "Only when the source shows a small gold price badge overlapping the bottom-left inside the photo, keep the badge at approximately 9% of the canvas width and 5% of the canvas height at that photo corner; otherwise keep the source structure."
+  ],
+  "perPreset": {},
+  "never": [
+    "Never add extra CTA buttons, price badges, promotional bands, or tabs not visible in the source.",
+    "Never add additional logos, wordmarks, frames, or borders beyond the cream surround and off-white panel visible in the source.",
+    "Never add extra products, text blocks, or decorative elements not visible in the source."
+  ],
+  "proportions": [
+    {
+      "element": "off-white panel",
+      "dimension": "width",
+      "pct": 90
+    },
+    {
+      "element": "product photo",
+      "dimension": "width",
+      "pct": 54
+    },
+    {
+      "element": "product photo",
+      "dimension": "height",
+      "pct": 63
+    },
+    {
+      "element": "LUMA wordmark text",
+      "dimension": "width",
+      "pct": 11
+    },
+    {
+      "element": "headline column",
+      "dimension": "width",
+      "pct": 32
+    },
+    {
+      "element": "CTA button",
+      "dimension": "width",
+      "pct": 36
+    },
+    {
+      "element": "CTA button",
+      "dimension": "height",
+      "pct": 7
+    },
+    {
+      "element": "price badge",
+      "dimension": "width",
+      "pct": 9
+    },
+    {
+      "element": "price badge",
+      "dimension": "height",
+      "pct": 5
+    }
+  ],
+  "text": [
+    "Visible text is English in Latin script, with the uppercase LUMA wordmark in small dark lettering at the top-left.",
+    "The headline is large dark #2b2b2b sans-serif, left-aligned in the left column over multiple short lines, and larger than all other text.",
+    "CTA text is white and centered inside the gold button, smaller than the headline.",
+    "Subtext below the CTA is small dark #2b2b2b, centered, and smaller than the CTA text.",
+    "Price badge text is dark, centered on gold, and smaller than the CTA text."
+  ],
+  "version": 1,
+  "generatedBy": "muse-wonder-1.0",
+  "generatedAt": "2026-11-02T15:23:53.328Z",
+  "editedByUser": false,
+  "colors": [
+    "#c9a24a",
+    "#f4ead8",
+    "#2b2b2b"
+  ],
+  "fonts": []
+}

@@ -191,7 +191,7 @@ const en = {
   trace_live: 'live',
 
   brands_title: 'Brands',
-  brands_sub: 'A brand teaches its layout per size. Visitor brands expire after 24 h.',
+  brands_sub: 'Add a few finished ads and the system writes the brand rules itself. Visitor brands expire after 24 h.',
   brands_new: 'New brand',
   brand_name: 'Name',
   brand_colors: 'Colors (comma-separated #rrggbb)',

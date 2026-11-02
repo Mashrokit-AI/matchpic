@@ -1,10 +1,22 @@
 import { describe, expect, it } from 'vitest';
-import { buildTextBlockHtml, isolateNumerals } from '../src/server/repair/render.js';
+import { buildTextBlockHtml, contrastRatio, ensureTextContrast, isolateNumerals } from '../src/server/repair/render.js';
 import { buildFastPrompt, buildPlatePrompt, type OutputRequest } from '../src/server/adfit/pipeline.js';
 import { buildQaPrompt } from '../src/server/models/qa.js';
 import { presetById } from '../src/shared/presets.js';
 import { planLayout } from '../src/server/adfit/planner.js';
 import type { PreparedSource } from '../src/server/adfit/pipeline.js';
+
+describe('ensureTextContrast', () => {
+  it('fixes white-on-white CTA text to reach 4.5:1', () => {
+    const white = { r: 255, g: 255, b: 255 };
+    const fixed = ensureTextContrast(white, white);
+    expect(contrastRatio(white, fixed)).toBeGreaterThanOrEqual(4.5);
+  });
+  it('keeps a readable brand color untouched', () => {
+    const black = { r: 0, g: 0, b: 0 };
+    expect(ensureTextContrast({ r: 255, g: 255, b: 255 }, black)).toEqual(black);
+  });
+});
 
 describe('text block html', () => {
   it('keeps logical order with rtl dir and isolates numerals', () => {

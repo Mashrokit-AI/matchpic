@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { clipMaskToPaddedBox, completeLogoMask, fillMaskHoles, growLogoMask, maskFillInBox } from '../src/server/repair/masks.js';
+import { clipMaskToPaddedBox, completeLogoMask, fillMaskHoles, growLogoMask, keepInstanceComponent, maskFillInBox } from '../src/server/repair/masks.js';
 import { padBox } from '../src/shared/geometry.js';
 import type { RgbaImage } from '../src/server/repair/composite.js';
 
@@ -131,6 +131,22 @@ describe('clipMaskToPaddedBox', () => {
   });
 });
 
+describe('keepInstanceComponent', () => {
+  it('drops a detached neighbour sliver, keeps the can that owns the box', () => {
+    const W = 96;
+    const H = 20;
+    const mask = new Uint8Array(W * H);
+    for (let y = 4; y < 16; y++) {
+      for (let x = 10; x < 30; x++) mask[y * W + x] = 1; // own can
+      for (let x = 34; x < 38; x++) mask[y * W + x] = 1; // neighbour sliver inside padded box
+    }
+    const dropped = keepInstanceComponent(mask, W, H, { x: 8, y: 2, w: 26, h: 16 });
+    expect(dropped).toBe(4 * 12);
+    expect(countIn(mask, 96, 10, 30)).toBe(20 * 12);
+    expect(countIn(mask, 96, 34, 38)).toBe(0);
+  });
+});
+
 describe('fillMaskHoles', () => {
   it('fills enclosed holes but keeps border-connected background', () => {
     const W = 20;
@@ -163,5 +179,18 @@ describe('padBox', () => {
     expect(padBox({ x: 100, y: 50, w: 200, h: 80 }, 15, 1080, 1080)).toEqual({ x: 85, y: 35, w: 230, h: 110 });
     expect(padBox({ x: 5, y: 5, w: 100, h: 100 }, 15, 1080, 1080)).toEqual({ x: 0, y: 0, w: 120, h: 120 });
     expect(padBox({ x: 1000, y: 1000, w: 70, h: 70 }, 15, 1080, 1080)).toEqual({ x: 985, y: 985, w: 95, h: 95 });
+  });
+});
+
+describe('keepInstanceComponent product parts', () => {
+  it('keeps a large second part of the same product (headphone earcup)', () => {
+    const W = 96; const H = 20;
+    const mask = new Uint8Array(W * H);
+    for (let y = 4; y < 16; y++) {
+      for (let x = 10; x < 30; x++) mask[y * W + x] = 1;
+      for (let x = 40; x < 58; x++) mask[y * W + x] = 1;
+    }
+    const dropped = keepInstanceComponent(mask, W, H, { x: 8, y: 2, w: 54, h: 16 });
+    expect(dropped).toBe(0);
   });
 });

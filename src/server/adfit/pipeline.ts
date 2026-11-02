@@ -7,7 +7,7 @@ import { editImages, generateImage, type ImageGenConfig } from '../models/muse-i
 import { qaOutput } from '../models/qa.js';
 import type { CostLedger } from '../models/costs.js';
 import type { WonderSizePlan } from '../models/wonder.js';
-import { clipMaskToPaddedBox, completeLogoMask, fillMaskHoles, maskFillInBox, segmentTargets } from '../repair/masks.js';
+import { clipMaskToPaddedBox, completeLogoMask, fillMaskHoles, keepInstanceComponent, maskFillInBox, segmentTargets } from '../repair/masks.js';
 import { buildBoxPromptText, segment } from '../models/sam.js';
 import {
   debandFlatPlate,
@@ -25,9 +25,9 @@ import {
   type RgbaImage,
 } from '../repair/composite.js';
 import { artifactDigest, elementProof, type ArtifactDigest, type ElementProof } from '../repair/proof.js';
-import { minLegiblePx, renderRebuiltPanel, renderTextBlock, rgbFromHex, RenderBlocker, type TextLine } from '../repair/render.js';
+import { ensureTextContrast, minLegiblePx, renderRebuiltPanel, renderTextBlock, rgbFromHex, RenderBlocker, type TextLine } from '../repair/render.js';
 import { maskBoundingBox, padBox, type PixelBox } from '../../shared/geometry.js';
-import { freeHeadlineSubtext, freeOtherTexts, planLayout, tallProductCell } from './planner.js';
+import { freeHeadlineSubtext, freeOtherTexts, planLayout, shiftBoxAbovePanel, tallProductCell } from './planner.js';
 import { panelComplexity, samplePanelColor, snapPanelRect } from './snap.js';
 import { loadCachedLayers, sourceDigest, storeCachedLayers } from './cache.js';
 import { enforceManifest, familyForPreset, manifestFromPlan, templateZonesPx, type ResolvedLayoutManifest } from './manifest.js';
@@ -310,6 +310,13 @@ export async function runMasksStage(
       if (dropped > 0.05 * (kept + dropped)) {
         clipNotes.push(`${id} clipped to its box (removed ${Math.round((dropped / Math.max(1, kept + dropped)) * 100)}% cross-coverage)`);
         maskLabels[id] += ` +box-clip(-${dropped}px)`;
+      }
+      // Instance separation: identical products share one phrase mask, so
+      // detached neighbour slivers can survive inside the padded box.
+      const slivers = keepInstanceComponent(mask, input.width, input.height, { ...p.bbox });
+      if (slivers > 0) {
+        clipNotes.push(`${id} instance-separated (removed ${slivers}px detached)`);
+        maskLabels[id] += ` +instance(-${slivers}px)`;
       }
     });
     // Hole-fill + sparse-mask retry (products only — logos keep counters).
@@ -768,7 +775,7 @@ export async function compositeProtected(
       try {
         const sampled = req.source.panelFill ?? a.panel.bg_color;
         const fill = rgbFromHex(sampled);
-        const textColor = rgbFromHex(a.panel.text_color);
+        const textColor = ensureTextContrast(fill, rgbFromHex(a.panel.text_color));
         const radius = shape === 'pill' ? Math.floor(panelDst.h / 2) : shape === 'rect' ? 0 : Math.round(Math.min(panelDst.w, panelDst.h) * 0.08);
         const align = req.template?.spec.text_align ?? 'center';
         const rendered = await renderRebuiltPanel({
@@ -797,14 +804,20 @@ export async function compositeProtected(
   // Free text on the background: re-rendered verbatim in Chromium.
   const align = req.template?.spec.text_align ?? 'center';
   const nestedInPanel = (dst: PlanBox): boolean =>
-    !!panelDst && dst.x >= panelDst.x && dst.y >= panelDst.y && dst.x + dst.w <= panelDst.x + panelDst.w && dst.y + dst.h <= panelDst.y + panelDst.h;
-  const renderOne = async (text: { text: string; bold: boolean; color: string } | null, dst: LayoutPlan['headline'], key: string): Promise<void> => {
-    if (!text || !dst) return;
+    !!panelDst && dst.x < panelDst.x + panelDst.w && panelDst.x < dst.x + dst.w && dst.y < panelDst.y + panelDst.h && panelDst.y < dst.y + dst.h;
+  const renderOne = async (text: { text: string; bold: boolean; color: string } | null, dstIn: LayoutPlan['headline'], key: string): Promise<void> => {
+    if (!text || !dstIn) return;
+    let dst = dstIn;
     if (nestedInPanel(dst)) {
-      // Last defense (enforcement should have pushed this out): never stamp
-      // free text over the panel's own text — skip it loudly instead.
-      notes.push(`${key} SKIPPED: box nested in the panel (would collide with panel text)`);
-      return;
+      // Prefer relocating above the panel over dropping the text entirely
+      // (a missing headline reads worse than a moved one).
+      const moved = panelDst ? shiftBoxAbovePanel(dst, panelDst) : null;
+      if (!moved) {
+        notes.push(`${key} SKIPPED: box overlaps the panel (would collide with panel text)`);
+        return;
+      }
+      notes.push(`${key}: moved above the panel to avoid collision`);
+      dst = moved;
     }
     const line: TextLine = { text: text.text, px: Math.max(24, Math.round(dst.h * 0.62)), weight: text.bold ? 700 : 400, color: rgbFromHex(text.color) };
     const rendered = await renderTextBlock({ width: dst.w, height: dst.h, lines: [line], lang: a.language, align });

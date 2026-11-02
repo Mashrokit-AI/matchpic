@@ -8,5 +8,13 @@
   ],
   "fonts": [],
   "logo": null,
-  "templates": []
+  "templates": [],
+  "examples": [
+    {
+      "id": "ex-luma-general",
+      "scope": "general",
+      "image": "source-en.png"
+    }
+  ],
+  "prompt": "prompt.json"
 }

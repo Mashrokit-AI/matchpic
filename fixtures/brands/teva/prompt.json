@@ -1,0 +1,71 @@
+{
+  "general": [
+    "Only when the source shows a photo inset on a white #ffffff canvas, keep the photo flush to the left edge at ≈68% of the canvas width and ≈75% of the canvas height with ≈19% white space above it and ≈7% below it, letting extra canvas go to the photo and white background; otherwise keep the source structure.",
+    "Only when the source shows the brand word at the top right on white, keep it black, bold and right-aligned at the top-right corner at ≈16% of the canvas width, separated above the headline; otherwise keep the source structure.",
+    "Only when the source shows a headline overlapping the right edge of the photo, keep the headline black, bold and right-aligned so it overlaps the photo edge and extends into the ≈32%-wide right white column; otherwise keep the source structure.",
+    "Only when the source shows a price directly below the headline on white, keep it black, bold and right-aligned to the same right edge as the headline at a smaller size than the headline; otherwise keep the source structure.",
+    "Only when the source shows a single outlined CTA at the bottom right on white, keep it at the bottom-right at ≈23% of the canvas width and ≈4% of the canvas height with a black rounded outline and white fill; otherwise keep the source structure.",
+    "Only when the source shows product bottles as the focal subject inside the photo, scale the photo as the flexible element rather than enlarging the brand word, headline, price or CTA; otherwise keep the source structure."
+  ],
+  "perPreset": {},
+  "never": [
+    "Never add extra logos or brand marks beyond the single top-right brand word visible in the source.",
+    "Never add additional buttons, badges, price tags, bands, tabs or frames not visible in the source.",
+    "Never add #1f6f3b or #f5a623 panels, bands or text recolouring when the source shows black text on a white #ffffff background.",
+    "Never add extra headlines, subtext or promotional copy beyond what is visible in the source."
+  ],
+  "proportions": [
+    {
+      "element": "photo",
+      "dimension": "width",
+      "pct": 68
+    },
+    {
+      "element": "photo",
+      "dimension": "height",
+      "pct": 75
+    },
+    {
+      "element": "white space above photo",
+      "dimension": "height",
+      "pct": 19
+    },
+    {
+      "element": "right white column",
+      "dimension": "width",
+      "pct": 32
+    },
+    {
+      "element": "brand word",
+      "dimension": "width",
+      "pct": 16
+    },
+    {
+      "element": "CTA button",
+      "dimension": "width",
+      "pct": 23
+    },
+    {
+      "element": "CTA button",
+      "dimension": "height",
+      "pct": 4
+    }
+  ],
+  "text": [
+    "Hebrew RTL text is right-aligned to a common right edge in the right white column.",
+    "The headline is the largest bold black text, set over two lines and larger than the price, brand word and CTA text.",
+    "The price is bold black text below the headline, smaller than the headline, with the ₪ symbol adjacent to the numerals as shown in the source.",
+    "The brand word at the top right is bold black text, smaller than the headline.",
+    "CTA text is black and centred inside a single outlined rounded rectangle, smaller than the price."
+  ],
+  "version": 1,
+  "generatedBy": "muse-wonder-1.0",
+  "generatedAt": "2026-11-02T15:26:05.125Z",
+  "editedByUser": false,
+  "colors": [
+    "#1f6f3b",
+    "#f5a623",
+    "#ffffff"
+  ],
+  "fonts": []
+}

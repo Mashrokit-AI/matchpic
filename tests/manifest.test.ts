@@ -351,3 +351,35 @@ describe('layout manifest', () => {
     expect(zones['product_zone']?.h).toBe(Math.round(0.55 * 1080));
   });
 });
+
+describe('panel cap and text restack (demo regressions)', () => {
+  const overlaps = (a: {x:number;y:number;w:number;h:number}, b: {x:number;y:number;w:number;h:number}) =>
+    a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
+
+  it('caps a giant panel at 25% of canvas height (teva)', () => {
+    const m = manifestFromPlan({
+      plan: plan({ panel: { x: 90, y: 300, w: 900, h: 700 }, headline: null, products: [], product_scales: [] }),
+      preset: presetById('ig-feed-11')!, planner: 'wonder', direction: 'rtl',
+    });
+    const out = enforceManifest({ manifest: m, direction: 'rtl' });
+    const panel = out.elements.find((e) => e.id === 'panel')!;
+    expect(panel.box.h).toBeLessThanOrEqual(Math.round(1080 * 0.25));
+  });
+
+  it('separates overlapping headline and subtext (northbean story)', () => {
+    const m = manifestFromPlan({
+      plan: plan({
+        preset: 'ig-story-916', width: 1080, height: 1920,
+        safe: { x: 54, y: 269, w: 972, h: 1267 },
+        logo: null, products: [], product_scales: [], logo_scale: null, panel: null,
+        headline: { x: 100, y: 1200, w: 800, h: 90 },
+        subtext: { x: 100, y: 1240, w: 800, h: 70 },
+      }),
+      preset: presetById('ig-story-916')!, planner: 'wonder', direction: 'ltr',
+    });
+    const out = enforceManifest({ manifest: m, direction: 'ltr' });
+    const h = out.elements.find((e) => e.id === 'headline')!;
+    const s = out.elements.find((e) => e.id === 'subtext')!;
+    expect(overlaps(h.box, s.box)).toBe(false);
+  });
+});

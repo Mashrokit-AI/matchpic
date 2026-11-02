@@ -80,6 +80,9 @@ const DEMO_JOBS: DemoDef[] = [
 /** Fallback demo id when the DB has no seeded demos (tests + /api/demo). */
 export const DEMO_JOB_ID = 'demo-luma';
 
+/** Fixed display order of the saved examples (EN first, then HE). */
+export const DEMO_JOB_ORDER: string[] = DEMO_JOBS.map((d) => d.jobId);
+
 /** PNG dimensions from the IHDR chunk (all fixture sources are PNG). */
 function pngSize(path: string): { width: number; height: number } {
   const bytes = readFileSync(path);

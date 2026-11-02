@@ -22,7 +22,7 @@ export function sourceDigest(bytes: Buffer): string {
  * lockup's own ink palette, so photo backgrounds no longer grow into the
  * cut). A mismatch re-segments.
  */
-export const LAYERS_VERSION = 4;
+export const LAYERS_VERSION = 5;
 
 export interface CachedLayers {
   digest: string;

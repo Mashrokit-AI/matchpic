@@ -438,8 +438,8 @@ html[dir="rtl"] h3 { line-height: 1.4; }
 .gen-block { display: flex; flex-direction: column; gap: var(--s2); }
 .gen-block .btn { width: 100%; }
 .sticky-gen {
-  /* Pinned to the viewport bottom only once scrolled to: top-anchored just
-     below the fold (a bottom-anchored sticky would cover content at rest). */
+  /* Pinned near the viewport bottom once scrolled to, but hidden (via
+     .show) while the main Generate button is in view — never both at once. */
   position: sticky;
   top: calc(100dvh - 96px);
   z-index: 30;
@@ -451,7 +451,9 @@ html[dir="rtl"] h3 { line-height: 1.4; }
   gap: var(--s1);
   min-height: 96px;
   justify-content: center;
+  visibility: hidden;
 }
+.sticky-gen.show { visibility: visible; }
 .sticky-gen .btn { width: 100%; }
 .sticky-gen .gen-hint { font-size: 12px; text-align: center; }
 @media (min-width: 768px) { .sticky-gen { display: none; } }

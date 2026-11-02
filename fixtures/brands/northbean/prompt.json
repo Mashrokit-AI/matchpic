@@ -1,0 +1,77 @@
+{
+  "general": [
+    "Only when the source shows a white bean icon above the NORTHBEAN wordmark at top-left over a dark background, keep that stacked logo anchored about 5% from the left edge and 8% from the top at about 18% of canvas width; otherwise keep the source structure.",
+    "Only when the source shows a full-bleed dark wood background in #3a2416 and #111111, keep it full-bleed edge-to-edge with the photo/background as the flexible element absorbing any extra width or height; otherwise keep the source structure.",
+    "Only when the source shows headline and price text on the left over the dark background, keep them left-aligned in a column about 37% of canvas width starting at the 5% left margin, in #ffffff; otherwise keep the source structure.",
+    "Only when the source shows black product cans with white labels on the right, keep the product group on the right about 46% of canvas width and 71% of canvas height without enlarging the fixed text or logo elements to fill space; otherwise keep the source structure.",
+    "Only when the source shows a single outlined CTA button below the price line, keep it left-aligned to the same left margin at about 19% of canvas width and 11% of canvas height with a white outline and transparent fill; otherwise keep the source structure.",
+    "Only when the source uses #111111, #3a2416, and #ffffff, keep text, logo, and CTA in #ffffff over the dark background and do not introduce other colours; otherwise keep the source structure."
+  ],
+  "perPreset": {},
+  "never": [
+    "Never add a bottom band, top band, side panel, tab, or frame that is not in the source.",
+    "Never add a second logo, badge, sticker, seal, or extra brand mark.",
+    "Never add additional CTA buttons, buttons, or promotional labels beyond the single outlined CTA shown in the source.",
+    "Never add a white panel or card behind the logo, headline, price line, or CTA.",
+    "Never add extra products, props, headlines, or text blocks that are not in the source."
+  ],
+  "proportions": [
+    {
+      "element": "logo wordmark",
+      "dimension": "width",
+      "pct": 18
+    },
+    {
+      "element": "logo block",
+      "dimension": "height",
+      "pct": 19
+    },
+    {
+      "element": "left margin",
+      "dimension": "width",
+      "pct": 5
+    },
+    {
+      "element": "left text column",
+      "dimension": "width",
+      "pct": 37
+    },
+    {
+      "element": "headline block",
+      "dimension": "width",
+      "pct": 30
+    },
+    {
+      "element": "CTA button",
+      "dimension": "width",
+      "pct": 19
+    },
+    {
+      "element": "CTA button",
+      "dimension": "height",
+      "pct": 11
+    },
+    {
+      "element": "product group",
+      "dimension": "width",
+      "pct": 46
+    }
+  ],
+  "text": [
+    "English Latin script only, left-aligned to the same 5% left edge for logo, headline, price line, and CTA.",
+    "Headline is large bold white sans-serif over two lines, clearly larger than the price line below it.",
+    "Price line is regular white sans-serif at about 40% of headline size, placed below the headline.",
+    "Logo wordmark is uppercase bold white sans-serif below the bean icon.",
+    "CTA label is medium white sans-serif centered inside the outlined rectangle."
+  ],
+  "version": 1,
+  "generatedBy": "muse-wonder-1.0",
+  "generatedAt": "2026-11-02T15:25:35.020Z",
+  "editedByUser": false,
+  "colors": [
+    "#111111",
+    "#3a2416",
+    "#ffffff"
+  ],
+  "fonts": []
+}
