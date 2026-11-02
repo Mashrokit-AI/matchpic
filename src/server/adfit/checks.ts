@@ -86,6 +86,9 @@ export function checkManifestGeometry(
     if (wide && hero.box.h < Math.round(H * 0.7)) {
       out.push({ code: 'product_size', severity: 'warn', element: hero.id, detail: `${hero.id} below 70% of canvas height on landscape` });
     }
+    if (!tall && !wide && hero.box.h < Math.round(safe.h * 0.4)) {
+      out.push({ code: 'product_size', severity: 'warn', element: hero.id, detail: `${hero.id} below 40% of safe height on square/portrait` });
+    }
   }
 
   // Text group: one shared alignment edge.
@@ -134,6 +137,12 @@ export function checkManifestGeometry(
   });
   if (analysis.logo_bbox && !ids.has('logo')) {
     out.push({ code: 'missing_element', severity: 'fail', element: 'logo', detail: 'logo not placed' });
+  }
+  // The panel/CTA carries the offer: dropping it silently (a transparent
+  // CTA with no pastable pixels, NORTHBEAN's vanished "Order now") must
+  // fail the layout check, never ship as a clean-looking ad without it.
+  if (analysis.panel && !ids.has('panel')) {
+    out.push({ code: 'missing_element', severity: 'fail', element: 'panel', detail: 'panel (CTA) not placed' });
   }
   // Headline/subtext travel with pasted panel pixels when a panel exists, so
   // they are not required to have their own manifest elements.

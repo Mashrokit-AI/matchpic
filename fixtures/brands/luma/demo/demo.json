@@ -1,11 +1,11 @@
 {
   "brand": "luma",
   "mode": "protected",
-  "finishedAt": "2026-11-02T15:22:26.714Z",
-  "modelCalls": 17,
-  "imageCalls": 6,
-  "firstPreviewMs": 136651,
-  "totalMs": 325618,
+  "finishedAt": "2026-11-02T22:05:37.898Z",
+  "modelCalls": 5,
+  "imageCalls": 1,
+  "firstPreviewMs": 79492,
+  "totalMs": 270159,
   "outputs": [
     {
       "source": "demo-src-luma",
@@ -952,9 +952,9 @@
       "sourceLabel": "source-en.png",
       "preset": "fb-link",
       "mode": "protected",
-      "status": "pass",
+      "status": "needs_review",
       "image": "fb-link.png",
-      "before": null,
+      "before": "before-fb-link.png",
       "plan": {
         "preset": "fb-link",
         "width": 1200,
@@ -968,59 +968,59 @@
           "h": 578
         },
         "logo": {
-          "x": 84,
+          "x": 72,
           "y": 45,
-          "w": 192,
-          "h": 56
+          "w": 125,
+          "h": 37
         },
         "products": [
           {
-            "x": 647,
+            "x": 631,
             "y": 88,
-            "w": 153,
-            "h": 452
+            "w": 161,
+            "h": 477
           },
           {
-            "x": 856,
-            "y": 269,
-            "w": 242,
-            "h": 271
+            "x": 858,
+            "y": 287,
+            "w": 248,
+            "h": 278
           }
         ],
         "headline": {
-          "x": 84,
-          "y": 119,
-          "w": 504,
-          "h": 176
+          "x": 72,
+          "y": 126,
+          "w": 480,
+          "h": 119
         },
         "subtext": {
-          "x": 84,
-          "y": 314,
-          "w": 504,
-          "h": 50
+          "x": 72,
+          "y": 267,
+          "w": 456,
+          "h": 35
         },
         "panel": {
-          "x": 84,
+          "x": 72,
           "y": 383,
-          "w": 456,
-          "h": 69
+          "w": 360,
+          "h": 63
         },
         "other_texts": [
           {
-            "x": 636,
-            "y": 550,
-            "w": 168,
-            "h": 28
+            "x": 72,
+            "y": 323,
+            "w": 108,
+            "h": 38
           }
         ],
         "product_scales": [
-          1.3696969696969696,
-          1.272300469483568
+          1.4410876132930515,
+          1.3051643192488263
         ],
-        "logo_scale": 1.5238095238095237,
+        "logo_scale": 0.9920634920634921,
         "notes": [
           "wonder: landscape_split",
-          "wonder rationale: Landscape split with a left-aligned text column opposite bottom-aligned proportional products at 72% canvas height."
+          "wonder rationale: Landscape split with left-aligned text group and tall right product pair at 76% height, balanced margins and no overlaps."
         ],
         "manifest": {
           "preset": "fb-link",
@@ -1039,40 +1039,40 @@
               "id": "product-0",
               "kind": "product",
               "box": {
-                "x": 647,
-                "y": 88,
-                "w": 153,
-                "h": 452
+                "x": 637,
+                "y": 150,
+                "w": 152,
+                "h": 440
               },
               "group": "products",
               "z": 20,
               "align": null,
-              "scale": 1.3696969696969696,
-              "source": "default",
+              "scale": 1.360529920624496,
+              "source": "corrected",
               "srcBox": {
-                "x": 555,
-                "y": 280,
-                "w": 125,
-                "h": 325
+                "x": 556,
+                "y": 281,
+                "w": 145,
+                "h": 335
               }
             },
             {
               "id": "product-1",
               "kind": "product",
               "box": {
-                "x": 807,
-                "y": 208,
-                "w": 341,
-                "h": 382
+                "x": 805,
+                "y": 201,
+                "w": 347,
+                "h": 389
               },
               "group": "products",
               "z": 21,
               "align": null,
-              "scale": 1.7927870251813913,
+              "scale": 1.8261774950779948,
               "source": "corrected",
               "srcBox": {
-                "x": 695,
-                "y": 445,
+                "x": 697,
+                "y": 447,
                 "w": 205,
                 "h": 195
               }
@@ -1081,58 +1081,58 @@
               "id": "panel",
               "kind": "panel",
               "box": {
-                "x": 84,
-                "y": 383,
-                "w": 456,
-                "h": 69
+                "x": 72,
+                "y": 451,
+                "w": 360,
+                "h": 63
               },
               "group": "offer",
               "z": 10,
               "align": "left",
               "scale": null,
-              "source": "default",
+              "source": "corrected",
               "srcBox": null
             },
             {
               "id": "headline",
               "kind": "headline",
               "box": {
-                "x": 84,
-                "y": 119,
-                "w": 504,
-                "h": 176
+                "x": 72,
+                "y": 299,
+                "w": 480,
+                "h": 119
               },
               "group": "text",
               "z": 30,
               "align": "left",
               "scale": null,
-              "source": "default",
+              "source": "corrected",
               "srcBox": null
             },
             {
               "id": "subtext",
               "kind": "subtext",
               "box": {
-                "x": 84,
-                "y": 314,
-                "w": 504,
-                "h": 50
+                "x": 72,
+                "y": 479,
+                "w": 456,
+                "h": 35
               },
               "group": "text",
               "z": 31,
               "align": "left",
               "scale": null,
-              "source": "default",
+              "source": "corrected",
               "srcBox": null
             },
             {
               "id": "other-0",
               "kind": "other_text",
               "box": {
-                "x": 84,
-                "y": 549,
-                "w": 168,
-                "h": 31
+                "x": 72,
+                "y": 523,
+                "w": 108,
+                "h": 38
               },
               "group": "text",
               "z": 32,
@@ -1145,15 +1145,15 @@
               "id": "logo",
               "kind": "logo",
               "box": {
-                "x": 84,
+                "x": 72,
                 "y": 45,
-                "w": 192,
-                "h": 56
+                "w": 125,
+                "h": 37
               },
               "group": "logo",
               "z": 40,
               "align": null,
-              "scale": 1.5238095238095237,
+              "scale": 0.9920634920634921,
               "source": "default",
               "srcBox": {
                 "x": 112,
@@ -1165,52 +1165,117 @@
           ],
           "templateZones": null,
           "corrections": [
-            "product-1: grew toward 70% canvas-height floor (341x382)",
-            "other-0: grew to the text minimum (168x31)",
+            "product-1: grew toward 70% canvas-height floor (347x389)",
+            "products: 1 aligned to the shared surface line y=590",
             "text group: 3 boxes share the left edge",
+            "text group: tight stack with 13px gaps",
+            "product-1: below size floor but blocked from growing — needs review",
+            "product-1: below size floor but blocked from growing — needs review",
+            "text group: 3 boxes share the left edge",
+            "text group: tight stack with 13px gaps",
+            "product-1: below size floor but blocked from growing — needs review",
+            "product-1: below size floor but blocked from growing — needs review",
+            "text group: 3 boxes share the left edge",
+            "text group: tight stack with panel with 13px gaps (offer group kept together)",
+            "product-1: below size floor but blocked from growing — needs review",
+            "product-1: below size floor but blocked from growing — needs review",
+            "text group: 3 boxes share the left edge",
+            "text group: tight stack with 13px gaps",
+            "product-1: below size floor but blocked from growing — needs review",
+            "repair reverted for product-1 (would touch product-0) (separation < 9px)",
+            "product-0: grew toward 70% canvas-height floor (150x440)",
+            "product-1: below size floor but blocked from growing — needs review",
+            "products: 1 aligned to the shared surface line y=590",
+            "text group: 3 boxes share the left edge",
+            "text group: tight stack with 13px gaps",
+            "product-1: below size floor but blocked from growing — needs review",
+            "product-0: grew toward 70% canvas-height floor (152x440)",
+            "product-1: below size floor but blocked from growing — needs review",
+            "text group: 3 boxes share the left edge",
+            "text group: tight stack with 13px gaps",
+            "product-1: below size floor but blocked from growing — needs review",
+            "product-1: clamped into safe area + 6% margin",
+            "product-1: below size floor but blocked from growing — needs review",
+            "text group: 3 boxes share the left edge",
+            "text group: tight stack with 13px gaps",
+            "product-1: below size floor but blocked from growing — needs review",
+            "product-0: clamped into safe area + 6% margin",
+            "product-1: below size floor but blocked from growing — needs review",
+            "text group: 3 boxes share the left edge",
+            "text group: tight stack with 13px gaps",
+            "product-1: below size floor but blocked from growing — needs review",
+            "product-1: below size floor but blocked from growing — needs review",
+            "text group: 3 boxes share the left edge",
+            "text group: tight stack with 13px gaps",
+            "product-1: below size floor but blocked from growing — needs review",
+            "product-1: below size floor but blocked from growing — needs review",
+            "text group: 3 boxes share the left edge",
+            "subtext: pushed clear of headline",
+            "other-0: pushed clear of headline",
+            "subtext: pushed clear of panel",
+            "other-0: pushed clear of panel",
+            "subtext: pushed clear of other-0",
+            "subtext: pushed clear of panel",
+            "subtext: pushed clear of other-0",
+            "subtext: pushed clear of panel",
+            "text overlaps persist after pushing — needs review",
+            "product-1: below size floor but blocked from growing — needs review",
+            "text group: final restack separated overlapping text",
+            "other-0: clamped into safe area + 6% margin",
+            "product-1: below size floor but blocked from growing — needs review",
+            "text group: 3 boxes share the left edge",
+            "subtext: pushed clear of panel",
+            "other-0: pushed clear of subtext",
+            "other-0: pushed clear of panel",
+            "subtext: pushed clear of other-0",
+            "subtext: pushed clear of panel",
+            "subtext: pushed clear of other-0",
+            "subtext: pushed clear of panel",
+            "subtext: pushed clear of other-0",
+            "text overlaps persist after pushing — needs review",
             "product-1: below size floor but blocked from growing — needs review"
           ],
-          "rationale": "Landscape split with a left-aligned text column opposite bottom-aligned proportional products at 72% canvas height."
+          "rationale": "Landscape split with left-aligned text group and tall right product pair at 76% height, balanced margins and no overlaps."
         }
       },
       "proof": {
         "product-0": {
-          "scale": 1.3696969696969696,
+          "scale": 1.360529920624496,
           "core_differ": 0,
-          "core_total": 53002,
-          "feather_total": 2408,
-          "coverage": 0.9565421404078687,
+          "core_total": 52350,
+          "feather_total": 2514,
+          "coverage": 0.95417760279965,
           "pass": true
         },
         "product-1": {
-          "scale": 1.7927870251813913,
+          "scale": 1.8261774950779948,
           "core_differ": 0,
-          "core_total": 113410,
-          "feather_total": 2908,
-          "coverage": 0.9749995701439158,
+          "core_total": 117838,
+          "feather_total": 3243,
+          "coverage": 0.9732162767073281,
           "pass": true
         },
         "logo": {
-          "scale": 1.5238095238095237,
+          "scale": 0.9920634920634921,
           "core_differ": 0,
-          "core_total": 7559,
-          "feather_total": 1269,
-          "coverage": 0.8562528318985048,
+          "core_total": 2989,
+          "feather_total": 820,
+          "coverage": 0.78472039905487,
           "pass": true
         }
       },
       "qa": null,
       "retries": 0,
       "modelCalls": 0,
-      "imageCalls": 2,
-      "latencyMs": 24925,
+      "imageCalls": 1,
+      "latencyMs": 16967,
       "trace": [
         {
           "step": "adfit_analyze",
           "tool_or_model": "model:muse-spark-1.3",
-          "input_summary": "source 1080x1080",
-          "output_summary": "lang=en products=2 logo=yes headline=\"Glow that lasts all day\" panel=opaque bg=other coords=pixels",
-          "duration_ms": 25521,
+          "input_summary": "source 1080x1080 digest 464996cfaa2c",
+          "output_summary": "lang=en products=2 (layer cache hit)",
+          "duration_ms": 0,
           "evidence_ids": [
             "src:analysis"
           ],
@@ -1221,9 +1286,9 @@
         {
           "step": "adfit_masks",
           "tool_or_model": "model:sam-3.1",
-          "input_summary": "product-0[dropper bottle] product-1[cream jar] logo[logo]",
-          "output_summary": "ok: product-0,product-1,logo coverage: products 2/2",
-          "duration_ms": 9533,
+          "input_summary": "digest 464996cfaa2c",
+          "output_summary": "ok: product-0,product-1,logo (layer cache hit)",
+          "duration_ms": 0,
           "evidence_ids": [
             "src:product-0",
             "src:product-1",
@@ -1237,7 +1302,7 @@
           "step": "adfit_plan",
           "tool_or_model": "model:muse-wonder-1.0",
           "input_summary": "fb-link protected no-template family=landscape_split",
-          "output_summary": "wonder: landscape_split; wonder rationale: Landscape split with a left-aligned text column opposite bottom-aligned proportional products at 72% canvas height. | corrections: product-1: grew toward 70% canvas-height floor (341x382); other-0: grew to the text minimum (168x31); text group: 3 boxes share the left edge; product-1: below size floor but blocked from growing — needs review",
+          "output_summary": "wonder: landscape_split; wonder rationale: Landscape split with left-aligned text group and tall right product pair at 76% height, balanced margins and no overlaps. | corrections: product-1: grew toward 70% canvas-height floor (347x389); products: 1 aligned to the shared surface line y=590; text group: 3 boxes share the left edge; text group: tight stack with 13px gaps; product-1: below size floor but blocked from growing — needs review",
           "duration_ms": 0,
           "evidence_ids": [
             "out:plan"
@@ -1250,8 +1315,8 @@
           "step": "adfit_generate",
           "tool_or_model": "model:muse-image-1.0",
           "input_summary": "protected plate 1200x628",
-          "output_summary": "wire bytes=2505027",
-          "duration_ms": 24325,
+          "output_summary": "wire bytes=2154487",
+          "duration_ms": 15989,
           "evidence_ids": [
             "out:plate"
           ],
@@ -1262,9 +1327,9 @@
         {
           "step": "adfit_composite",
           "tool_or_model": "code:composite+chromium",
-          "input_summary": "plate + product-0@1.370x product-1@1.793x logo@1.524x + text(panel,headline,subtext,other-0) panel:rebuilt",
-          "output_summary": "1200x628 product-0: contact shadow at support y=539; product-1: contact shadow at support y=588; panel rebuilt in code (rounded_rect, fill #fbf6ee sampled)",
-          "duration_ms": 447,
+          "input_summary": "plate + product-0@1.441x product-1@1.826x logo@0.992x + text(panel,headline,subtext,other-0) panel:rebuilt",
+          "output_summary": "1200x628 product-0: contact shadow at support y=588; product-1: contact shadow at support y=588; panel rebuilt in code (rounded_rect, fill #fbf6ee sampled)",
+          "duration_ms": 822,
           "evidence_ids": [
             "out:product-0",
             "out:product-1",
@@ -1278,8 +1343,8 @@
           "step": "adfit_proof",
           "tool_or_model": "code:elementProof",
           "input_summary": "3 pasted elements",
-          "output_summary": "product-0:0/53002 (96% compared) product-1:0/113410 (97% compared) logo:0/7559 (86% compared) feather outside core only",
-          "duration_ms": 66,
+          "output_summary": "product-0:0/58800 (96% compared) product-1:0/117838 (97% compared) logo:0/2989 (78% compared) feather outside core only",
+          "duration_ms": 60,
           "evidence_ids": [
             "out:product-0",
             "out:product-1",
@@ -1290,24 +1355,24 @@
           "seq": 6
         },
         {
-          "step": "adfit_generate",
-          "tool_or_model": "model:muse-image-1.0",
-          "input_summary": "protected plate 1200x628 (retry) text-only",
-          "output_summary": "wire bytes=2126119",
-          "duration_ms": 33714,
+          "step": "adfit_repair",
+          "tool_or_model": "code:recompose",
+          "input_summary": "rerender_text:headline, move:subtext, move:headline, move:other-0, flag:panel, flag:other-0, scale:product-1, scale:product-0",
+          "output_summary": "applied: headline: re-render (Rendered headline is centre-aligned inside its left-aligned box, with 'day' centred under the first line, breaking the s); subtext: move (0,94); headline: move (0,94); other-0: move (0,94); product-0: scale x0.75",
+          "duration_ms": 0,
           "evidence_ids": [
-            "out:plate"
+            "out:repair"
           ],
-          "next_state": "adfit_composite",
+          "next_state": "done",
           "cached": false,
           "seq": 7
         },
         {
           "step": "adfit_composite",
           "tool_or_model": "code:composite+chromium",
-          "input_summary": "plate + product-0@1.370x product-1@1.793x logo@1.524x + text(panel,headline,subtext,other-0) panel:rebuilt",
-          "output_summary": "1200x628 product-0: contact shadow at support y=539; product-1: contact shadow at support y=588; panel rebuilt in code (rounded_rect, fill #fbf6ee sampled)",
-          "duration_ms": 472,
+          "input_summary": "plate + product-0@1.343x product-1@1.826x logo@0.992x + text(panel,headline,subtext,other-0) panel:rebuilt",
+          "output_summary": "1200x628 product-0: contact shadow at support y=591; product-1: contact shadow at support y=588; panel rebuilt in code (rounded_rect, fill #fbf6ee sampled)",
+          "duration_ms": 500,
           "evidence_ids": [
             "out:product-0",
             "out:product-1",
@@ -1321,8 +1386,8 @@
           "step": "adfit_proof",
           "tool_or_model": "code:elementProof",
           "input_summary": "3 pasted elements",
-          "output_summary": "product-0:0/53002 (96% compared) product-1:0/113410 (97% compared) logo:0/7559 (86% compared) feather outside core only",
-          "duration_ms": 60,
+          "output_summary": "product-0:0/51019 (95% compared) product-1:0/117838 (97% compared) logo:0/2989 (78% compared) feather outside core only",
+          "duration_ms": 63,
           "evidence_ids": [
             "out:product-0",
             "out:product-1",
@@ -1333,73 +1398,159 @@
           "seq": 9
         },
         {
+          "step": "adfit_repair",
+          "tool_or_model": "code:recompose",
+          "input_summary": "retry: scale:product-1, scale:product-0, move:product-1, move:product-0, rerender_text:headline, move:subtext, move:headline, move:other-0, rerender_text:subtext, flag:panel, flag:other-0",
+          "output_summary": "applied: product-0: scale x0.66; product-1: move (0,67); product-0: move (0,67); headline: re-render (Headline glyphs are center-aligned inside the left-aligned box, breaking the source left-aligned text stack shared with ); subtext: move (0,94); headline: move (0,94); other-0: move (0,94); subtext: re-rende",
+          "duration_ms": 0,
+          "evidence_ids": [
+            "out:repair"
+          ],
+          "next_state": "done",
+          "cached": false,
+          "seq": 10
+        },
+        {
+          "step": "adfit_composite",
+          "tool_or_model": "code:composite+chromium",
+          "input_summary": "plate + product-0@1.361x product-1@1.826x logo@0.992x + text(panel,headline,subtext,other-0) panel:rebuilt",
+          "output_summary": "1200x628 product-0: contact shadow at support y=593; product-1: contact shadow at support y=588; panel rebuilt in code (rounded_rect, fill #fbf6ee sampled); subtext: moved above the panel to avoid collision",
+          "duration_ms": 512,
+          "evidence_ids": [
+            "out:product-0",
+            "out:product-1",
+            "out:logo"
+          ],
+          "next_state": "adfit_proof",
+          "cached": false,
+          "seq": 11
+        },
+        {
+          "step": "adfit_proof",
+          "tool_or_model": "code:elementProof",
+          "input_summary": "3 pasted elements",
+          "output_summary": "product-0:0/52350 (95% compared) product-1:0/117838 (97% compared) logo:0/2989 (78% compared) feather outside core only",
+          "duration_ms": 62,
+          "evidence_ids": [
+            "out:product-0",
+            "out:product-1",
+            "out:logo"
+          ],
+          "next_state": "adfit_review",
+          "cached": false,
+          "seq": 12
+        },
+        {
           "step": "adfit_wonder_plan",
           "tool_or_model": "model:muse-wonder-1.0",
-          "input_summary": "1 source x 3 sizes",
-          "output_summary": "families: ig-feed-45=portrait_stack ig-story-916=portrait_stack fb-link=landscape_split",
-          "duration_ms": 88564,
+          "input_summary": "1 source x 1 sizes",
+          "output_summary": "families: fb-link=landscape_split",
+          "duration_ms": 61854,
           "evidence_ids": [
             "out:plan"
           ],
           "next_state": "adfit_generate",
-          "cached": true,
-          "seq": 10
+          "cached": false,
+          "seq": 13
         },
         {
           "step": "adfit_plate_check",
           "tool_or_model": "model:muse-spark-1.3",
-          "input_summary": "3 plates",
-          "output_summary": "dirty (regenerate once): ig-feed-45: Straight horizontal horizon seam dividing frame into two fields: textured wall above and stone surface below; not one continuous field. | ig-story-916: Multiple straight horizontal seams/bands dividing frame: wall field, stone tabletop, thick table edge, and darker lower region. | fb-link: Multiple straight horizontal bands/blocks dividing frame: wall, stone riser, stone surface, and f",
-          "duration_ms": 19776,
+          "input_summary": "1 plates",
+          "output_summary": "all clean",
+          "duration_ms": 7704,
           "evidence_ids": [
             "out:plate"
           ],
           "next_state": "adfit_review",
-          "cached": true,
-          "seq": 11
+          "cached": false,
+          "seq": 14
         },
         {
           "step": "adfit_text_check",
           "tool_or_model": "model:muse-spark-1.3",
-          "input_summary": "3 outputs with re-rendered text",
+          "input_summary": "1 outputs with re-rendered text",
           "output_summary": "all exact",
-          "duration_ms": 11888,
+          "duration_ms": 4488,
           "evidence_ids": [
             "out:text"
           ],
           "next_state": "adfit_review",
-          "cached": true,
-          "seq": 12
+          "cached": false,
+          "seq": 15
         },
         {
           "step": "adfit_review",
           "tool_or_model": "model:muse-wonder-1.0",
-          "input_summary": "source + 3 outputs + deterministic findings",
-          "output_summary": "wonder review failed (Structured request failed (json-only): Request timed out.)",
-          "duration_ms": 0,
+          "input_summary": "source + 1 outputs + deterministic findings",
+          "output_summary": "5 defects: fb-link/headline, fb-link/subtext, fb-link/panel, fb-link/other-0, fb-link/product-1",
+          "duration_ms": 91003,
           "evidence_ids": [
             "out:review"
           ],
           "next_state": "adfit_repair",
-          "cached": true,
-          "seq": 13
+          "cached": false,
+          "seq": 16
+        },
+        {
+          "step": "adfit_repair",
+          "tool_or_model": "code:recompose",
+          "input_summary": "1 sizes with defects",
+          "output_summary": "1 recomposed from cached layers (before kept)",
+          "duration_ms": 0,
+          "evidence_ids": [
+            "out:repair"
+          ],
+          "next_state": "done",
+          "cached": false,
+          "seq": 17
+        },
+        {
+          "step": "adfit_review_retry",
+          "tool_or_model": "model:muse-wonder-1.0",
+          "input_summary": "second chance for 1 reverted size(s)",
+          "output_summary": "7 re-proposed defects: fb-link/product-1, fb-link/product-1, fb-link/headline, fb-link/subtext, fb-link/subtext, fb-link/panel, fb-link/other-0",
+          "duration_ms": 80497,
+          "evidence_ids": [
+            "out:review"
+          ],
+          "next_state": "adfit_repair",
+          "cached": false,
+          "seq": 18
         }
       ],
       "error": null,
       "checks": {
         "protected_pixels": {
           "status": "passed",
-          "detail": "Protected core matches the resized source (86% compared)"
+          "detail": "Protected core matches the resized source (78% compared)"
         },
         "text": {
-          "status": "passed",
-          "detail": "re-rendered text verified exact"
+          "status": "fixed",
+          "detail": "re-rendered text verified exact after repair"
         },
         "layout_review": {
-          "status": "passed",
-          "detail": "deterministic checks passed (review skipped)"
+          "status": "needs_review",
+          "detail": "deterministic: overlap"
         },
-        "repaired": null
+        "repaired": {
+          "before": "fixtures/brands/luma/demo/before-fb-link.png",
+          "patches": [
+            "headline: re-render (Rendered headline is centre-aligned inside its left-aligned box, with 'day' centred under the first line, breaking the s)",
+            "subtext: move (0,94)",
+            "headline: move (0,94)",
+            "other-0: move (0,94)",
+            "product-0: scale x0.75",
+            "product-0: scale x0.66",
+            "product-1: move (0,67)",
+            "product-0: move (0,67)",
+            "headline: re-render (Headline glyphs are center-aligned inside the left-aligned box, breaking the source left-aligned text stack shared with )",
+            "subtext: move (0,94)",
+            "headline: move (0,94)",
+            "other-0: move (0,94)",
+            "subtext: re-render (Free shipping glyphs are center-aligned inside the left-aligned box, so its visual left edge does not match headline, pr)"
+          ]
+        }
       }
     }
   ]

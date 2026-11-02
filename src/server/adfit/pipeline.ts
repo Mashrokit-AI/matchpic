@@ -7,9 +7,10 @@ import { editImages, generateImage, type ImageGenConfig } from '../models/muse-i
 import { qaOutput } from '../models/qa.js';
 import type { CostLedger } from '../models/costs.js';
 import type { WonderSizePlan } from '../models/wonder.js';
-import { clipMaskToPaddedBox, completeLogoMask, fillMaskHoles, keepInstanceComponent, maskFillInBox, segmentTargets } from '../repair/masks.js';
+import { clipProductMask, completeLogoMask, fillMaskHoles, keepInstanceComponent, maskFillInBox, resolveMaskOverlaps, segmentTargets } from '../repair/masks.js';
 import { buildBoxPromptText, segment } from '../models/sam.js';
 import {
+  completeOccludedBase,
   debandFlatPlate,
   decodeRgba,
   defringeCut,
@@ -26,7 +27,7 @@ import {
 } from '../repair/composite.js';
 import { artifactDigest, elementProof, type ArtifactDigest, type ElementProof } from '../repair/proof.js';
 import { ensureTextContrast, minLegiblePx, renderRebuiltPanel, renderTextBlock, rgbFromHex, RenderBlocker, type TextLine } from '../repair/render.js';
-import { maskBoundingBox, padBox, type PixelBox } from '../../shared/geometry.js';
+import { maskBoundingBox, padBox, unionMasks, type PixelBox } from '../../shared/geometry.js';
 import { freeHeadlineSubtext, freeOtherTexts, planLayout, shiftBoxAbovePanel, tallProductCell } from './planner.js';
 import { panelComplexity, samplePanelColor, snapPanelRect } from './snap.js';
 import { loadCachedLayers, sourceDigest, storeCachedLayers } from './cache.js';
@@ -303,13 +304,20 @@ export async function runMasksStage(
     const clipNotes: string[] = [];
     analysis.products.forEach((p, i) => {
       const id = `product-${i}`;
-      const mask = masks.get(id);
-      if (!mask) return;
+      const origMask = masks.get(id);
+      if (!origMask) return;
       const margin = Math.max(24, Math.round(Math.max(p.bbox.w, p.bbox.h) * 0.08));
-      const { kept, dropped } = clipMaskToPaddedBox(mask, input.width, input.height, { ...p.bbox }, margin);
-      if (dropped > 0.05 * (kept + dropped)) {
-        clipNotes.push(`${id} clipped to its box (removed ${Math.round((dropped / Math.max(1, kept + dropped)) * 100)}% cross-coverage)`);
-        maskLabels[id] += ` +box-clip(-${dropped}px)`;
+      const siblings = analysis.products.filter((_, j) => j !== i).map((q) => ({ ...q.bbox }));
+      const clipped = clipProductMask(origMask, input.width, input.height, { ...p.bbox }, margin, siblings);
+      masks.set(id, clipped.mask);
+      const mask = clipped.mask;
+      if (clipped.expanded) {
+        clipNotes.push(`${id} clip bound expanded (Spark box sliced the product)`);
+        maskLabels[id] += ' +box-clip-expanded';
+      }
+      if (clipped.dropped > 0.05 * (clipped.kept + clipped.dropped)) {
+        clipNotes.push(`${id} clipped to its box (removed ${Math.round((clipped.dropped / Math.max(1, clipped.kept + clipped.dropped)) * 100)}% cross-coverage)`);
+        maskLabels[id] += ` +box-clip(-${clipped.dropped}px)`;
       }
       // Instance separation: identical products share one phrase mask, so
       // detached neighbour slivers can survive inside the padded box.
@@ -349,7 +357,9 @@ export async function runMasksStage(
           fillMaskHoles(retryMask, input.width, input.height);
           const retryFill = maskFillInBox(retryMask, input.width, input.height);
           if (retryFill > fill && maskBoundingBox(retryMask, input.width, input.height)) {
-            masks.set(id, retryMask);
+            // Union, never replace: the box-only retry fills the silhouette
+            // but can drop parts the phrase mask found (a can's silver lid).
+            masks.set(id, unionMasks(retryMask, mask));
             maskLabels[id] = `box-only retry (fill ${fill.toFixed(2)} → ${retryFill.toFixed(2)})`;
             holeNotes.push(`${id} sparse mask retried box-only (fill ${fill.toFixed(2)} → ${retryFill.toFixed(2)})`);
             fill = retryFill;
@@ -359,6 +369,20 @@ export async function runMasksStage(
         } catch {
           holeNotes.push(`${id} mask sparse (fill ${fill.toFixed(2)}), retry failed — kept original`);
         }
+      }
+    }
+    // Contested-pixel resolution (after the retry, whose box mask can
+    // reintroduce an occluder's strip): a pixel claimed by two products
+    // belongs to the one whose Spark box centre is nearer.
+    if (analysis.products.length > 1) {
+      const productMasks = new Map<string, Uint8Array>();
+      analysis.products.forEach((_, i) => {
+        const m = masks.get(`product-${i}`);
+        if (m) productMasks.set(`product-${i}`, m);
+      });
+      const removed = resolveMaskOverlaps(productMasks, input.width, input.height, analysis.products.map((p) => ({ ...p.bbox })));
+      for (const [id, n] of Object.entries(removed)) {
+        if (n > 0) holeNotes.push(`${id} contested pixels assigned to the nearer product (-${n}px)`);
       }
     }
     // Coverage validation: every analyzed product instance must be found, and
@@ -421,7 +445,15 @@ export async function assemblePreparedSource(
   const products: ElementCut[] = [];
   analysis.products.forEach((p, i) => {
     const cut = cutOrRect(`product-${i}`, { ...p.bbox });
-    if (cut) products.push(cut);
+    if (cut) {
+      // Complete a base torn by a source foreground occluder (fruit over
+      // the bottle bases) so the product pastes whole, not jagged.
+      if (!cut.fallbackRect) {
+        const filled = completeOccludedBase(cut.rgba);
+        if (filled > 0) maskLabels[cut.id] = `${maskLabels[cut.id] ?? ''} +base-complete(+${filled}px)`;
+      }
+      products.push(cut);
+    }
   });
   const logo = logoBox ? cutOrRect('logo', { ...logoBox }) : null;
   // The opaque panel travels as pixels; snap Spark's box out to the panel's
@@ -768,14 +800,19 @@ export async function compositeProtected(
   let panelRebuilt = false;
   let panelFlagged = false;
   const panelDst = mBox('panel') ?? plan.panel;
-  if (req.source.panel && panelDst && a.panel) {
+  if (panelDst && a.panel && (req.source.panel || a.panel.texts.length > 0)) {
     const shape = req.template?.spec.panel_zone?.shape ?? 'rounded_rect';
-    const simple = a.panel.opaque && !req.source.panelComplex && a.panel.texts.length > 0;
+    // A transparent panel is a CTA button with no pastable pixels of its
+    // own (its source rect is background + outline): rebuild it as an
+    // outlined button instead of dropping it (seen live: NORTHBEAN's
+    // "Order now" vanished from every output).
+    const isCta = !a.panel.opaque;
+    const simple = !req.source.panelComplex && a.panel.texts.length > 0;
     if (simple) {
       try {
         const sampled = req.source.panelFill ?? a.panel.bg_color;
         const fill = rgbFromHex(sampled);
-        const textColor = ensureTextContrast(fill, rgbFromHex(a.panel.text_color));
+        const textColor = isCta ? rgbFromHex(a.panel.text_color) : ensureTextContrast(fill, rgbFromHex(a.panel.text_color));
         const radius = shape === 'pill' ? Math.floor(panelDst.h / 2) : shape === 'rect' ? 0 : Math.round(Math.min(panelDst.w, panelDst.h) * 0.08);
         const align = req.template?.spec.text_align ?? 'center';
         const rendered = await renderRebuiltPanel({
@@ -783,6 +820,7 @@ export async function compositeProtected(
           height: panelDst.h,
           radius,
           fill,
+          outline: isCta ? textColor : null,
           lines: a.panel.texts.map((t, i) => ({ text: t, weight: i === 0 ? 700 : 400, color: textColor })),
           lang: a.language,
           align,
@@ -790,11 +828,11 @@ export async function compositeProtected(
         textSizes['panel'] = rendered.sizes;
         stampLayer(canvas, await decodeRgba(rendered.png), panelDst.x, panelDst.y);
         panelRebuilt = true;
-        notes.push(`panel rebuilt in code (${shape}, fill ${sampled}${req.source.panelFill ? ' sampled' : ' spec'})`);
+        notes.push(isCta ? `cta rebuilt in code as outlined button (${a.panel.texts.join(' / ')})` : `panel rebuilt in code (${shape}, fill ${sampled}${req.source.panelFill ? ' sampled' : ' spec'})`);
       } catch (err) {
         if (!(err instanceof RenderBlocker)) throw err;
         notes.push(`panel rebuild refused (${err.message.slice(0, 120)}) — paste fallback`);
-        panelFlagged = await pastePanelFallback(req, panelDst, canvas, placed, notes);
+        panelFlagged = (await pastePanelFallback(req, panelDst, canvas, placed, notes)) || !req.source.panel;
       }
     } else {
       panelFlagged = await pastePanelFallback(req, panelDst, canvas, placed, notes);
@@ -1111,6 +1149,7 @@ export function planForSize(req: OutputRequest, wonder: WonderSizePlan | null): 
           templateZones: zones,
           rationale: wonder.rationale,
           freeText: freeHeadlineSubtext(req.source.analysis, converted.plan),
+          ctaPanel: !!req.source.analysis.panel && !req.source.analysis.panel.opaque,
         }),
         direction: req.source.analysis.direction,
       });
@@ -1127,6 +1166,7 @@ export function planForSize(req: OutputRequest, wonder: WonderSizePlan | null): 
       direction: req.source.analysis.direction,
       templateZones: zones,
       freeText: freeHeadlineSubtext(req.source.analysis, codePlan),
+      ctaPanel: !!req.source.analysis.panel && !req.source.analysis.panel.opaque,
     }),
     direction: req.source.analysis.direction,
   });

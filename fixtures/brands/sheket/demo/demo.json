@@ -1,11 +1,11 @@
 {
   "brand": "sheket",
   "mode": "protected",
-  "finishedAt": "2026-11-02T15:22:26.830Z",
-  "modelCalls": 14,
-  "imageCalls": 7,
-  "firstPreviewMs": 94498,
-  "totalMs": 439992,
+  "finishedAt": "2026-11-02T22:05:38.050Z",
+  "modelCalls": 13,
+  "imageCalls": 5,
+  "firstPreviewMs": 81659,
+  "totalMs": 248114,
   "outputs": [
     {
       "source": "demo-src-sheket",
@@ -30,17 +30,17 @@
         "logo": null,
         "products": [
           {
-            "x": 342,
-            "y": 287,
-            "w": 395,
-            "h": 463
+            "x": 308,
+            "y": 281,
+            "w": 465,
+            "h": 497
           }
         ],
         "headline": {
           "x": 65,
-          "y": 140,
+          "y": 130,
           "w": 950,
-          "h": 97
+          "h": 92
         },
         "subtext": {
           "x": 65,
@@ -49,26 +49,26 @@
           "h": 54
         },
         "panel": {
-          "x": 583,
-          "y": 880,
-          "w": 432,
-          "h": 86
+          "x": 65,
+          "y": 907,
+          "w": 950,
+          "h": 76
         },
         "other_texts": [
           {
             "x": 65,
-            "y": 799,
+            "y": 837,
             "w": 950,
-            "h": 59
+            "h": 52
           }
         ],
         "product_scales": [
-          0.9729064039408867
+          1.0426008968609866
         ],
         "logo_scale": null,
         "notes": [
           "wonder: square_balanced",
-          "wonder rationale: Square balanced stack with right-aligned RTL text above and below the centered product, filling the safe area without overlap."
+          "wonder rationale: Square balanced stack: right-aligned text above, centered product, price and CTA below."
         ],
         "manifest": {
           "preset": "ig-feed-11",
@@ -87,37 +87,37 @@
               "id": "product-0",
               "kind": "product",
               "box": {
-                "x": 342,
-                "y": 287,
-                "w": 395,
-                "h": 463
+                "x": 308,
+                "y": 281,
+                "w": 465,
+                "h": 497
               },
               "group": "products",
               "z": 20,
               "align": null,
-              "scale": 0.9729064039408867,
+              "scale": 1.0426008968609866,
               "source": "default",
               "srcBox": {
                 "x": 126,
                 "y": 126,
-                "w": 368,
-                "h": 482
+                "w": 394,
+                "h": 484
               }
             },
             {
               "id": "panel",
               "kind": "panel",
               "box": {
-                "x": 421,
-                "y": 880,
-                "w": 432,
-                "h": 86
+                "x": 65,
+                "y": 907,
+                "w": 950,
+                "h": 76
               },
               "group": "offer",
               "z": 10,
               "align": "right",
               "scale": null,
-              "source": "corrected",
+              "source": "default",
               "srcBox": null
             },
             {
@@ -125,9 +125,9 @@
               "kind": "headline",
               "box": {
                 "x": 65,
-                "y": 140,
+                "y": 130,
                 "w": 950,
-                "h": 97
+                "h": 92
               },
               "group": "text",
               "z": 30,
@@ -157,9 +157,9 @@
               "kind": "other_text",
               "box": {
                 "x": 65,
-                "y": 799,
+                "y": 837,
                 "w": 950,
-                "h": 59
+                "h": 52
               },
               "group": "text",
               "z": 32,
@@ -171,25 +171,24 @@
           ],
           "templateZones": null,
           "corrections": [
-            "text group: 3 boxes share the right edge",
             "text group: 3 boxes share the right edge"
           ],
-          "rationale": "Square balanced stack with right-aligned RTL text above and below the centered product, filling the safe area without overlap."
+          "rationale": "Square balanced stack: right-aligned text above, centered product, price and CTA below."
         }
       },
       "proof": {
         "product-0": {
-          "scale": 0.9729064039408867,
+          "scale": 1.0426008968609866,
           "core_differ": 0,
-          "core_total": 65449,
-          "feather_total": 6331,
-          "coverage": 0.9117999442741711,
+          "core_total": 84368,
+          "feather_total": 8126,
+          "coverage": 0.9121456526909854,
           "pass": true
         },
         "panel": {
-          "scale": 1.34375,
+          "scale": 1.1875,
           "core_differ": 0,
-          "core_total": 22127,
+          "core_total": 17124,
           "feather_total": 0,
           "coverage": 1,
           "pass": true
@@ -198,15 +197,15 @@
       "qa": null,
       "retries": 0,
       "modelCalls": 0,
-      "imageCalls": 2,
-      "latencyMs": 18622,
+      "imageCalls": 3,
+      "latencyMs": 22502,
       "trace": [
         {
           "step": "adfit_analyze",
           "tool_or_model": "model:muse-spark-1.3",
           "input_summary": "source 1280x720",
           "output_summary": "lang=he products=1 logo=no headline=\"שומעים רק את המוזיקה\" panel=opaque bg=flat coords=pixels",
-          "duration_ms": 23036,
+          "duration_ms": 24559,
           "evidence_ids": [
             "src:analysis"
           ],
@@ -218,8 +217,8 @@
           "step": "adfit_masks",
           "tool_or_model": "model:sam-3.1",
           "input_summary": "product-0[headphones]",
-          "output_summary": "ok: product-0 coverage: products 1/1; product-0 clipped to its box (removed 8% cross-coverage); product-0 mask sparse (fill 0.39) even after retry — kept best",
-          "duration_ms": 5047,
+          "output_summary": "ok: product-0 coverage: products 1/1; product-0 clip bound expanded (Spark box sliced the product); product-0 mask sparse (fill 0.39) even after retry — kept best",
+          "duration_ms": 9163,
           "evidence_ids": [
             "src:product-0"
           ],
@@ -231,7 +230,7 @@
           "step": "adfit_plan",
           "tool_or_model": "model:muse-wonder-1.0",
           "input_summary": "ig-feed-11 protected no-template family=square_balanced",
-          "output_summary": "wonder: square_balanced; wonder rationale: Square balanced stack with right-aligned RTL text above and below the centered product, filling the safe area without overlap. | corrections: text group: 3 boxes share the right edge",
+          "output_summary": "wonder: square_balanced; wonder rationale: Square balanced stack: right-aligned text above, centered product, price and CTA below. | corrections: text group: 3 boxes share the right edge",
           "duration_ms": 0,
           "evidence_ids": [
             "out:plan"
@@ -244,8 +243,8 @@
           "step": "adfit_generate",
           "tool_or_model": "model:muse-image-1.0",
           "input_summary": "protected plate 1080x1080",
-          "output_summary": "wire bytes=2284863",
-          "duration_ms": 17931,
+          "output_summary": "wire bytes=2311480",
+          "duration_ms": 21833,
           "evidence_ids": [
             "out:plate"
           ],
@@ -257,7 +256,7 @@
           "step": "adfit_generate",
           "tool_or_model": "code:deband",
           "input_summary": "plate 1080x1080",
-          "output_summary": "debanded 337 edge rows into the field",
+          "output_summary": "debanded 131 edge rows into the field",
           "duration_ms": 0,
           "evidence_ids": [],
           "next_state": "adfit_composite",
@@ -267,9 +266,9 @@
         {
           "step": "adfit_composite",
           "tool_or_model": "code:composite+chromium",
-          "input_summary": "plate + product-0@0.973x panel@1.344x + text(headline,subtext,other-0)",
-          "output_summary": "1080x1080 product-0: contact shadow at support y=749; panel pasted (complex) at 1.34x",
-          "duration_ms": 448,
+          "input_summary": "plate + product-0@1.043x panel@1.188x + text(headline,subtext,other-0)",
+          "output_summary": "1080x1080 product-0: contact shadow at support y=777; panel pasted (complex) at 1.19x",
+          "duration_ms": 424,
           "evidence_ids": [
             "out:product-0",
             "out:panel"
@@ -282,8 +281,8 @@
           "step": "adfit_proof",
           "tool_or_model": "code:elementProof",
           "input_summary": "2 pasted elements",
-          "output_summary": "product-0:0/65449 (91% compared) panel:0/22127 (100% compared) feather outside core only",
-          "duration_ms": 29,
+          "output_summary": "product-0:0/84368 (91% compared) panel:0/17124 (100% compared) feather outside core only",
+          "duration_ms": 35,
           "evidence_ids": [
             "out:product-0",
             "out:panel"
@@ -296,8 +295,8 @@
           "step": "adfit_generate",
           "tool_or_model": "model:muse-image-1.0",
           "input_summary": "protected plate 1080x1080 (retry) text-only",
-          "output_summary": "wire bytes=972945",
-          "duration_ms": 26751,
+          "output_summary": "wire bytes=2634292",
+          "duration_ms": 11826,
           "evidence_ids": [
             "out:plate"
           ],
@@ -308,9 +307,9 @@
         {
           "step": "adfit_composite",
           "tool_or_model": "code:composite+chromium",
-          "input_summary": "plate + product-0@0.973x panel@1.344x + text(headline,subtext,other-0)",
-          "output_summary": "1080x1080 product-0: contact shadow at support y=749; panel pasted (complex) at 1.34x",
-          "duration_ms": 371,
+          "input_summary": "plate + product-0@1.043x panel@1.188x + text(headline,subtext,other-0)",
+          "output_summary": "1080x1080 product-0: contact shadow at support y=777; panel pasted (complex) at 1.19x",
+          "duration_ms": 410,
           "evidence_ids": [
             "out:product-0",
             "out:panel"
@@ -323,8 +322,8 @@
           "step": "adfit_proof",
           "tool_or_model": "code:elementProof",
           "input_summary": "2 pasted elements",
-          "output_summary": "product-0:0/65449 (91% compared) panel:0/22127 (100% compared) feather outside core only",
-          "duration_ms": 26,
+          "output_summary": "product-0:0/84368 (91% compared) panel:0/17124 (100% compared) feather outside core only",
+          "duration_ms": 42,
           "evidence_ids": [
             "out:product-0",
             "out:panel"
@@ -335,9 +334,9 @@
         },
         {
           "step": "adfit_repair",
-          "tool_or_model": "code:recompose",
-          "input_summary": "flag:product-0, move:panel",
-          "output_summary": "applied: panel: move (-162,0)",
+          "tool_or_model": "model:muse-image-1.0",
+          "input_summary": "flag:product-0, regenerate_plate:background",
+          "output_summary": "applied: plate: regenerate (Background is mottled, grainy and stained-looking versus the smooth clean pale-pink source plate, creating a dirty textu)",
           "duration_ms": 0,
           "evidence_ids": [
             "out:repair"
@@ -347,134 +346,132 @@
           "seq": 11
         },
         {
+          "step": "adfit_generate",
+          "tool_or_model": "model:muse-image-1.0",
+          "input_summary": "protected plate 1080x1080 (retry) text-only",
+          "output_summary": "wire bytes=1109539",
+          "duration_ms": 16533,
+          "evidence_ids": [
+            "out:plate"
+          ],
+          "next_state": "adfit_composite",
+          "cached": false,
+          "seq": 12
+        },
+        {
+          "step": "adfit_generate",
+          "tool_or_model": "code:deband",
+          "input_summary": "plate 1080x1080",
+          "output_summary": "debanded 1 edge rows into the field",
+          "duration_ms": 0,
+          "evidence_ids": [],
+          "next_state": "adfit_composite",
+          "cached": false,
+          "seq": 13
+        },
+        {
           "step": "adfit_composite",
           "tool_or_model": "code:composite+chromium",
-          "input_summary": "plate + product-0@0.973x panel@1.344x + text(headline,subtext,other-0)",
-          "output_summary": "1080x1080 product-0: contact shadow at support y=749; panel pasted (complex) at 1.34x",
-          "duration_ms": 778,
+          "input_summary": "plate + product-0@1.043x panel@1.188x + text(headline,subtext,other-0)",
+          "output_summary": "1080x1080 product-0: contact shadow at support y=777; panel pasted (complex) at 1.19x",
+          "duration_ms": 443,
           "evidence_ids": [
             "out:product-0",
             "out:panel"
           ],
           "next_state": "adfit_proof",
           "cached": false,
-          "seq": 12
+          "seq": 14
         },
         {
           "step": "adfit_proof",
           "tool_or_model": "code:elementProof",
           "input_summary": "2 pasted elements",
-          "output_summary": "product-0:0/65449 (91% compared) panel:0/22127 (100% compared) feather outside core only",
-          "duration_ms": 31,
+          "output_summary": "product-0:0/84368 (91% compared) panel:0/17124 (100% compared) feather outside core only",
+          "duration_ms": 36,
           "evidence_ids": [
             "out:product-0",
             "out:panel"
           ],
           "next_state": "adfit_review",
           "cached": false,
-          "seq": 13
-        },
-        {
-          "step": "adfit_repair",
-          "tool_or_model": "code:recompose",
-          "input_summary": "retry: flag:product-0",
-          "output_summary": "flagged: product-0: Right headband is disconnected from the right earcup and the earcup has a separated sliver on its right edge; the cutout asset itself is truncated and cannot be restored by move or scale",
-          "duration_ms": 0,
-          "evidence_ids": [
-            "out:repair"
-          ],
-          "next_state": "done",
-          "cached": false,
-          "seq": 14
+          "seq": 15
         },
         {
           "step": "adfit_wonder_plan",
           "tool_or_model": "model:muse-wonder-1.0",
-          "input_summary": "1 source x 3 sizes",
-          "output_summary": "families: ig-feed-11=square_balanced ig-feed-45=portrait_stack ig-story-916=portrait_stack",
-          "duration_ms": 54286,
+          "input_summary": "1 source x 2 sizes",
+          "output_summary": "families: ig-feed-11=square_balanced ig-feed-45=portrait_stack",
+          "duration_ms": 36004,
           "evidence_ids": [
             "out:plan"
           ],
           "next_state": "adfit_generate",
           "cached": false,
-          "seq": 15
+          "seq": 16
         },
         {
           "step": "adfit_plate_check",
           "tool_or_model": "model:muse-spark-1.3",
-          "input_summary": "3 plates",
-          "output_summary": "dirty (regenerate once): ig-feed-11: straight horizontal seams forming header and footer bands dividing the frame | ig-feed-45: straight horizontal seam forming footer strip dividing the frame",
-          "duration_ms": 13636,
+          "input_summary": "2 plates",
+          "output_summary": "dirty (regenerate once): ig-feed-11: straight horizontal seam/footer strip dividing the frame near bottom creates bands, breaks one continuous field, not pure texture | ig-feed-45: straight horizontal seam/header band across upper frame dividing the frame, breaks one continuous field",
+          "duration_ms": 26240,
           "evidence_ids": [
             "out:plate"
-          ],
-          "next_state": "adfit_review",
-          "cached": false,
-          "seq": 16
-        },
-        {
-          "step": "adfit_text_check",
-          "tool_or_model": "model:muse-spark-1.3",
-          "input_summary": "3 outputs with re-rendered text",
-          "output_summary": "all exact",
-          "duration_ms": 15816,
-          "evidence_ids": [
-            "out:text"
           ],
           "next_state": "adfit_review",
           "cached": false,
           "seq": 17
         },
         {
+          "step": "adfit_text_check",
+          "tool_or_model": "model:muse-spark-1.3",
+          "input_summary": "2 outputs with re-rendered text",
+          "output_summary": "all exact",
+          "duration_ms": 26730,
+          "evidence_ids": [
+            "out:text"
+          ],
+          "next_state": "adfit_review",
+          "cached": false,
+          "seq": 18
+        },
+        {
           "step": "adfit_review",
           "tool_or_model": "model:muse-wonder-1.0",
-          "input_summary": "source + 3 outputs + deterministic findings",
-          "output_summary": "12 defects: ig-feed-11/product-0, ig-feed-11/panel, ig-feed-45/product-0, ig-feed-45/panel, ig-feed-45/background, ig-story-916/product-0, ig-story-916/background, ig-story-916/product-0, ig-story-916/subtext, ig-story-916/headline, ig-story-916/other-0, ig-story-916/panel",
-          "duration_ms": 109103,
+          "input_summary": "source + 2 outputs + deterministic findings",
+          "output_summary": "3 defects: ig-feed-11/product-0, ig-feed-11/background, ig-feed-45/product-0",
+          "duration_ms": 53072,
           "evidence_ids": [
             "out:review"
           ],
           "next_state": "adfit_repair",
           "cached": false,
-          "seq": 18
+          "seq": 19
         },
         {
           "step": "adfit_plate_recheck",
           "tool_or_model": "model:muse-spark-1.3",
-          "input_summary": "2 regened plates",
+          "input_summary": "1 regened plates",
           "output_summary": "all clean after regen",
-          "duration_ms": 21476,
+          "duration_ms": 3782,
           "evidence_ids": [
             "out:plate"
-          ],
-          "next_state": "done",
-          "cached": false,
-          "seq": 19
-        },
-        {
-          "step": "adfit_repair",
-          "tool_or_model": "code:recompose",
-          "input_summary": "3 sizes with defects",
-          "output_summary": "3 recomposed from cached layers (before kept)",
-          "duration_ms": 0,
-          "evidence_ids": [
-            "out:repair"
           ],
           "next_state": "done",
           "cached": false,
           "seq": 20
         },
         {
-          "step": "adfit_review_retry",
-          "tool_or_model": "model:muse-wonder-1.0",
-          "input_summary": "second chance for 1 reverted size(s)",
-          "output_summary": "7 re-proposed defects: ig-feed-11/product-0, ig-feed-45/product-0, ig-feed-45/background, ig-story-916/product-0, ig-story-916/other-0, ig-story-916/panel, ig-story-916/background",
-          "duration_ms": 76319,
+          "step": "adfit_repair",
+          "tool_or_model": "code:recompose",
+          "input_summary": "2 sizes with defects",
+          "output_summary": "1 recomposed from cached layers (before kept)",
+          "duration_ms": 0,
           "evidence_ids": [
-            "out:review"
+            "out:repair"
           ],
-          "next_state": "adfit_repair",
+          "next_state": "done",
           "cached": false,
           "seq": 21
         }
@@ -491,12 +488,12 @@
         },
         "layout_review": {
           "status": "needs_review",
-          "detail": "deterministic: wonder_flag"
+          "detail": "Earcup bottoms are flat-truncated versus the full oval earcups in the source, with a thin dangling vertical cutout strand below the left earcup and an isolated shadow blob below the right earcup"
         },
         "repaired": {
           "before": "fixtures/brands/sheket/demo/before-ig-feed-11.png",
           "patches": [
-            "panel: move (-162,0)"
+            "plate: regenerate (Background is mottled, grainy and stained-looking versus the smooth clean pale-pink source plate, creating a dirty textu)"
           ]
         }
       }
@@ -508,7 +505,7 @@
       "mode": "protected",
       "status": "needs_review",
       "image": "ig-feed-45.png",
-      "before": "before-ig-feed-45.png",
+      "before": null,
       "plan": {
         "preset": "ig-feed-45",
         "width": 1080,
@@ -524,45 +521,45 @@
         "logo": null,
         "products": [
           {
-            "x": 257,
-            "y": 296,
-            "w": 567,
-            "h": 665
+            "x": 246,
+            "y": 317,
+            "w": 588,
+            "h": 629
           }
         ],
         "headline": {
           "x": 65,
-          "y": 149,
+          "y": 151,
           "w": 950,
-          "h": 92
+          "h": 97
         },
         "subtext": {
           "x": 65,
-          "y": 74,
+          "y": 81,
           "w": 950,
-          "h": 54
+          "h": 57
         },
         "panel": {
-          "x": 583,
-          "y": 1114,
-          "w": 432,
-          "h": 88
+          "x": 65,
+          "y": 1103,
+          "w": 950,
+          "h": 92
         },
         "other_texts": [
           {
             "x": 65,
-            "y": 1026,
+            "y": 1019,
             "w": 950,
-            "h": 61
+            "h": 57
           }
         ],
         "product_scales": [
-          1.396551724137931
+          1.3183856502242153
         ],
         "logo_scale": null,
         "notes": [
           "wonder: portrait_stack",
-          "wonder rationale: Portrait stack places headline above a tall centered product with price and CTA below, all right-aligned on the RTL edge."
+          "wonder rationale: Portrait stack: right-aligned headline group, tall centered product, price and CTA below."
         ],
         "manifest": {
           "preset": "ig-feed-45",
@@ -581,37 +578,37 @@
               "id": "product-0",
               "kind": "product",
               "box": {
-                "x": 257,
-                "y": 296,
-                "w": 567,
-                "h": 665
+                "x": 246,
+                "y": 317,
+                "w": 588,
+                "h": 629
               },
               "group": "products",
               "z": 20,
               "align": null,
-              "scale": 1.396551724137931,
+              "scale": 1.3183856502242153,
               "source": "default",
               "srcBox": {
                 "x": 126,
                 "y": 126,
-                "w": 368,
-                "h": 482
+                "w": 394,
+                "h": 484
               }
             },
             {
               "id": "panel",
               "kind": "panel",
               "box": {
-                "x": 421,
-                "y": 1114,
-                "w": 432,
-                "h": 88
+                "x": 65,
+                "y": 1103,
+                "w": 950,
+                "h": 92
               },
               "group": "offer",
               "z": 10,
               "align": "right",
               "scale": null,
-              "source": "corrected",
+              "source": "default",
               "srcBox": null
             },
             {
@@ -619,9 +616,9 @@
               "kind": "headline",
               "box": {
                 "x": 65,
-                "y": 149,
+                "y": 151,
                 "w": 950,
-                "h": 92
+                "h": 97
               },
               "group": "text",
               "z": 30,
@@ -635,9 +632,9 @@
               "kind": "subtext",
               "box": {
                 "x": 65,
-                "y": 74,
+                "y": 81,
                 "w": 950,
-                "h": 54
+                "h": 57
               },
               "group": "text",
               "z": 31,
@@ -651,9 +648,9 @@
               "kind": "other_text",
               "box": {
                 "x": 65,
-                "y": 1026,
+                "y": 1019,
                 "w": 950,
-                "h": 61
+                "h": 57
               },
               "group": "text",
               "z": 32,
@@ -665,25 +662,24 @@
           ],
           "templateZones": null,
           "corrections": [
-            "text group: 3 boxes share the right edge",
             "text group: 3 boxes share the right edge"
           ],
-          "rationale": "Portrait stack places headline above a tall centered product with price and CTA below, all right-aligned on the RTL edge."
+          "rationale": "Portrait stack: right-aligned headline group, tall centered product, price and CTA below."
         }
       },
       "proof": {
         "product-0": {
-          "scale": 1.396551724137931,
+          "scale": 1.3183856502242153,
           "core_differ": 0,
-          "core_total": 138593,
-          "feather_total": 9131,
-          "coverage": 0.9381887844899949,
+          "core_total": 137535,
+          "feather_total": 10286,
+          "coverage": 0.9304158407804033,
           "pass": true
         },
         "panel": {
-          "scale": 1.375,
+          "scale": 1.4375,
           "core_differ": 0,
-          "core_total": 23171,
+          "core_total": 25055,
           "feather_total": 0,
           "coverage": 1,
           "pass": true
@@ -692,15 +688,15 @@
       "qa": null,
       "retries": 0,
       "modelCalls": 0,
-      "imageCalls": 3,
-      "latencyMs": 16367,
+      "imageCalls": 2,
+      "latencyMs": 20341,
       "trace": [
         {
           "step": "adfit_analyze",
           "tool_or_model": "model:muse-spark-1.3",
           "input_summary": "source 1280x720",
           "output_summary": "lang=he products=1 logo=no headline=\"שומעים רק את המוזיקה\" panel=opaque bg=flat coords=pixels",
-          "duration_ms": 23036,
+          "duration_ms": 24559,
           "evidence_ids": [
             "src:analysis"
           ],
@@ -712,8 +708,8 @@
           "step": "adfit_masks",
           "tool_or_model": "model:sam-3.1",
           "input_summary": "product-0[headphones]",
-          "output_summary": "ok: product-0 coverage: products 1/1; product-0 clipped to its box (removed 8% cross-coverage); product-0 mask sparse (fill 0.39) even after retry — kept best",
-          "duration_ms": 5047,
+          "output_summary": "ok: product-0 coverage: products 1/1; product-0 clip bound expanded (Spark box sliced the product); product-0 mask sparse (fill 0.39) even after retry — kept best",
+          "duration_ms": 9163,
           "evidence_ids": [
             "src:product-0"
           ],
@@ -725,7 +721,7 @@
           "step": "adfit_plan",
           "tool_or_model": "model:muse-wonder-1.0",
           "input_summary": "ig-feed-45 protected no-template family=portrait_stack",
-          "output_summary": "wonder: portrait_stack; wonder rationale: Portrait stack places headline above a tall centered product with price and CTA below, all right-aligned on the RTL edge. | corrections: text group: 3 boxes share the right edge",
+          "output_summary": "wonder: portrait_stack; wonder rationale: Portrait stack: right-aligned headline group, tall centered product, price and CTA below. | corrections: text group: 3 boxes share the right edge",
           "duration_ms": 0,
           "evidence_ids": [
             "out:plan"
@@ -738,8 +734,8 @@
           "step": "adfit_generate",
           "tool_or_model": "model:muse-image-1.0",
           "input_summary": "protected plate 1080x1350",
-          "output_summary": "wire bytes=2230850",
-          "duration_ms": 15563,
+          "output_summary": "wire bytes=2214376",
+          "duration_ms": 19481,
           "evidence_ids": [
             "out:plate"
           ],
@@ -751,7 +747,7 @@
           "step": "adfit_generate",
           "tool_or_model": "code:deband",
           "input_summary": "plate 1080x1350",
-          "output_summary": "debanded 298 edge rows into the field",
+          "output_summary": "debanded 439 edge rows into the field",
           "duration_ms": 0,
           "evidence_ids": [],
           "next_state": "adfit_composite",
@@ -761,9 +757,9 @@
         {
           "step": "adfit_composite",
           "tool_or_model": "code:composite+chromium",
-          "input_summary": "plate + product-0@1.397x panel@1.375x + text(headline,subtext,other-0)",
-          "output_summary": "1080x1350 product-0: contact shadow at support y=960; panel pasted (complex) at 1.38x",
-          "duration_ms": 510,
+          "input_summary": "plate + product-0@1.318x panel@1.438x + text(headline,subtext,other-0)",
+          "output_summary": "1080x1350 product-0: contact shadow at support y=945; panel pasted (complex) at 1.44x",
+          "duration_ms": 555,
           "evidence_ids": [
             "out:product-0",
             "out:panel"
@@ -776,8 +772,8 @@
           "step": "adfit_proof",
           "tool_or_model": "code:elementProof",
           "input_summary": "2 pasted elements",
-          "output_summary": "product-0:0/138593 (94% compared) panel:0/23171 (100% compared) feather outside core only",
-          "duration_ms": 41,
+          "output_summary": "product-0:0/137535 (93% compared) panel:0/25055 (100% compared) feather outside core only",
+          "duration_ms": 42,
           "evidence_ids": [
             "out:product-0",
             "out:panel"
@@ -790,8 +786,8 @@
           "step": "adfit_generate",
           "tool_or_model": "model:muse-image-1.0",
           "input_summary": "protected plate 1080x1350 (retry) text-only",
-          "output_summary": "wire bytes=1349976",
-          "duration_ms": 26862,
+          "output_summary": "wire bytes=927720",
+          "duration_ms": 19162,
           "evidence_ids": [
             "out:plate"
           ],
@@ -800,264 +796,140 @@
           "seq": 8
         },
         {
-          "step": "adfit_generate",
-          "tool_or_model": "code:deband",
-          "input_summary": "plate 1080x1350",
-          "output_summary": "debanded 155 edge rows into the field",
-          "duration_ms": 0,
-          "evidence_ids": [],
-          "next_state": "adfit_composite",
+          "step": "adfit_composite",
+          "tool_or_model": "code:composite+chromium",
+          "input_summary": "plate + product-0@1.318x panel@1.438x + text(headline,subtext,other-0)",
+          "output_summary": "1080x1350 product-0: contact shadow at support y=945; panel pasted (complex) at 1.44x",
+          "duration_ms": 442,
+          "evidence_ids": [
+            "out:product-0",
+            "out:panel"
+          ],
+          "next_state": "adfit_proof",
           "cached": false,
           "seq": 9
         },
         {
-          "step": "adfit_composite",
-          "tool_or_model": "code:composite+chromium",
-          "input_summary": "plate + product-0@1.397x panel@1.375x + text(headline,subtext,other-0)",
-          "output_summary": "1080x1350 product-0: contact shadow at support y=960; panel pasted (complex) at 1.38x",
-          "duration_ms": 454,
+          "step": "adfit_proof",
+          "tool_or_model": "code:elementProof",
+          "input_summary": "2 pasted elements",
+          "output_summary": "product-0:0/137535 (93% compared) panel:0/25055 (100% compared) feather outside core only",
+          "duration_ms": 50,
           "evidence_ids": [
             "out:product-0",
             "out:panel"
           ],
-          "next_state": "adfit_proof",
+          "next_state": "adfit_review",
           "cached": false,
           "seq": 10
         },
         {
-          "step": "adfit_proof",
-          "tool_or_model": "code:elementProof",
-          "input_summary": "2 pasted elements",
-          "output_summary": "product-0:0/138593 (94% compared) panel:0/23171 (100% compared) feather outside core only",
-          "duration_ms": 51,
+          "step": "adfit_repair",
+          "tool_or_model": "code:recompose",
+          "input_summary": "flag:product-0",
+          "output_summary": "flagged: product-0: Earcup bottoms are flat-truncated versus the full oval earcups in the source, with a thin dangling vertical cutout strand below the left earcup and an isolated shadow blob below the right earcup",
+          "duration_ms": 0,
           "evidence_ids": [
-            "out:product-0",
-            "out:panel"
+            "out:repair"
           ],
-          "next_state": "adfit_review",
+          "next_state": "done",
           "cached": false,
           "seq": 11
         },
         {
-          "step": "adfit_repair",
-          "tool_or_model": "model:muse-image-1.0",
-          "input_summary": "flag:product-0, move:panel, regenerate_plate:background",
-          "output_summary": "applied: panel: move (-162,0); plate: regenerate (Visible horizontal seam across the lower portion of the canvas where the pale pink plate changes to a lighter band, indi)",
-          "duration_ms": 0,
-          "evidence_ids": [
-            "out:repair"
-          ],
-          "next_state": "done",
-          "cached": false,
-          "seq": 12
-        },
-        {
-          "step": "adfit_generate",
-          "tool_or_model": "model:muse-image-1.0",
-          "input_summary": "protected plate 1080x1350 (retry) text-only",
-          "output_summary": "wire bytes=1366209",
-          "duration_ms": 26286,
-          "evidence_ids": [
-            "out:plate"
-          ],
-          "next_state": "adfit_composite",
-          "cached": false,
-          "seq": 13
-        },
-        {
-          "step": "adfit_generate",
-          "tool_or_model": "code:deband",
-          "input_summary": "plate 1080x1350",
-          "output_summary": "debanded 85 edge rows into the field",
-          "duration_ms": 0,
-          "evidence_ids": [],
-          "next_state": "adfit_composite",
-          "cached": false,
-          "seq": 14
-        },
-        {
-          "step": "adfit_composite",
-          "tool_or_model": "code:composite+chromium",
-          "input_summary": "plate + product-0@1.397x panel@1.375x + text(headline,subtext,other-0)",
-          "output_summary": "1080x1350 product-0: contact shadow at support y=960; panel pasted (complex) at 1.38x",
-          "duration_ms": 440,
-          "evidence_ids": [
-            "out:product-0",
-            "out:panel"
-          ],
-          "next_state": "adfit_proof",
-          "cached": false,
-          "seq": 15
-        },
-        {
-          "step": "adfit_proof",
-          "tool_or_model": "code:elementProof",
-          "input_summary": "2 pasted elements",
-          "output_summary": "product-0:0/138593 (94% compared) panel:0/23171 (100% compared) feather outside core only",
-          "duration_ms": 52,
-          "evidence_ids": [
-            "out:product-0",
-            "out:panel"
-          ],
-          "next_state": "adfit_review",
-          "cached": false,
-          "seq": 16
-        },
-        {
-          "step": "adfit_repair",
-          "tool_or_model": "code:recompose",
-          "input_summary": "retry: flag:product-0, regenerate_plate:background",
-          "output_summary": "applied: plate: regenerate (Plate is mottled pink/green instead of the source clean flat pale pink, with a visible horizontal seam across the lower )",
-          "duration_ms": 0,
-          "evidence_ids": [
-            "out:repair"
-          ],
-          "next_state": "done",
-          "cached": false,
-          "seq": 17
-        },
-        {
-          "step": "adfit_composite",
-          "tool_or_model": "code:composite+chromium",
-          "input_summary": "plate + product-0@1.397x panel@1.375x + text(headline,subtext,other-0)",
-          "output_summary": "1080x1350 product-0: contact shadow at support y=960; panel pasted (complex) at 1.38x",
-          "duration_ms": 488,
-          "evidence_ids": [
-            "out:product-0",
-            "out:panel"
-          ],
-          "next_state": "adfit_proof",
-          "cached": false,
-          "seq": 18
-        },
-        {
-          "step": "adfit_proof",
-          "tool_or_model": "code:elementProof",
-          "input_summary": "2 pasted elements",
-          "output_summary": "product-0:0/138593 (94% compared) panel:0/23171 (100% compared) feather outside core only",
-          "duration_ms": 52,
-          "evidence_ids": [
-            "out:product-0",
-            "out:panel"
-          ],
-          "next_state": "adfit_review",
-          "cached": false,
-          "seq": 19
-        },
-        {
           "step": "adfit_wonder_plan",
           "tool_or_model": "model:muse-wonder-1.0",
-          "input_summary": "1 source x 3 sizes",
-          "output_summary": "families: ig-feed-11=square_balanced ig-feed-45=portrait_stack ig-story-916=portrait_stack",
-          "duration_ms": 54286,
+          "input_summary": "1 source x 2 sizes",
+          "output_summary": "families: ig-feed-11=square_balanced ig-feed-45=portrait_stack",
+          "duration_ms": 36004,
           "evidence_ids": [
             "out:plan"
           ],
           "next_state": "adfit_generate",
           "cached": true,
-          "seq": 20
+          "seq": 12
         },
         {
           "step": "adfit_plate_check",
           "tool_or_model": "model:muse-spark-1.3",
-          "input_summary": "3 plates",
-          "output_summary": "dirty (regenerate once): ig-feed-11: straight horizontal seams forming header and footer bands dividing the frame | ig-feed-45: straight horizontal seam forming footer strip dividing the frame",
-          "duration_ms": 13636,
+          "input_summary": "2 plates",
+          "output_summary": "dirty (regenerate once): ig-feed-11: straight horizontal seam/footer strip dividing the frame near bottom creates bands, breaks one continuous field, not pure texture | ig-feed-45: straight horizontal seam/header band across upper frame dividing the frame, breaks one continuous field",
+          "duration_ms": 26240,
           "evidence_ids": [
             "out:plate"
           ],
           "next_state": "adfit_review",
           "cached": true,
-          "seq": 21
+          "seq": 13
         },
         {
           "step": "adfit_text_check",
           "tool_or_model": "model:muse-spark-1.3",
-          "input_summary": "3 outputs with re-rendered text",
+          "input_summary": "2 outputs with re-rendered text",
           "output_summary": "all exact",
-          "duration_ms": 15816,
+          "duration_ms": 26730,
           "evidence_ids": [
             "out:text"
           ],
           "next_state": "adfit_review",
           "cached": true,
-          "seq": 22
+          "seq": 14
         },
         {
           "step": "adfit_review",
           "tool_or_model": "model:muse-wonder-1.0",
-          "input_summary": "source + 3 outputs + deterministic findings",
-          "output_summary": "12 defects: ig-feed-11/product-0, ig-feed-11/panel, ig-feed-45/product-0, ig-feed-45/panel, ig-feed-45/background, ig-story-916/product-0, ig-story-916/background, ig-story-916/product-0, ig-story-916/subtext, ig-story-916/headline, ig-story-916/other-0, ig-story-916/panel",
-          "duration_ms": 109103,
+          "input_summary": "source + 2 outputs + deterministic findings",
+          "output_summary": "3 defects: ig-feed-11/product-0, ig-feed-11/background, ig-feed-45/product-0",
+          "duration_ms": 53072,
           "evidence_ids": [
             "out:review"
           ],
           "next_state": "adfit_repair",
           "cached": true,
-          "seq": 23
+          "seq": 15
         },
         {
           "step": "adfit_plate_recheck",
           "tool_or_model": "model:muse-spark-1.3",
-          "input_summary": "2 regened plates",
+          "input_summary": "1 regened plates",
           "output_summary": "all clean after regen",
-          "duration_ms": 21476,
+          "duration_ms": 3782,
           "evidence_ids": [
             "out:plate"
           ],
           "next_state": "done",
           "cached": true,
-          "seq": 24
+          "seq": 16
         },
         {
           "step": "adfit_repair",
           "tool_or_model": "code:recompose",
-          "input_summary": "3 sizes with defects",
-          "output_summary": "3 recomposed from cached layers (before kept)",
+          "input_summary": "2 sizes with defects",
+          "output_summary": "1 recomposed from cached layers (before kept)",
           "duration_ms": 0,
           "evidence_ids": [
             "out:repair"
           ],
           "next_state": "done",
           "cached": true,
-          "seq": 25
-        },
-        {
-          "step": "adfit_review_retry",
-          "tool_or_model": "model:muse-wonder-1.0",
-          "input_summary": "second chance for 1 reverted size(s)",
-          "output_summary": "7 re-proposed defects: ig-feed-11/product-0, ig-feed-45/product-0, ig-feed-45/background, ig-story-916/product-0, ig-story-916/other-0, ig-story-916/panel, ig-story-916/background",
-          "duration_ms": 76319,
-          "evidence_ids": [
-            "out:review"
-          ],
-          "next_state": "adfit_repair",
-          "cached": true,
-          "seq": 26
+          "seq": 17
         }
       ],
       "error": null,
       "checks": {
         "protected_pixels": {
           "status": "passed",
-          "detail": "Protected core matches the resized source (94% compared)"
+          "detail": "Protected core matches the resized source (93% compared)"
         },
         "text": {
-          "status": "fixed",
-          "detail": "re-rendered text verified exact after repair"
+          "status": "passed",
+          "detail": "re-rendered text verified exact"
         },
         "layout_review": {
           "status": "needs_review",
           "detail": "deterministic: wonder_flag"
         },
-        "repaired": {
-          "before": "fixtures/brands/sheket/demo/before-ig-feed-45.png",
-          "patches": [
-            "panel: move (-162,0)",
-            "plate: regenerate (Visible horizontal seam across the lower portion of the canvas where the pale pink plate changes to a lighter band, indi)",
-            "plate: regenerate (Plate is mottled pink/green instead of the source clean flat pale pink, with a visible horizontal seam across the lower )"
-          ]
-        }
+        "repaired": null
       }
     }
   ]

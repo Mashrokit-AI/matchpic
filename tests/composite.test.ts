@@ -1,6 +1,6 @@
 import sharp from 'sharp';
 import { describe, expect, it } from 'vitest';
-import { cutMaskedPng, debandFlatPlate, decodeRgba, exactSize, findSurfaceEdge, scaleRgbaNearest, textContrastRatio } from '../src/server/repair/composite.js';
+import { completeOccludedBase, cutMaskedPng, debandFlatPlate, decodeRgba, exactSize, findSurfaceEdge, scaleRgbaNearest, textContrastRatio } from '../src/server/repair/composite.js';
 import { applyFrameOverlay, pastePanelFallback, type OutputRequest } from '../src/server/adfit/pipeline.js';
 import { elementProof } from '../src/server/repair/proof.js';
 
@@ -39,6 +39,72 @@ describe('cutMaskedPng', () => {
   it('throws on an empty mask', async () => {
     const rgba = await decodeRgba(await solidPng(4, 4, 1, 2, 3));
     await expect(cutMaskedPng(rgba, new Uint8Array(16))).rejects.toThrow(/empty mask/);
+  });
+});
+
+describe('completeOccludedBase (teva torn-base regression)', () => {
+  it('completes a base bitten by a foreground occluder, with bottle-coloured pixels', () => {
+    // 30x40 bottle: solid rows 0-39 except a bite (x12-20, rows 30-39 missing).
+    const W = 30; const H = 40;
+    const data = Buffer.alloc(W * H * 4);
+    for (let y = 0; y < H; y++) for (let x = 2; x < 28; x++) {
+      if (x >= 12 && x < 21 && y >= 30) continue;
+      const o = (y * W + x) * 4;
+      data[o] = 200; data[o + 1] = 120; data[o + 2] = 10; data[o + 3] = 255;
+    }
+    const cut = { data, width: W, height: H };
+    const filled = completeOccludedBase(cut);
+    expect(filled).toBeGreaterThan(0);
+    const at = (x: number, y: number): number[] => [...cut.data.slice((y * W + x) * 4, (y * W + x) * 4 + 4)];
+    expect(at(16, 39)).toEqual([200, 120, 10, 255]); // base row completed in bottle colour
+    expect(at(16, 35)[3]).toBe(255);
+  });
+
+  it('completes a base bitten at the cut edge (fruit against the bottle side)', () => {
+    // 30x40 bottle: left-edge columns x2-10 end at row 29 (abrupt cliff to
+    // the deep interior at x11+), as when a fruit overlaps the bottle's side.
+    const W = 30; const H = 40;
+    const data = Buffer.alloc(W * H * 4);
+    for (let y = 0; y < H; y++) for (let x = 2; x < 28; x++) {
+      if (x < 11 && y >= 30) continue;
+      const o = (y * W + x) * 4;
+      data[o] = 10; data[o + 1] = 140; data[o + 2] = 30; data[o + 3] = 255;
+    }
+    const cut = { data, width: W, height: H };
+    const filled = completeOccludedBase(cut);
+    expect(filled).toBeGreaterThan(0);
+    const at = (x: number, y: number): number[] => [...cut.data.slice((y * W + x) * 4, (y * W + x) * 4 + 4)];
+    expect(at(5, 39)).toEqual([10, 140, 30, 255]); // edge base completed to the shared base line
+  });
+
+  it('trims narrow deep spikes below the base instead of filling down to them', () => {
+    // 30x40 bottle: flat base at row 34, plus two narrow spikes (x8, x20)
+    // reaching row 39 — mask strays, not the bottle's footing.
+    const W = 30; const H = 40;
+    const data = Buffer.alloc(W * H * 4);
+    for (let y = 0; y < H; y++) for (let x = 2; x < 28; x++) {
+      if (y > 34 && x !== 8 && x !== 20) continue;
+      const o = (y * W + x) * 4;
+      data[o] = 200; data[o + 3] = 255;
+    }
+    const cut = { data, width: W, height: H };
+    completeOccludedBase(cut);
+    const alpha = (x: number, y: number): number => cut.data[(y * W + x) * 4 + 3] as number;
+    expect(alpha(8, 38)).toBe(0); // spike trimmed at the base line
+    expect(alpha(20, 38)).toBe(0);
+    expect(alpha(15, 34)).toBe(255); // base itself intact
+  });
+
+  it('leaves a naturally curved bottom alone (lying can ends)', () => {
+    // Arch/hump shape: middle columns deep, end columns much shallower.
+    const W = 40; const H = 30;
+    const data = Buffer.alloc(W * H * 4);
+    for (let x = 0; x < W; x++) {
+      const depth = 10 + Math.round(18 * Math.sin((x / (W - 1)) * Math.PI));
+      for (let y = 5; y < 5 + depth; y++) { const o = (y * W + x) * 4; data[o] = 9; data[o + 3] = 255; }
+    }
+    const cut = { data, width: W, height: H };
+    expect(completeOccludedBase(cut)).toBe(0);
   });
 });
 
