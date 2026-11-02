@@ -60,3 +60,7 @@ client-showable are left out of `demo.json`, never faked.
 
 GALI stays as a brand (templates + logo) but is no longer a demo example:
 its `demo/` dir was removed with the old single-bottle seed.
+
+## Demo v2 (Nov 2, afternoon)
+
+The live demo now uses five fictional brands whose **source** creatives were generated as test inputs with Google's Gemini image model ("Nano Banana", via our server) because the code-rendered fixtures looked too synthetic: LUMA (skincare, Feed 1:1), STRIDE (running shoes, Story 9:16), NORTHBEAN (cold brew, Link 1.91:1), טבע (juice, Portrait 4:5, Hebrew), שקט (headphones, YouTube 16:9, Hebrew). Each source is cropped to its exact native size. Every **output** is MatchPic's own (Meta models only). The previous demo dirs are kept as `demo-unused/`.

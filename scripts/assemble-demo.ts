@@ -26,14 +26,10 @@ interface DemoDef {
 }
 
 const DEMOS: DemoDef[] = [
-  { key: 'vela', brand: 'vela', outDir: 'artifacts/demo-11/vela', sourceFile: 'source-en.png', sizes: ['ig-feed-45', 'ig-story-916', 'fb-link', 'yt-thumb'] },
-  // NOA square + story dropped (floating product); fb-link + yt-thumb grounded.
-  { key: 'noa', brand: 'noa', outDir: 'artifacts/demo-11/noa', sourceFile: 'source.png', sizes: ['fb-link', 'yt-thumb'] },
-  { key: 'dafna-story', brand: 'dafna', outDir: 'artifacts/demo-11/dafna-story', sourceFile: 'source-story.png', sizes: ['ig-feed-11', 'ig-feed-45', 'fb-link', 'yt-thumb'] },
-  // ZAZO story from the story2 re-run (run-1 story crammed into the top half).
-  { key: 'zazo', brand: 'zazo', outDir: 'artifacts/demo-11/zazo', sourceFile: 'source-en.png', sizes: ['ig-feed-11', 'ig-feed-45', 'ig-story-916', 'yt-thumb'], sizeSrc: { 'ig-story-916': 'artifacts/demo-11/zazo-story2' }, extraReports: ['artifacts/demo-11/zazo-story2'] },
-  // TODA 4:5 + story dropped (portrait plates keep a bg headphone); square from toda3.
-  { key: 'toda', brand: 'toda', outDir: 'artifacts/demo-11/toda', sourceFile: 'source-he.png', sizes: ['ig-feed-11', 'fb-link'], sizeSrc: { 'ig-feed-11': 'artifacts/demo-11/toda3' }, extraReports: ['artifacts/demo-11/toda3'] },
+  { key: 'luma', brand: 'luma', outDir: 'artifacts/demo-nb/luma', sourceFile: 'source-en.png', sizes: ['ig-feed-45', 'ig-story-916', 'fb-link'] },
+  { key: 'stride', brand: 'stride', outDir: 'artifacts/demo-nb/stride', sourceFile: 'source-en.png', sizes: ['ig-feed-11', 'ig-feed-45', 'fb-link'] },
+  { key: 'northbean', brand: 'northbean', outDir: 'artifacts/demo-nb/northbean', sourceFile: 'source-en.png', sizes: ['ig-feed-11', 'ig-feed-45'] },
+  { key: 'sheket', brand: 'sheket', outDir: 'artifacts/demo-nb/sheket', sourceFile: 'source-he.png', sizes: ['ig-feed-11', 'ig-feed-45'] },
 ];
 
 async function exists(path: string): Promise<boolean> {
