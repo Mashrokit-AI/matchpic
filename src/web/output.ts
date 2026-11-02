@@ -163,9 +163,9 @@ export async function renderOutput(root: HTMLElement, lang: Lang, id: string): P
   tools.append(sliderBtn, xrayBtn, safeBtn, zoomSeg);
   const legend = el({
     tag: 'div', cls: 'xray-legend', attrs: { hidden: 'true' }, children: [
-      el({ tag: 'span', html: `<span class="sw" style="background:#1fa84f"></span>${t(lang, 'xray_masks')}` }),
+      el({ tag: 'span', html: `<span class="sw" style="background:var(--mask-green)"></span>${t(lang, 'xray_masks')}` }),
       el({ tag: 'span', html: `<span class="sw" style="background:#e5488c"></span>${t(lang, 'toggle_placed')}` }),
-      el({ tag: 'span', html: `<span class="sw" style="border:1px dashed #16211b"></span>${t(lang, 'xray_zones')}` }),
+      el({ tag: 'span', html: `<span class="sw" style="border:1px dashed var(--zone-dash)"></span>${t(lang, 'xray_zones')}` }),
     ],
   });
   stageCol.append(legend);
@@ -370,7 +370,7 @@ function xrayCanvas(
   // CSS stretches it over the same box, so coordinates map 1:1.
   if (show.safe) {
     const s = manifest.safe;
-    ctx.fillStyle = 'rgba(22,33,27,0.35)';
+    ctx.fillStyle = 'rgba(18,30,48,0.35)';
     ctx.fillRect(0, 0, W, s.y);
     ctx.fillRect(0, s.y + s.h, W, H - s.y - s.h);
     ctx.fillRect(0, s.y, s.x, s.h);
@@ -378,13 +378,13 @@ function xrayCanvas(
   }
   if (show.masks) {
     // Protected placement from the resolved manifest (what the proof verified).
-    ctx.fillStyle = 'rgba(31,168,79,0.45)';
+    ctx.fillStyle = 'rgba(33,195,170,0.45)';
     for (const e of manifest.elements) {
       if (e.kind === 'product' || e.kind === 'logo') ctx.fillRect(e.box.x, e.box.y, e.box.w, e.box.h);
     }
   }
   if (show.zones && manifest.templateZones) {
-    ctx.strokeStyle = '#16211b';
+    ctx.strokeStyle = '#121e30';
     ctx.lineWidth = Math.max(2, Math.round(W / 600));
     ctx.setLineDash([8, 6]);
     for (const z of Object.values(manifest.templateZones)) {

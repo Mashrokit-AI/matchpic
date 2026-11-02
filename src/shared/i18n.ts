@@ -12,6 +12,7 @@ const en = {
   nav_about: 'How it works',
   footer_synthetic: 'Demo · synthetic fictional brands only · nothing is published',
   footer_repo: 'Source code',
+  footer_by: 'by Mashrokit',
 
   home_title: 'Adapt a creative',
   home_sub: 'Upload a finished creative, pick a brand and sizes, get every placement back.',
@@ -291,6 +292,7 @@ const he: Record<MessageKey, string> = {
   nav_about: 'איך זה עובד',
   footer_synthetic: 'דמו · מותגים מומצאים בלבד · שום דבר לא מתפרסם',
   footer_repo: 'קוד המקור',
+  footer_by: 'by Mashrokit',
 
   home_title: 'התאמת קריאייטיב לכל הגדלים',
   home_sub: 'מעלים עיצוב מוכן, בוחרים מותג וגדלים — ומקבלים גרסה מוכנה לכל פלטפורמה.',

@@ -101,7 +101,7 @@ async function renderList(host: HTMLElement, lang: Lang): Promise<void> {
   const name = el({ tag: 'input', cls: 'input', attrs: { id: 'new-brand-name', placeholder: t(lang, 'brand_name'), 'aria-label': t(lang, 'brand_name') } }) as HTMLInputElement;
   const colors: string[] = ['#111111', '#ffffff'];
   const colorRow = el({ tag: 'div', cls: 'color-row' });
-  const hex = el({ tag: 'input', cls: 'input small', attrs: { placeholder: '#0e6b45', 'aria-label': '#hex', size: '10' } }) as HTMLInputElement;
+  const hex = el({ tag: 'input', cls: 'input small', attrs: { placeholder: '#055a84', 'aria-label': '#hex', size: '10' } }) as HTMLInputElement;
   const renderColors = (): void => {
     colorRow.textContent = '';
     for (const c of colors) {
@@ -386,7 +386,7 @@ async function renderOpenBrand(host: HTMLElement, lang: Lang, id: string): Promi
       if (!detail.demo && colors.length < 8) {
         const add = el({ tag: 'button', cls: 'btn small secondary', text: '+', attrs: { type: 'button', 'aria-label': '#hex' } }) as HTMLButtonElement;
         add.addEventListener('click', () => {
-          colors.push({ hex: '#0e6b45', role: 'accent' });
+          colors.push({ hex: '#055a84', role: 'accent' });
           paint();
         });
         list.append(add);

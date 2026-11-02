@@ -16,8 +16,10 @@ const REPO_ROOT = findRepoRoot(import.meta.url);
 const OUT = join(REPO_ROOT, 'dist', 'web');
 
 const FONTS: Array<[string, string[]]> = [
-  ['noto-sans', ['noto-sans-latin-400-normal.woff2', 'noto-sans-latin-500-normal.woff2', 'noto-sans-latin-700-normal.woff2']],
-  ['noto-sans-hebrew', ['noto-sans-hebrew-hebrew-400-normal.woff2', 'noto-sans-hebrew-hebrew-500-normal.woff2', 'noto-sans-hebrew-hebrew-700-normal.woff2']],
+  ['rubik', [
+    'rubik-latin-400-normal.woff2', 'rubik-latin-500-normal.woff2', 'rubik-latin-600-normal.woff2', 'rubik-latin-700-normal.woff2',
+    'rubik-hebrew-400-normal.woff2', 'rubik-hebrew-500-normal.woff2', 'rubik-hebrew-600-normal.woff2', 'rubik-hebrew-700-normal.woff2',
+  ]],
 ];
 
 async function copyStatic(): Promise<void> {
