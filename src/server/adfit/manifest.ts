@@ -378,14 +378,29 @@ export function enforceManifest(input: EnforceInput): ResolvedLayoutManifest {
   // Consistent gaps: text boxes stacked vertically share the same edge x.
   const texts = m.elements.filter((e) => e.group === 'text').sort((a, b) => a.box.y - b.box.y);
   if (texts.length >= 2) {
-    const edgeX = wantAlign === 'right' ? Math.max(...texts.map((t) => t.box.x + t.box.w)) : Math.min(...texts.map((t) => t.box.x));
+    let edgeX = wantAlign === 'right' ? Math.max(...texts.map((t) => t.box.x + t.box.w)) : Math.min(...texts.map((t) => t.box.x));
+    // Snap the column to the logo's edge when the logo sits above the
+    // texts near that edge: logo/headline/subtext then share one edge
+    // instead of near-miss edges a few dozen px apart.
+    const logoEl = m.elements.find((e) => e.kind === 'logo');
+    if (logoEl && logoEl.box.y + logoEl.box.h <= Math.min(...texts.map((t) => t.box.y)) + 4) {
+      const logoEdge = wantAlign === 'right' ? logoEl.box.x + logoEl.box.w : logoEl.box.x;
+      if (Math.abs(logoEdge - edgeX) > 0 && Math.abs(logoEdge - edgeX) < W * 0.25) {
+        edgeX = logoEdge;
+        corrections.push(`text group: column snapped to the logo ${wantAlign} edge`);
+      }
+    }
     for (const t of texts) {
       // Same-row texts (price + shipping on one line) are side-by-side by
       // design: aligning their x would stack them onto each other.
       const sameRow = texts.some((o) => o !== t && o.box.y < t.box.y + t.box.h && t.box.y < o.box.y + o.box.h);
       if (sameRow) continue;
       const nx = wantAlign === 'right' ? edgeX - t.box.w : edgeX;
-      const clamped = clampInto({ ...t.box, x: nx }, BB);
+      // A box wider than the space from the shared edge to the bound must
+      // shrink to fit there, or clamping silently moves it off the edge
+      // (the 12px-off headline that read as a ragged column).
+      const fitW = wantAlign === 'right' ? Math.min(t.box.w, edgeX - BB.x) : Math.min(t.box.w, BB.x + BB.w - nx);
+      const clamped = clampInto({ ...t.box, x: nx, w: Math.max(8, fitW) }, BB);
       if (clamped.x !== t.box.x) {
         t.box = clamped;
         t.source = 'corrected';
@@ -500,10 +515,12 @@ export function enforceManifest(input: EnforceInput): ResolvedLayoutManifest {
     const aspect = e.box.w / Math.max(1, e.box.h);
     const nh = minLogoH;
     const nw = Math.max(8, Math.round(nh * aspect));
-    const cx = e.box.x + e.box.w / 2;
     const cy = e.box.y + e.box.h / 2;
     const prevW = e.box.w;
-    e.box = clampInto({ x: Math.round(cx - nw / 2), y: Math.round(cy - nh / 2), w: nw, h: nh }, BB);
+    // Grow from the alignment edge, not the center: center growth shifts
+    // the logo's edge off the text column it was just snapped to.
+    const anchoredX = wantAlign === 'right' ? e.box.x + e.box.w - nw : e.box.x;
+    e.box = clampInto({ x: Math.round(anchoredX), y: Math.round(cy - nh / 2), w: nw, h: nh }, BB);
     if (e.scale !== null) e.scale = (e.scale * e.box.w) / Math.max(1, prevW);
     e.source = 'corrected';
     corrections.push(`${e.id}: grew to the logo minimum (${e.box.w}x${e.box.h})`);
@@ -621,7 +638,10 @@ export function enforceManifest(input: EnforceInput): ResolvedLayoutManifest {
       const cx = e.box.x + e.box.w / 2;
       const cy = e.box.y + e.box.h / 2;
       const prevW = e.box.w;
-      e.box = clampInto({ x: Math.round(cx - nw / 2), y: Math.round(cy - nh / 2), w: nw, h: nh }, BB);
+      // Logos shrink from their alignment edge (see the logo floor above):
+      // center shrinking walks the logo off the text column.
+      const sx = e.kind === 'logo' ? (wantAlign === 'right' ? e.box.x + e.box.w - nw : e.box.x) : Math.round(cx - nw / 2);
+      e.box = clampInto({ x: sx, y: Math.round(cy - nh / 2), w: nw, h: nh }, BB);
       if (e.scale !== null) e.scale = (e.scale * e.box.w) / Math.max(1, prevW);
       e.source = 'corrected';
       if (iter === 11) corrections.push(`${e.id}: still overlaps ${hit.id} after shrinking — needs review`);

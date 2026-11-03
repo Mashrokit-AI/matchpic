@@ -460,6 +460,46 @@ export function resolveMaskOverlaps(
   return removed;
 }
 
+/**
+ * Drop tiny disconnected components from a logo mask (mutates): contrast
+ * growth on a busy background adds background speckles whose quantized
+ * colour matches the lockup palette; pasted, they read as erosion/mottling
+ * on the logo. Real lockup components (letters, marks) are never below
+ * 2% of the largest component or 20px. Returns dropped pixel count.
+ */
+export function dropSmallComponents(mask: Uint8Array, W: number, H: number): number {
+  const seen = new Uint8Array(W * H);
+  const comps: number[][] = [];
+  for (let s = 0; s < W * H; s++) {
+    if (!mask[s] || seen[s]) continue;
+    const comp: number[] = [];
+    const queue = [s];
+    seen[s] = 1;
+    let head = 0;
+    while (head < queue.length) {
+      const i = queue[head++] as number;
+      comp.push(i);
+      const x = i % W;
+      const y = Math.floor(i / W);
+      if (x > 0 && mask[i - 1] && !seen[i - 1]) { seen[i - 1] = 1; queue.push(i - 1); }
+      if (x < W - 1 && mask[i + 1] && !seen[i + 1]) { seen[i + 1] = 1; queue.push(i + 1); }
+      if (y > 0 && mask[i - W] && !seen[i - W]) { seen[i - W] = 1; queue.push(i - W); }
+      if (y < H - 1 && mask[i + W] && !seen[i + W]) { seen[i + W] = 1; queue.push(i + W); }
+    }
+    comps.push(comp);
+  }
+  if (comps.length <= 1) return 0;
+  const largest = Math.max(...comps.map((c) => c.length));
+  const floor = Math.max(20, Math.round(largest * 0.02));
+  let dropped = 0;
+  for (const c of comps) {
+    if (c.length >= floor) continue;
+    dropped += c.length;
+    for (const i of c) mask[i] = 0;
+  }
+  return dropped;
+}
+
 /** Fill ratio of a mask within its own bounding box (1 = solid). */
 export function maskFillInBox(mask: Uint8Array, W: number, H: number): number {
   const box = maskBoundingBox(mask, W, H);

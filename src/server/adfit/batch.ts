@@ -20,7 +20,7 @@ import {
   type SourceInput,
 } from './pipeline.js';
 import { storeCachedLayers } from './cache.js';
-import { decodeRgba, findSurfaceEdge, gapDrift, textContrastRatio } from '../repair/composite.js';
+import { decodeRgba, findSurfaceEdge, gapDrift, panelPixelFindings, textContrastRatio } from '../repair/composite.js';
 import { artifactDigest, type ElementProof } from '../repair/proof.js';
 import { brandPromptTraceTag, brandPromptUseForSize, type StoredBrandPrompt } from '../../shared/brand-prompt.js';
 import { measureTextLines, rgbFromHex, type MeasuredText } from '../repair/render.js';
@@ -312,6 +312,33 @@ export async function contrastMissFor(
   } catch {
     return null;
   }
+}
+
+/** Dominant quantized colour inside a box (the panel fill as actually rendered). */
+export function dominantPanelColor(
+  canvas: { data: Buffer; width: number; height: number },
+  box: { x: number; y: number; w: number; h: number },
+): { r: number; g: number; b: number } | null {
+  const counts = new Map<number, { n: number; r: number; g: number; b: number }>();
+  const x0 = Math.max(0, Math.round(box.x));
+  const y0 = Math.max(0, Math.round(box.y));
+  const x1 = Math.min(canvas.width, Math.round(box.x + box.w));
+  const y1 = Math.min(canvas.height, Math.round(box.y + box.h));
+  for (let y = y0; y < y1; y += 3) {
+    for (let x = x0; x < x1; x += 3) {
+      const o = (y * canvas.width + x) * 4;
+      const r = canvas.data[o] as number; const g = canvas.data[o + 1] as number; const b = canvas.data[o + 2] as number;
+      const key = ((r >> 4) << 8) | ((g >> 4) << 4) | (b >> 4);
+      const e = counts.get(key) ?? { n: 0, r: 0, g: 0, b: 0 };
+      e.n++; e.r += r; e.g += g; e.b += b;
+      counts.set(key, e);
+    }
+  }
+  let best: { n: number; r: number; g: number; b: number } | null = null;
+  for (const e of counts.values()) if (!best || e.n > best.n) best = e;
+  if (!best) return null;
+  const b = best as { n: number; r: number; g: number; b: number };
+  return { r: Math.round(b.r / b.n), g: Math.round(b.g / b.n), b: Math.round(b.b / b.n) };
 }
 
 /**
@@ -1278,6 +1305,23 @@ export async function runProtectedBatch(opts: BatchOptions): Promise<BatchResult
   // --- finalize checks + append shared rows into every size trace ---
   for (const o of outcomes) {
     if (o.error || !o.png || !o.manifest) continue;
+    // Final deterministic pixel verdict on the delivered image: a CTA
+    // with clipped glyphs or a ghost bar can never pass, whatever the
+    // review said (several such outputs shipped as `pass` live).
+    try {
+      const panelEl = o.manifest.elements.find((e) => e.kind === 'panel');
+      if (panelEl && opts.source.analysis.panel) {
+        const canvas = await decodeRgba(o.png);
+        // Fill = the panel's dominant in-box colour (Spark's sampled
+        // bg_color can describe a different run's panel classification).
+        const fill = dominantPanelColor(canvas, panelEl.box) ?? rgbFromHex(opts.source.panelFill ?? opts.source.analysis.panel.bg_color);
+        for (const f of panelPixelFindings(canvas, panelEl.box, fill, rgbFromHex(opts.source.analysis.panel.text_color))) {
+          if (!o.findings.some((x) => x.code === f.code)) {
+            o.findings = [...o.findings, { code: f.code, severity: 'fail' as const, element: 'panel', detail: f.detail }];
+          }
+        }
+      }
+    } catch { /* pixel check is additive; geometry findings still stand */ }
     const wonderFlags = (patchesBySize.get(o.preset.id) ?? []).filter((p) => p.action === 'flag').map((p) => p.reason);
     const applied = o.repaired?.patches ?? [];
     o.checks = computeChecks({

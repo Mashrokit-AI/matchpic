@@ -1,5 +1,6 @@
 import type { ResolvedLayoutManifest } from './manifest.js';
 import { minLegiblePx } from '../repair/render.js';
+import { freeOtherTexts } from './planner.js';
 import type { SourceAnalysis } from '../../shared/schemas.js';
 
 /**
@@ -97,6 +98,58 @@ export function checkManifestGeometry(
   if (edges.size > 1) {
     out.push({ code: 'text_align', severity: 'warn', element: null, detail: `text group mixes alignment edges (${[...edges].join(',')})` });
   }
+  // Ragged column: non-same-row text boxes must share the alignment edge
+  // in pixels (a shared `align` label with different box edges renders as
+  // a ragged column — the defect Wonder kept "fixing" with ±162px moves).
+  {
+    const stacked = texts.filter(
+      (t) => !texts.some((o) => o !== t && o.box.y < t.box.y + t.box.h && t.box.y < o.box.y + o.box.h),
+    );
+    if (stacked.length >= 2) {
+      const align = stacked[0]!.align ?? 'left';
+      const edgeOf = (b: { x: number; w: number }): number => (align === 'right' ? b.x + b.w : align === 'center' ? b.x + b.w / 2 : b.x);
+      const edge0 = edgeOf(stacked[0]!.box);
+      for (const t of stacked.slice(1)) {
+        if (Math.abs(edgeOf(t.box) - edge0) > 4) {
+          out.push({ code: 'text_column', severity: 'fail', element: t.id, detail: `${t.id} alignment edge off by ${Math.round(edgeOf(t.box) - edge0)}px from the text column` });
+        }
+      }
+      // The logo shares the column edge when it sits above the texts on
+      // the same side (near-miss edges read as a ragged lockup column).
+      const logo = manifest.elements.find((e) => e.kind === 'logo');
+      const firstTextY = Math.min(...stacked.map((t) => t.box.y));
+      if (logo && logo.box.y + logo.box.h <= firstTextY + 4) {
+        // Near-miss only: a logo far from the column edge is a centered
+        // lockup by design, not a ragged column.
+        if (Math.abs(edgeOf(logo.box) - edge0) > 8 && Math.abs(edgeOf(logo.box) - edge0) < W * 0.25) {
+          out.push({ code: 'text_column', severity: 'fail', element: 'logo', detail: `logo alignment edge off by ${Math.round(edgeOf(logo.box) - edge0)}px from the text column` });
+        }
+      }
+    }
+  }
+  // Grouped source lines split apart: other-texts stacked tightly in the
+  // source must stay a tight stack in the output.
+  {
+    const free = freeOtherTexts(analysis);
+    const byId = new Map(manifest.elements.map((e) => [e.id, e]));
+    const sorted = free
+      .map((t, i) => ({ t, el: byId.get(`other-${i}`) }))
+      .filter((r): r is { t: (typeof free)[number]; el: NonNullable<ReturnType<typeof byId.get>> } => !!r.el)
+      .sort((a, b) => a.t.bbox.y - b.t.bbox.y);
+    for (let i = 1; i < sorted.length; i++) {
+      const prev = sorted[i - 1]!;
+      const cur = sorted[i]!;
+      const srcGap = cur.t.bbox.y - (prev.t.bbox.y + prev.t.bbox.h);
+      const xOverlap = Math.max(0, Math.min(prev.t.bbox.x + prev.t.bbox.w, cur.t.bbox.x + cur.t.bbox.w) - Math.max(prev.t.bbox.x, cur.t.bbox.x));
+      const grouped = srcGap < Math.max(prev.t.bbox.h, cur.t.bbox.h) * 0.6 && xOverlap > Math.min(prev.t.bbox.w, cur.t.bbox.w) * 0.3;
+      if (!grouped) continue;
+      const outGap = cur.el.box.y - (prev.el.box.y + prev.el.box.h);
+      const limit = Math.max(48, Math.round(Math.max(prev.el.box.h, cur.el.box.h) * 1.5));
+      if (outGap > limit) {
+        out.push({ code: 'text_group_split', severity: 'fail', element: cur.el.id, detail: `${prev.el.id}→${cur.el.id} were one group in the source but are split by ${outGap}px in the output` });
+      }
+    }
+  }
 
   // Legibility: rendered text must clear the floor for this canvas.
   const floor = minLegiblePx(Math.min(W, H));
@@ -124,7 +177,10 @@ export function checkManifestGeometry(
     if (isGap && gapStart < 0) gapStart = r;
     if (!isGap && gapStart >= 0) {
       if ((r - gapStart) * rowH > H * 0.25) {
-        out.push({ code: 'empty_band', severity: 'warn', element: null, detail: `empty band over 25% of canvas height (rows ${gapStart}-${r})` });
+        // Over a third of the canvas empty is a failed layout (the ad
+        // shrunk into a small box on a tall size), not a warning.
+        const severe = (r - gapStart) * rowH > H * 0.35;
+        out.push({ code: 'empty_band', severity: severe ? 'fail' : 'warn', element: null, detail: `empty band ${Math.round(((r - gapStart) * rowH) / H * 100)}% of canvas height (rows ${gapStart}-${r})` });
       }
       gapStart = -1;
     }

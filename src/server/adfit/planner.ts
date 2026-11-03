@@ -411,6 +411,44 @@ export function planLayout(input: PlannerInput): LayoutPlan {
     return clampInto(box(cx - Math.max(mapped.w, minW) / 2, cy - Math.max(mapped.h, minH) / 2, Math.max(mapped.w, minW), Math.max(mapped.h, minH)), safe);
   });
   if (otherTexts.length > 0) notes.push(`${otherTexts.length} other text(s): relative position`);
+  // Source-grouped lines stay one group: lines stacked tightly in the
+  // source (e.g. a price split as "5$" / "only" / "returns" over three
+  // OCR lines) are re-stacked with their source gaps at the first line's
+  // mapped position, instead of each being mapped independently onto a
+  // differently-shaped canvas where they scatter down the layout.
+  {
+    const order = freeOthers.map((_, i) => i).sort((a, b) => (freeOthers[a] as (typeof freeOthers)[number]).bbox.y - (freeOthers[b] as (typeof freeOthers)[number]).bbox.y);
+    let group: number[] = [];
+    const flush = (): void => {
+      if (group.length >= 2) {
+        const anchor = otherTexts[group[0] as number] as PlanBox;
+        let cursor = anchor.y + anchor.h;
+        for (let k = 1; k < group.length; k++) {
+          const prevSrc = (freeOthers[group[k - 1] as number] as (typeof freeOthers)[number]).bbox;
+          const curSrc = (freeOthers[group[k] as number] as (typeof freeOthers)[number]).bbox;
+          const srcGap = Math.max(0, curSrc.y - (prevSrc.y + prevSrc.h));
+          const gap = Math.round(srcGap * (W / Math.max(1, input.sourceWidth)));
+          const b = otherTexts[group[k] as number] as PlanBox;
+          b.x = anchor.x;
+          b.y = cursor + gap;
+          cursor = b.y + b.h;
+        }
+        notes.push(`${group.length} other text(s): kept as one source group (stacked, not scattered)`);
+      }
+      group = [];
+    };
+    for (const idx of order) {
+      if (group.length === 0) { group = [idx]; continue; }
+      const prev = (freeOthers[group[group.length - 1] as number] as (typeof freeOthers)[number]).bbox;
+      const cur = (freeOthers[idx] as (typeof freeOthers)[number]).bbox;
+      const gap = cur.y - (prev.y + prev.h);
+      const xOverlap = Math.max(0, Math.min(prev.x + prev.w, cur.x + cur.w) - Math.max(prev.x, cur.x));
+      const tight = gap >= -Math.min(prev.h, cur.h) * 0.5 && gap < Math.max(prev.h, cur.h) * 0.6 && xOverlap > Math.min(prev.w, cur.w) * 0.3;
+      if (tight) group.push(idx);
+      else { flush(); group = [idx]; }
+    }
+    flush();
+  }
 
   // No-template stack reservation: relative mapping can drop a price/CTA
   // line straight onto the headline/subtext/panel stack the defaults just

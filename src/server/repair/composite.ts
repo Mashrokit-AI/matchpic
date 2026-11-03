@@ -509,6 +509,163 @@ export function debandFlatPlate(canvas: RgbaImage): DebandResult {
   return { corrected: rows > 0, rows };
 }
 
+/**
+ * Erase a rect from a plate by extending each row's surrounding pixels
+ * inward (median of the 24px strips left/right of the rect, blended by
+ * proximity). Plate painters routinely retain a fake button/text/logo at
+ * roughly the guided position; whatever will be stamped over the region
+ * must not let that ghost show through or peek out from behind. Row-wise
+ * extension preserves horizontal bands (ledges, tile lines) crossing it.
+ */
+export function eraseRectByRowExtension(
+  canvas: RgbaImage,
+  box: { x: number; y: number; w: number; h: number },
+): void {
+  const W = canvas.width;
+  const H = canvas.height;
+  const x0 = Math.max(0, Math.round(box.x));
+  const y0 = Math.max(0, Math.round(box.y));
+  const x1 = Math.min(W, Math.round(box.x + box.w));
+  const y1 = Math.min(H, Math.round(box.y + box.h));
+  if (x1 <= x0 || y1 <= y0) return;
+  const med = (vals: number[]): number => {
+    vals.sort((a, b) => a - b);
+    return vals[Math.floor(vals.length / 2)] ?? 0;
+  };
+  for (let y = y0; y < y1; y++) {
+    const left: number[][] = [[], [], []];
+    const right: number[][] = [[], [], []];
+    for (let x = Math.max(0, x0 - 24); x < x0; x++) {
+      const o = (y * W + x) * 4;
+      for (let c = 0; c < 3; c++) (left[c] as number[]).push(canvas.data[o + c] as number);
+    }
+    for (let x = x1; x < Math.min(W, x1 + 24); x++) {
+      const o = (y * W + x) * 4;
+      for (let c = 0; c < 3; c++) (right[c] as number[]).push(canvas.data[o + c] as number);
+    }
+    if (left[0]!.length === 0 && right[0]!.length === 0) continue;
+    const lm = left[0]!.length > 0 ? left.map((v) => med([...v])) : right.map((v) => med([...v]));
+    const rm = right[0]!.length > 0 ? right.map((v) => med([...v])) : lm;
+    const span = Math.max(1, x1 - x0 - 1);
+    for (let x = x0; x < x1; x++) {
+      const t = (x - x0) / span;
+      const o = (y * W + x) * 4;
+      // Feather the rect border (10px ramp): a hard-edged flat patch on a
+      // gradient/textured field reads as a visible band behind the text.
+      const edgeD = Math.min(x - x0, x1 - 1 - x, y - y0, y1 - 1 - y);
+      const a = Math.max(0, Math.min(1, edgeD / 10));
+      for (let c = 0; c < 3; c++) {
+        const ext = Math.round((lm[c] as number) * (1 - t) + (rm[c] as number) * t);
+        canvas.data[o + c] = Math.round(ext * a + (canvas.data[o + c] as number) * (1 - a));
+      }
+      canvas.data[o + 3] = 255;
+    }
+  }
+}
+
+export interface PanelPixelFinding {
+  code: 'panel_text_clipped' | 'panel_ghost_bar';
+  detail: string;
+}
+
+/**
+ * Deterministic pixel verdict on a composed panel/CTA: glyph ink touching
+ * the panel's top/bottom inner edge is clipped text; a wide bar in the
+ * strip below the panel whose tone diverges from the same row outside the
+ * panel's x-range is a leftover ghost rectangle (a full-width ledge or
+ * horizon spans outside too and never triggers). Pure pixel math.
+ */
+export function panelPixelFindings(
+  canvas: RgbaImage,
+  box: { x: number; y: number; w: number; h: number },
+  fill: { r: number; g: number; b: number },
+  text?: { r: number; g: number; b: number },
+): PanelPixelFinding[] {
+  const out: PanelPixelFinding[] = [];
+  const W = canvas.width;
+  const H = canvas.height;
+  // Glyph ink: text-coloured when the text colour is known (rims, ledges
+  // and shadows inside a loose panel box are not), else far-from-fill.
+  const dist = (o: number): number =>
+    text
+      ? 999 - (Math.abs((canvas.data[o] as number) - text.r) + Math.abs((canvas.data[o + 1] as number) - text.g) + Math.abs((canvas.data[o + 2] as number) - text.b))
+      : Math.abs((canvas.data[o] as number) - fill.r) + Math.abs((canvas.data[o + 1] as number) - fill.g) + Math.abs((canvas.data[o + 2] as number) - fill.b);
+  const inkAt = (o: number): boolean => (text ? dist(o) > 999 - 140 : dist(o) > 90);
+  const cx0 = Math.round(box.x + box.w * 0.15);
+  const cx1 = Math.round(box.x + box.w * 0.85);
+  const inkFrac = (y: number): number => {
+    let ink = 0;
+    let n = 0;
+    for (let x = Math.max(0, cx0); x < Math.min(W, cx1); x++) {
+      n++;
+      if (inkAt((y * W + x) * 4)) ink++;
+    }
+    return n > 0 ? ink / n : 0;
+  };
+  const y0 = Math.max(0, Math.round(box.y));
+  const y1 = Math.min(H - 1, Math.round(box.y + box.h) - 1);
+  // Ink near the box's left/right edges in the same row = a border line
+  // (design), not clipped glyphs: glyph rows never reach the box edges.
+  const edgeInkFrac = (y: number): number => {
+    let ink = 0;
+    let n = 0;
+    for (const [ex0, ex1] of [[Math.round(box.x + box.w * 0.02), Math.round(box.x + box.w * 0.1)], [Math.round(box.x + box.w * 0.9), Math.round(box.x + box.w * 0.98)]] as const) {
+      for (let x = Math.max(0, ex0); x < Math.min(W, ex1); x++) {
+        n++;
+        if (inkAt((y * W + x) * 4)) ink++;
+      }
+    }
+    return n > 0 ? ink / n : 0;
+  };
+  const glyphInk = (y: number): number => (edgeInkFrac(y) > 0.5 ? 0 : inkFrac(y));
+  if (y1 > y0) {
+    // Offset 3px in: a CTA border row is design, glyph ink there is not.
+    const topInk = Math.max(glyphInk(Math.min(y1, y0 + 3)), glyphInk(Math.min(y1, y0 + 4)), glyphInk(Math.min(y1, y0 + 5)));
+    const botInk = Math.max(glyphInk(Math.max(y0, y1 - 3)), glyphInk(Math.max(y0, y1 - 4)), glyphInk(Math.max(y0, y1 - 5)));
+    if (topInk > 0.02) out.push({ code: 'panel_text_clipped', detail: `panel glyph ink touches the top edge (frac ${topInk.toFixed(2)})` });
+    if (botInk > 0.02) out.push({ code: 'panel_text_clipped', detail: `panel glyph ink touches the bottom edge (frac ${botInk.toFixed(2)})` });
+  }
+  // Ghost bar below the panel: a panel-coloured rectangle starting right
+  // at the panel's bottom edge (its top hides behind the real panel). A
+  // ledge the panel sits on starts lower and is not panel-coloured.
+  const stripH = Math.min(48, Math.max(8, Math.round(box.h * 0.6)));
+  let run = 0;
+  let worst = 0;
+  for (let y = y1 + 1; y < Math.min(H, y1 + 1 + stripH); y++) {
+    let inner = 0;
+    let outer = 0;
+    let diff = 0;
+    let fillDist = Infinity;
+    const inLums: number[] = [];
+    const outLums: number[] = [];
+    const inRgb: number[][] = [[], [], []];
+    for (let x = Math.max(0, cx0); x < Math.min(W, cx1); x += 2) {
+      const o = (y * W + x) * 4;
+      inLums.push(0.299 * (canvas.data[o] as number) + 0.587 * (canvas.data[o + 1] as number) + 0.114 * (canvas.data[o + 2] as number));
+      for (let c = 0; c < 3; c++) (inRgb[c] as number[]).push(canvas.data[o + c] as number);
+    }
+    for (const [ox0, ox1] of [[Math.max(0, Math.round(box.x) - Math.round(box.w * 0.4)), Math.round(box.x)], [Math.round(box.x + box.w), Math.min(W, Math.round(box.x + box.w * 1.4))]] as const) {
+      for (let x = ox0; x < ox1; x += 2) {
+        const o = (y * W + x) * 4;
+        outLums.push(0.299 * (canvas.data[o] as number) + 0.587 * (canvas.data[o + 1] as number) + 0.114 * (canvas.data[o + 2] as number));
+      }
+    }
+    if (inLums.length > 4 && outLums.length > 4) {
+      inLums.sort((a, b) => a - b);
+      outLums.sort((a, b) => a - b);
+      inner = inLums[Math.floor(inLums.length / 2)] as number;
+      outer = outLums[Math.floor(outLums.length / 2)] as number;
+      diff = Math.abs(inner - outer);
+      const med3 = inRgb.map((v) => { const s = [...v].sort((a, b) => a - b); return s[Math.floor(s.length / 2)] as number; });
+      fillDist = Math.abs((med3[0] as number) - fill.r) + Math.abs((med3[1] as number) - fill.g) + Math.abs((med3[2] as number) - fill.b);
+    }
+    const isGhostRow = diff > 28 && fillDist < 75 && y - y1 <= 4 + run;
+    if (isGhostRow) { run++; worst = Math.max(worst, run); } else if (y - y1 > 4 && run === 0) { /* bar must start at the panel edge */ } else run = 0;
+  }
+  if (worst >= 6) out.push({ code: 'panel_ghost_bar', detail: `ghost bar below the panel (${worst} divergent rows under the panel x-range)` });
+  return out;
+}
+
 /** WCAG relative luminance of an sRGB triple. */
 export function relativeLuminance(r: number, g: number, b: number): number {
   const lin = (v: number): number => {

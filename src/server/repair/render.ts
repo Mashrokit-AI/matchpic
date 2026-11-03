@@ -495,7 +495,7 @@ export function buildRebuiltPanelHtml(input: RebuiltPanelInput & { fontCss: stri
 <style>
 ${input.fontCss}
 html,body{margin:0;padding:0;width:${input.width}px;height:${input.height}px;}
-.panel{width:${input.width}px;height:${input.height}px;background:${input.outline ? 'transparent' : cssColor(input.fill)};${input.outline ? `border:3px solid ${cssColor(input.outline)};` : ''}border-radius:${input.radius}px;display:flex;flex-direction:column;align-items:stretch;justify-content:center;overflow:hidden;box-sizing:border-box;padding:${Math.round(input.height * 0.1)}px ${Math.round(input.width * 0.05)}px;}
+.panel{width:${input.width}px;height:${input.height}px;background:${cssColor(input.fill)};${input.outline ? `border:3px solid ${cssColor(input.outline)};` : ''}border-radius:${input.radius}px;display:flex;flex-direction:column;align-items:stretch;justify-content:center;overflow:hidden;box-sizing:border-box;padding:${Math.round(input.height * 0.1)}px ${Math.round(input.width * 0.05)}px;}
 .pline{font-family:${stack};line-height:1.25;margin:0;text-align:${align};white-space:pre-wrap;overflow-wrap:break-word;}
 </style>
 </head>

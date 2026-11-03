@@ -7,7 +7,7 @@ import { editImages, generateImage, type ImageGenConfig } from '../models/muse-i
 import { qaOutput } from '../models/qa.js';
 import type { CostLedger } from '../models/costs.js';
 import type { WonderSizePlan } from '../models/wonder.js';
-import { clipProductMask, completeLogoMask, fillMaskHoles, keepInstanceComponent, maskFillInBox, resolveMaskOverlaps, segmentTargets } from '../repair/masks.js';
+import { clipProductMask, completeLogoMask, dropSmallComponents, fillMaskHoles, keepInstanceComponent, maskFillInBox, resolveMaskOverlaps, segmentTargets } from '../repair/masks.js';
 import { buildBoxPromptText, segment } from '../models/sam.js';
 import {
   completeOccludedBase,
@@ -15,6 +15,7 @@ import {
   decodeRgba,
   defringeCut,
   drawContactShadow,
+  eraseRectByRowExtension,
   exactSize,
   findSurfaceEdge,
   gapDrift,
@@ -293,6 +294,10 @@ export async function runMasksStage(
       for (let i = 0; i < grown.length; i++) {
         if (grown[i] && !logoMask[i]) logoGrownBy++;
       }
+      // Speckle cleanup: contrast growth can add busy-background pixels
+      // matching the lockup palette — pasted, they erode/mottle the logo.
+      const speckles = dropSmallComponents(grown, input.width, input.height);
+      if (speckles > 0) maskLabels['logo'] += ` +speckle-clean(-${speckles}px)`;
       masks.set('logo', grown);
       if (logoGrownBy > 0) maskLabels['logo'] += ` +contrast-grow(${logoGrownBy}px)`;
     }
@@ -782,14 +787,26 @@ export async function compositeProtected(
     // Floating products (no opaque pixel near the cut bottom third) get no
     // shadow; the plate was asked for no product shadows either.
     const floating = sp === null || sp.y < top + scaled.height * 0.9;
-    if (sp && drawContactShadow(canvas, sp, { floating })) notes.push(`${cut.id}: contact shadow at support y=${sp.y}`);
+    if (sp && !floating) {
+      // A product whose base sits well above the plate's surface edge is
+      // floating over that surface: its shadow belongs ON the surface,
+      // not glued to the sole (which reads as a pasted cut-out).
+      const edge = a.background.type === 'photo' ? findSurfaceEdge(canvas, left, left + scaled.width, sp.y, Math.round(plan.height * 0.12)) : null;
+      if (edge && edge.y > sp.y + Math.round(plan.height * 0.02)) {
+        if (drawContactShadow(canvas, { ...sp, y: edge.y }, { strength: 0.18 })) notes.push(`${cut.id}: floating shadow on surface y=${edge.y} (base y=${sp.y})`);
+      } else if (drawContactShadow(canvas, sp, { floating })) {
+        notes.push(`${cut.id}: contact shadow at support y=${sp.y}`);
+      }
+    }
     pasteWithFeather(canvas, scaled, left, top, 2);
     placed.push({ id: cut.id, cut, left, top, scale, featherPx: 2 });
   });
   if (req.source.logo && (mBox('logo') ?? plan.logo) && (manifest?.elements.find((e) => e.id === 'logo')?.scale ?? plan.logo_scale) !== null) {
     const dst = (mBox('logo') ?? plan.logo) as PlanBox;
     const scale = (manifest?.elements.find((e) => e.id === 'logo')?.scale ?? plan.logo_scale) as number;
-    const scaled = defringeCut(scaleRgbaNearest(req.source.logo.rgba, scale), 2);
+    // Logo is protected content: source pixels exactly, never defringed
+    // (defringe recolours thin light letterforms at their edges).
+    const scaled = scaleRgbaNearest(req.source.logo.rgba, scale);
     const left = Math.round(dst.x + (dst.w - scaled.width) / 2);
     const top = Math.round(dst.y + (dst.h - scaled.height) / 2);
     pasteWithFeather(canvas, scaled, left, top, 2);
@@ -808,6 +825,11 @@ export async function compositeProtected(
     // "Order now" vanished from every output).
     const isCta = !a.panel.opaque;
     const simple = !req.source.panelComplex && a.panel.texts.length > 0;
+    // Erase the plate under and around the panel first: plate painters
+    // retain a fake button at roughly the guided position, which showed
+    // through transparent CTAs and peeked out below as a ghost bar.
+    const ghostPad = Math.max(10, Math.min(44, Math.round(panelDst.h * 0.5)));
+    eraseRectByRowExtension(canvas, { x: panelDst.x - 10, y: panelDst.y - 6, w: panelDst.w + 20, h: panelDst.h + ghostPad + 6 });
     if (simple) {
       try {
         const sampled = req.source.panelFill ?? a.panel.bg_color;
@@ -858,7 +880,13 @@ export async function compositeProtected(
       dst = moved;
     }
     const line: TextLine = { text: text.text, px: Math.max(24, Math.round(dst.h * 0.62)), weight: text.bold ? 700 : 400, color: rgbFromHex(text.color) };
-    const rendered = await renderTextBlock({ width: dst.w, height: dst.h, lines: [line], lang: a.language, align });
+    // Free text shares the manifest's alignment edge (left LTR / right
+    // RTL): rendering centered inside differently-sized boxes made every
+    // line start at a different x (the ragged column Wonder then tried
+    // to fix with clamped ±162px group moves). A template's explicit
+    // center alignment is brand design and is kept.
+    const textAlign = align === 'center' && !req.template ? 'start' : align;
+    const rendered = await renderTextBlock({ width: dst.w, height: dst.h, lines: [line], lang: a.language, align: textAlign });
     textSizes[key] = rendered.sizes;
     stampLayer(canvas, await decodeRgba(rendered.png), dst.x, dst.y);
   };
