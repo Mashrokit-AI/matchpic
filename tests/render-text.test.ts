@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildTextBlockHtml, contrastRatio, ensureTextContrast, isolateNumerals } from '../src/server/repair/render.js';
+import { buildTextBlockHtml, closeSharedBrowser, contrastRatio, ensureTextContrast, isolateNumerals, renderTextBlock, sharedRenderBrowserForTest } from '../src/server/repair/render.js';
 import { buildFastPrompt, buildPlatePrompt, type OutputRequest } from '../src/server/adfit/pipeline.js';
 import { buildQaPrompt } from '../src/server/models/qa.js';
 import { presetById } from '../src/shared/presets.js';
@@ -112,4 +112,21 @@ describe('image prompts', () => {
     expect(p).toContain('y=25');
     expect(p).toContain('y=602');
   });
+});
+
+describe('shared render browser', () => {
+  it('relaunches after the browser dies instead of failing every later render', async () => {
+    const block = { width: 300, height: 80, lang: 'en' as const, align: 'center' as const, lines: [{ text: 'Shop now', px: 32, weight: 700 as const, color: { r: 0, g: 0, b: 0 } }] };
+    try {
+      await renderTextBlock(block);
+      const first = sharedRenderBrowserForTest();
+      expect(first?.isConnected()).toBe(true);
+      await first?.close(); // what a crash or an OOM kill looks like to the server
+      const again = await renderTextBlock(block);
+      expect(again.png.length).toBeGreaterThan(0);
+      expect(sharedRenderBrowserForTest()).not.toBe(first);
+    } finally {
+      await closeSharedBrowser();
+    }
+  }, 60_000);
 });
