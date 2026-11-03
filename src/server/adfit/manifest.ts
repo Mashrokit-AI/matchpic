@@ -118,10 +118,18 @@ export function manifestFromPlan(input: ManifestFromPlanInput): ResolvedLayoutMa
   if (plan.panel) {
     let panelBox = { ...plan.panel };
     if (input.ctaPanel) {
-      // A transparent CTA keeps button proportions on every planner path:
-      // bottom-anchored, at most ~10% of the canvas tall and ~55% wide.
-      const h = Math.min(panelBox.h, Math.max(48, Math.round(plan.height * 0.1)));
-      const w = Math.min(panelBox.w, Math.max(Math.round(h * 3.1), Math.min(panelBox.w, 160)), Math.round(plan.safe.w * 0.55));
+      // A CTA keeps button proportions on every planner path: bottom-
+      // anchored, at most 45% of canvas width / 9% of canvas height in
+      // square/portrait (40% / 20% on landscape), aspect preserved.
+      const wideCanvas = plan.width / plan.height > 1.3;
+      const maxW = Math.round(plan.width * (wideCanvas ? 0.4 : 0.45));
+      const maxH = Math.round(plan.height * (wideCanvas ? 0.2 : 0.09));
+      const aspect = panelBox.w / Math.max(1, panelBox.h);
+      let h = Math.min(panelBox.h, maxH);
+      let w = Math.min(panelBox.w, Math.round(h * aspect), maxW);
+      if (w >= maxW) h = Math.round(w / Math.max(0.1, aspect));
+      w = Math.max(24, w);
+      h = Math.max(24, h);
       panelBox = {
         x: Math.round(panelBox.x + panelBox.w / 2 - w / 2),
         y: panelBox.y + panelBox.h - h,
@@ -685,6 +693,60 @@ export function enforceManifest(input: EnforceInput): ResolvedLayoutManifest {
       }
       for (const t of stack) t.box = clampInto(t.box, BB);
       corrections.push('text group: final restack separated overlapping text');
+    }
+  }
+
+  // 6c. Offer cohesion + reading order (every family, not only landscape):
+  // an isolated other-text (the price) stranded far from the
+  // headline/subtext/panel cluster is pulled next to the panel; then
+  // headline → subtext → panel are restacked in role order when a planner
+  // reversed them. Grouped others (Hebrew badge lines) never move here.
+  {
+    const panelEl = m.elements.find((e) => e.id === 'panel') ?? null;
+    const headEl = m.elements.find((e) => e.id === 'headline') ?? null;
+    const subEl = m.elements.find((e) => e.id === 'subtext') ?? null;
+    const cluster = [headEl, subEl, panelEl].filter((e): e is ManifestElement => !!e);
+    const others = m.elements.filter((e) => e.kind === 'other_text');
+    const vGap = (a: PlanBox, b: PlanBox): number => Math.max(0, Math.max(a.y - (b.y + b.h), b.y - (a.y + a.h)));
+    for (const o of others) {
+      if (cluster.length === 0) break;
+      const grouped = others.some((q) => q !== o && vGap(o.box, q.box) < 100);
+      if (grouped) continue;
+      const dist = Math.min(...cluster.map((c) => vGap(o.box, c.box)));
+      if (dist <= Math.max(60, Math.round(H * 0.06))) continue;
+      const targetY = panelEl ? panelEl.box.y - o.box.h - minGap : (subEl ?? headEl)!.box.y + (subEl ?? headEl)!.box.h + minGap;
+      const cand = clampInto({ ...o.box, y: targetY }, BB);
+      const solids = m.elements.filter((e) => e !== o && e.group !== 'text' && e.kind !== 'shadow' && e.kind !== 'frame');
+      if (solids.some((s) => overlaps(cand, s.box))) continue;
+      o.box = cand;
+      o.source = 'corrected';
+      corrections.push(`${o.id}: pulled next to the offer group (was orphaned ${dist}px away)`);
+    }
+    const seq = [headEl, subEl, panelEl].filter((e): e is ManifestElement => !!e);
+    if (seq.length >= 2) {
+      const centers = seq.map((e) => e.box.y + e.box.h / 2);
+      const ordered = centers.every((c, i) => i === 0 || c > centers[i - 1]!);
+      if (!ordered) {
+        let cursor = Math.min(...seq.map((e) => e.box.y));
+        const desired = new Map<string, PlanBox>();
+        for (const e of seq) {
+          desired.set(e.id, { ...e.box, y: Math.round(cursor) });
+          cursor += e.box.h + minGap;
+        }
+        const solids = m.elements.filter((e) => !seq.includes(e) && e.kind !== 'shadow' && e.kind !== 'frame');
+        const blocked = seq.some((e) => solids.some((s) => overlaps(desired.get(e.id)!, s.box)));
+        if (!blocked) {
+          for (const e of seq) {
+            const next = desired.get(e.id)!;
+            const clamped = clampInto(next, BB);
+            if (clamped.y !== e.box.y) {
+              e.box = clamped;
+              e.source = 'corrected';
+            }
+          }
+          corrections.push('text group: restacked in reading order (headline → subtext → panel)');
+        }
+      }
     }
   }
 

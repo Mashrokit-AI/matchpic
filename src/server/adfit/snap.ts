@@ -44,10 +44,20 @@ export function samplePanelColor(rgba: RgbaImage, box: PixelBox): string {
  * Threshold tuned on flat panels (~2-8) vs photographic regions (>40).
  */
 export function panelComplexity(rgba: RgbaImage, box: PixelBox): { stdev: number; complex: boolean } {
-  const x1 = Math.max(0, Math.min(rgba.width - 1, Math.round(box.x)));
-  const y1 = Math.max(0, Math.min(rgba.height - 1, Math.round(box.y)));
-  const x2 = Math.max(x1 + 1, Math.min(rgba.width, Math.round(box.x + box.w)));
-  const y2 = Math.max(y1 + 1, Math.min(rgba.height, Math.round(box.y + box.h)));
+  // Sample INSIDE the button: the outer ring of a Spark/snap box mixes the
+  // button's edge line, its shadow and the surrounding photo, which scored
+  // a flat slate CTA (stdev 41) as "complex" and forced a blurry paste.
+  // Shrinking 10% lands on flat fill for a real flat button (stdev ~2),
+  // while photo/illustration texture stays varied at any inset.
+  const insetX = Math.round(box.w * 0.1);
+  const insetY = Math.round(box.h * 0.1);
+  const shrunk: PixelBox = box.w - insetX * 2 > 16 && box.h - insetY * 2 > 12
+    ? { x: box.x + insetX, y: box.y + insetY, w: box.w - insetX * 2, h: box.h - insetY * 2 }
+    : box;
+  const x1 = Math.max(0, Math.min(rgba.width - 1, Math.round(shrunk.x)));
+  const y1 = Math.max(0, Math.min(rgba.height - 1, Math.round(shrunk.y)));
+  const x2 = Math.max(x1 + 1, Math.min(rgba.width, Math.round(shrunk.x + shrunk.w)));
+  const y2 = Math.max(y1 + 1, Math.min(rgba.height, Math.round(shrunk.y + shrunk.h)));
   const ring = Math.max(2, Math.round(Math.min(x2 - x1, y2 - y1) * 0.12));
   const vals: Array<[number, number, number]> = [];
   const step = Math.max(1, Math.floor(Math.min(x2 - x1, y2 - y1) / 24));

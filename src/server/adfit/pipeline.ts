@@ -19,7 +19,10 @@ import {
   exactSize,
   findSurfaceEdge,
   gapDrift,
+  insetPanelCutToFill,
   pasteWithFeather,
+  readableTextColor,
+  textContrastRatio,
   roundPanelCorners,
   scaleRgbaNearest,
   trimFlatBorders,
@@ -29,7 +32,7 @@ import {
 import { artifactDigest, elementProof, type ArtifactDigest, type ElementProof } from '../repair/proof.js';
 import { ensureTextContrast, minLegiblePx, renderRebuiltPanel, renderTextBlock, rgbFromHex, RenderBlocker, type TextLine } from '../repair/render.js';
 import { maskBoundingBox, padBox, unionMasks, type PixelBox } from '../../shared/geometry.js';
-import { freeHeadlineSubtext, freeOtherTexts, planLayout, shiftBoxAbovePanel, tallProductCell } from './planner.js';
+import { freeHeadlineSubtext, freeOtherTexts, isCtaPanel, planLayout, shiftBoxAbovePanel, tallProductCell } from './planner.js';
 import { panelComplexity, samplePanelColor, snapPanelRect } from './snap.js';
 import { loadCachedLayers, sourceDigest, storeCachedLayers } from './cache.js';
 import { enforceManifest, familyForPreset, manifestFromPlan, templateZonesPx, type ResolvedLayoutManifest } from './manifest.js';
@@ -701,6 +704,8 @@ export interface CompositeResult {
   notes: string[];
   panelRebuilt: boolean;
   panelFlagged: boolean;
+  /** Scale of a pasted panel cut (null when rebuilt or no panel). */
+  panelScale: number | null;
 }
 
 /** Stamp a same-size-or-smaller RGBA layer onto the canvas with its own alpha. */
@@ -816,6 +821,7 @@ export async function compositeProtected(
   // Panel: rebuilt in code when simple, else pasted with a legibility floor.
   let panelRebuilt = false;
   let panelFlagged = false;
+  let panelScale: number | null = null;
   const panelDst = mBox('panel') ?? plan.panel;
   if (panelDst && a.panel && (req.source.panel || a.panel.texts.length > 0)) {
     const shape = req.template?.spec.panel_zone?.shape ?? 'rounded_rect';
@@ -825,16 +831,27 @@ export async function compositeProtected(
     // "Order now" vanished from every output).
     const isCta = !a.panel.opaque;
     const simple = !req.source.panelComplex && a.panel.texts.length > 0;
+    // A paste that would upscale the source cut past 1.25x renders blurry
+    // text (STRIDE's "Shop now" at ~1.9x): try the rebuild first even
+    // when the panel scored complex; the paste stays as the fallback.
+    const pasteScaleEst = req.source.panel
+      ? Math.min(panelDst.w / Math.max(1, req.source.panel.rgba.width), panelDst.h / Math.max(1, req.source.panel.rgba.height))
+      : 0;
+    const attemptRebuild = simple || (a.panel.texts.length > 0 && pasteScaleEst > 1.25);
     // Erase the plate under and around the panel first: plate painters
     // retain a fake button at roughly the guided position, which showed
     // through transparent CTAs and peeked out below as a ghost bar.
     const ghostPad = Math.max(10, Math.min(44, Math.round(panelDst.h * 0.5)));
     eraseRectByRowExtension(canvas, { x: panelDst.x - 10, y: panelDst.y - 6, w: panelDst.w + 20, h: panelDst.h + ghostPad + 6 });
-    if (simple) {
+    if (attemptRebuild) {
       try {
         const sampled = req.source.panelFill ?? a.panel.bg_color;
         const fill = rgbFromHex(sampled);
         const textColor = isCta ? rgbFromHex(a.panel.text_color) : ensureTextContrast(fill, rgbFromHex(a.panel.text_color));
+        // A flat panel whose fill matches the plate vanishes (LUMA's cream
+        // button on a cream plate): give it the text colour as an outline.
+        const fillVsPlate = textContrastRatio(canvas, panelDst, fill).ratio;
+        const needsOutline = !isCta && fillVsPlate < 1.4;
         const radius = shape === 'pill' ? Math.floor(panelDst.h / 2) : shape === 'rect' ? 0 : Math.round(Math.min(panelDst.w, panelDst.h) * 0.08);
         const align = req.template?.spec.text_align ?? 'center';
         const rendered = await renderRebuiltPanel({
@@ -842,7 +859,7 @@ export async function compositeProtected(
           height: panelDst.h,
           radius,
           fill,
-          outline: isCta ? textColor : null,
+          outline: isCta || needsOutline ? textColor : null,
           lines: a.panel.texts.map((t, i) => ({ text: t, weight: i === 0 ? 700 : 400, color: textColor })),
           lang: a.language,
           align,
@@ -859,6 +876,7 @@ export async function compositeProtected(
     } else {
       panelFlagged = await pastePanelFallback(req, panelDst, canvas, placed, notes);
     }
+    panelScale = placed.find((p) => p.id === 'panel')?.scale ?? null;
   }
 
   // Free text on the background: re-rendered verbatim in Chromium.
@@ -879,7 +897,13 @@ export async function compositeProtected(
       notes.push(`${key}: moved above the panel to avoid collision`);
       dst = moved;
     }
-    const line: TextLine = { text: text.text, px: Math.max(24, Math.round(dst.h * 0.62)), weight: text.bold ? 700 : 400, color: rgbFromHex(text.color) };
+    // Contrast: re-rendered text must read against the plate under its
+    // box (the Hebrew yellow tagline on cream tiles scored ~1.2). The
+    // analysis carries no backing-shape field, so a failing source
+    // colour is swapped for black/white, whichever reads better.
+    const picked = readableTextColor(canvas, dst, rgbFromHex(text.color));
+    if (picked.changed) notes.push(`${key}: text colour swapped for contrast (${picked.ratio.toFixed(2)} vs plate)`);
+    const line: TextLine = { text: text.text, px: Math.max(24, Math.round(dst.h * 0.62)), weight: text.bold ? 700 : 400, color: picked.color };
     // Free text shares the manifest's alignment edge (left LTR / right
     // RTL): rendering centered inside differently-sized boxes made every
     // line start at a different x (the ragged column Wonder then tried
@@ -918,7 +942,7 @@ export async function compositeProtected(
     next_state: 'adfit_proof',
     cached: false,
   });
-  return { png, placed, textSizes, notes, panelRebuilt, panelFlagged };
+  return { png, placed, textSizes, notes, panelRebuilt, panelFlagged, panelScale };
 }
 
 /**
@@ -935,11 +959,20 @@ export async function pastePanelFallback(
 ): Promise<boolean> {
   const cut = req.source.panel;
   if (!cut) return false;
-  // Loose rect cuts carry flat background (light strips/corner squares stamp
-  // on the plate). Trim + round BEFORE scaling: the proof compares the placed
-  // cut, so post-scale rounding would fail its zero-tolerance core check.
-  const cleaned: ElementCut = { ...cut, rgba: roundPanelCorners(trimFlatBorders(cut.rgba)) };
-  const scale = Math.min(panelDst.w / cleaned.rgba.width, panelDst.h / cleaned.rgba.height);
+  // Loose rect cuts carry surrounding plate pixels (the grey/red rim).
+  // Inset to the button's own fill edge first, then trim + round BEFORE
+  // scaling: the proof compares the placed cut, so post-scale rounding
+  // would fail its zero-tolerance core check.
+  let cutRgba = cut.rgba;
+  if (req.source.panelFill) {
+    try {
+      cutRgba = insetPanelCutToFill(cutRgba, rgbFromHex(req.source.panelFill));
+    } catch { /* a bad fill hex keeps the original cut */ }
+  }
+  const cleaned: ElementCut = { ...cut, rgba: roundPanelCorners(trimFlatBorders(cutRgba)) };
+  // Never upscale a pasted cut past 1.25x: blurry text ships as a defect,
+  // not a button. Keep the cut near its source size instead.
+  const scale = Math.min(panelDst.w / cleaned.rgba.width, panelDst.h / cleaned.rgba.height, 1.25);
   // Biggest source line ≈ 35% of the panel height; pasted text must clear the floor.
   const floor = minLegiblePx(Math.min(panelDst.w, panelDst.h));
   const estTextH = cleaned.rgba.height * 0.35 * scale;
@@ -1177,7 +1210,7 @@ export function planForSize(req: OutputRequest, wonder: WonderSizePlan | null): 
           templateZones: zones,
           rationale: wonder.rationale,
           freeText: freeHeadlineSubtext(req.source.analysis, converted.plan),
-          ctaPanel: !!req.source.analysis.panel && !req.source.analysis.panel.opaque,
+          ctaPanel: isCtaPanel(req.source.analysis.panel),
         }),
         direction: req.source.analysis.direction,
       });
@@ -1194,7 +1227,7 @@ export function planForSize(req: OutputRequest, wonder: WonderSizePlan | null): 
       direction: req.source.analysis.direction,
       templateZones: zones,
       freeText: freeHeadlineSubtext(req.source.analysis, codePlan),
-      ctaPanel: !!req.source.analysis.panel && !req.source.analysis.panel.opaque,
+      ctaPanel: isCtaPanel(req.source.analysis.panel),
     }),
     direction: req.source.analysis.direction,
   });

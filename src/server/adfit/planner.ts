@@ -94,6 +94,48 @@ export function shiftBoxAbovePanel(dst: PlanBox, panel: PlanBox, gap = 12): Plan
   return overlaps(moved, panel) ? null : moved;
 }
 
+/** A standalone price token ("$129", "5$", "₪42") — not a sentence containing one. */
+export function isPriceText(text: string): boolean {
+  const t = text.trim();
+  if (t.length === 0 || t.length > 20) return false;
+  return /^[$€£₪]?\s*\d+([.,]\d+)?\s*([$€£₪]|only|בלבד)?$/i.test(t);
+}
+
+/** A panel that is really a CTA button: transparent, or a single line of copy. */
+export function isCtaPanel(panel: SourceAnalysis['panel']): boolean {
+  return !!panel && (!panel.opaque || panel.texts.length <= 1);
+}
+
+/**
+ * CTA size from the SOURCE button × the layout (canvas/source width) scale,
+ * capped so a button never becomes a banner: ≤45% of canvas width and
+ * ≤9% of canvas height in square/portrait (≤40% / ≤20% on landscape).
+ */
+export function ctaPanelSize(
+  panel: NonNullable<SourceAnalysis['panel']>,
+  W: number,
+  H: number,
+  sourceWidth: number,
+): { w: number; h: number } {
+  const scale = W / Math.max(1, sourceWidth);
+  let w = Math.max(1, panel.bbox.w * scale);
+  let h = Math.max(1, panel.bbox.h * scale);
+  const wideCanvas = W / H > 1.3;
+  const maxW = W * (wideCanvas ? 0.4 : 0.45);
+  const maxH = H * (wideCanvas ? 0.2 : 0.09);
+  const s = Math.min(1, maxW / w, maxH / h);
+  w *= s;
+  h *= s;
+  if (h < 44 && h < maxH) {
+    const grow = Math.min(maxH / h, maxW / Math.max(1, w));
+    if (grow > 1) {
+      w *= grow;
+      h *= grow;
+    }
+  }
+  return { w: Math.max(24, Math.round(w)), h: Math.max(24, Math.round(h)) };
+}
+
 /** True when a text bbox travels with pasted element pixels (never re-render). */
 export function travelsWithPixels(source: SourceAnalysis, bbox: BoxLike, text?: string): boolean {
   if (source.panel) {
@@ -323,16 +365,14 @@ export function planLayout(input: PlannerInput): LayoutPlan {
     logoScale = scale;
     notes.push(`logo: default top corner (${source.direction})`);
   }
-  if (source.panel && !panel && !source.panel.opaque) {
-    // Transparent panel = a CTA button (e.g. an outlined "Order now"): keep
-    // it button-sized, never a full-width panel — the 90%-width aspect box
-    // reserved a quarter of the canvas and squeezed the products.
-    const ph = Math.max(48, Math.round(H * 0.1));
-    const aspect = source.panel.bbox.w / Math.max(1, source.panel.bbox.h);
-    let pw = Math.round(ph * aspect);
-    if (pw > Math.round(safe.w * 0.55)) pw = Math.round(safe.w * 0.55);
-    panel = clampInto(box(safe.x + (safe.w - pw) / 2, safe.y + safe.h - ph - margin, pw, ph), safe);
-    notes.push('panel: default bottom (cta button)');
+  if (source.panel && !panel && isCtaPanel(source.panel)) {
+    // CTA button (transparent outline OR a single flat line like STRIDE's
+    // "Shop now"): size from the source button, never a full-width panel —
+    // the old opaque branch stretched it to 90% of the safe width and the
+    // paste fallback then upscaled the small source cut ~2x into a banner.
+    const size = ctaPanelSize(source.panel, W, H, input.sourceWidth);
+    panel = clampInto(box(safe.x + (safe.w - size.w) / 2, safe.y + safe.h - size.h - margin, size.w, size.h), safe);
+    notes.push('panel: default bottom (cta button, source-sized)');
   }
   if (source.panel && !panel) {
     const pw = Math.round(safe.w * 0.9);
@@ -448,6 +488,60 @@ export function planLayout(input: PlannerInput): LayoutPlan {
       else { flush(); group = [idx]; }
     }
     flush();
+  }
+
+  // Reading order: the old defaults placed the subtext ABOVE the headline
+  // ("subtext above headline") and left the price at its relative-mapped
+  // spot, so square/story outputs read subtext → headline with the price
+  // stranded above both. Restack headline → subtext → price(s) → panel in
+  // source order, anchored just above the panel (or the safe bottom).
+  {
+    const groupedWith = (i: number): boolean =>
+      freeOthers.some((o, j) => {
+        if (j === i) return false;
+        const t = freeOthers[i] as (typeof freeOthers)[number];
+        const gap = Math.max(t.bbox.y, o.bbox.y) - Math.min(t.bbox.y + t.bbox.h, o.bbox.y + o.bbox.h);
+        const xOverlap = Math.max(0, Math.min(t.bbox.x + t.bbox.w, o.bbox.x + o.bbox.w) - Math.max(t.bbox.x, o.bbox.x));
+        return gap < Math.max(t.bbox.h, o.bbox.h) * 0.6 && xOverlap > Math.min(t.bbox.w, o.bbox.w) * 0.3;
+      });
+    const priceBoxes = freeOthers
+      .map((t, i) => ({ t, i }))
+      .filter(({ t, i }) => isPriceText(t.text) && !groupedWith(i))
+      .sort((a, b) => a.t.bbox.y - b.t.bbox.y)
+      .map(({ i }) => otherTexts[i] as PlanBox);
+    // Stack in SOURCE vertical order, panel included: LUMA's source reads
+    // headline → price → CTA → subtext, and forcing headline → subtext →
+    // price → panel reordered it (and stranded the CTA out of the group).
+    const stackItems: Array<{ b: PlanBox; srcY: number }> = [];
+    if (headline) stackItems.push({ b: headline, srcY: source.headline?.bbox.y ?? 0 });
+    if (subtext) stackItems.push({ b: subtext, srcY: source.subtext?.bbox.y ?? 0 });
+    freeOthers
+      .map((t, i) => ({ t, i }))
+      .filter(({ t, i }) => isPriceText(t.text) && !groupedWith(i))
+      .forEach(({ t, i }) => stackItems.push({ b: otherTexts[i] as PlanBox, srcY: t.bbox.y }));
+    if (panel) stackItems.push({ b: panel, srcY: source.panel?.bbox.y ?? Number.MAX_SAFE_INTEGER });
+    stackItems.sort((a, b) => a.srcY - b.srcY);
+    const stack: PlanBox[] = stackItems.map((s) => s.b);
+    if (stack.length >= 2) {
+      const gap = tall ? Math.max(8, Math.round(margin / 2)) : margin;
+      if (tall) {
+        // Compact boxes on 9:16 so the product band keeps its height.
+        if (headline) headline.h = Math.min(headline.h, Math.round(H * 0.06));
+        if (subtext) subtext.h = Math.min(subtext.h, Math.round(H * 0.035));
+        for (const p of priceBoxes) p.h = Math.min(p.h, Math.round(H * 0.03));
+      }
+      const total = stack.reduce((s, b) => s + b.h, 0) + gap * (stack.length - 1);
+      const bottom = safe.y + safe.h - margin;
+      let cursor = Math.max(safe.y + margin, bottom - total);
+      const anchorX = (headline ?? subtext)?.x;
+      for (const b of stack) {
+        b.y = Math.round(cursor);
+        if (anchorX !== undefined && priceBoxes.includes(b)) b.x = anchorX;
+        cursor += b.h + gap;
+      }
+      // Keep the local refs in sync (headline/subtext are the same objects).
+      notes.push('text group: restacked in source reading order (headline → subtext → price → panel)');
+    }
   }
 
   // No-template stack reservation: relative mapping can drop a price/CTA

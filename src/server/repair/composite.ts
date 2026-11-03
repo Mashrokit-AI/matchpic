@@ -666,6 +666,165 @@ export function panelPixelFindings(
   return out;
 }
 
+/**
+ * Crop a pasted panel cut in to the button's own edge: outer rows/columns
+ * whose median colour is far from the sampled fill are surrounding plate
+ * pixels (the grey/red rim pasted around STRIDE's button), not button.
+ * Stops at 55% of the cut in each dimension so a mis-sampled fill can
+ * never crop the button away.
+ */
+export function insetPanelCutToFill(
+  rgba: RgbaImage,
+  fill: { r: number; g: number; b: number },
+): RgbaImage {
+  const W = rgba.width;
+  const H = rgba.height;
+  const lum = (x: number, y: number): number => {
+    const o = (y * W + x) * 4;
+    return Math.abs((rgba.data[o] as number) - fill.r) + Math.abs((rgba.data[o + 1] as number) - fill.g) + Math.abs((rgba.data[o + 2] as number) - fill.b);
+  };
+  const rowDist = (y: number): number => {
+    const vals: number[] = [];
+    for (let x = 0; x < W; x += 3) vals.push(lum(x, y));
+    vals.sort((a, b) => a - b);
+    return vals[Math.floor(vals.length / 2)] as number;
+  };
+  const colDist = (x: number, y0: number, y1: number): number => {
+    const vals: number[] = [];
+    for (let y = y0; y < y1; y += 3) vals.push(lum(x, y));
+    vals.sort((a, b) => a - b);
+    return vals.length > 0 ? (vals[Math.floor(vals.length / 2)] as number) : 0;
+  };
+  let x0 = 0;
+  let y0 = 0;
+  let x1 = W;
+  let y1 = H;
+  const maxCropX = Math.floor(W * 0.45);
+  const maxCropY = Math.floor(H * 0.45);
+  while (y1 - y0 > 12 && y0 < maxCropY && rowDist(y0) > 70) y0++;
+  while (y1 - y0 > 12 && H - y1 < maxCropY && rowDist(y1 - 1) > 70) y1--;
+  while (x1 - x0 > 16 && x0 < maxCropX && colDist(x0, y0, y1) > 70) x0++;
+  while (x1 - x0 > 16 && W - x1 < maxCropX && colDist(x1 - 1, y0, y1) > 70) x1--;
+  if (x0 === 0 && y0 === 0 && x1 === W && y1 === H) return rgba;
+  const w = x1 - x0;
+  const h = y1 - y0;
+  const data = Buffer.alloc(w * h * 4);
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const si = ((y0 + y) * W + (x0 + x)) * 4;
+      const di = (y * w + x) * 4;
+      data[di] = rgba.data[si] as number;
+      data[di + 1] = rgba.data[si + 1] as number;
+      data[di + 2] = rgba.data[si + 2] as number;
+      data[di + 3] = rgba.data[si + 3] as number;
+    }
+  }
+  return { data, width: w, height: h };
+}
+
+export interface PanelRimFinding {
+  code: 'panel_rim';
+  detail: string;
+}
+
+/**
+ * A band of non-plate, non-panel colour hugging the panel: compare the
+ * ring just OUTSIDE the panel box with the plate a little further out.
+ * When the inner ring differs from the outer plate on most sides, it is
+ * pasted source surround, not plate.
+ */
+export function panelRimFindings(
+  canvas: RgbaImage,
+  box: { x: number; y: number; w: number; h: number },
+  fill: { r: number; g: number; b: number },
+): PanelRimFinding[] {
+  const W = canvas.width;
+  const H = canvas.height;
+  const px = (x: number, y: number): [number, number, number] | null => {
+    if (x < 0 || y < 0 || x >= W || y >= H) return null;
+    const o = (y * W + x) * 4;
+    return [canvas.data[o] as number, canvas.data[o + 1] as number, canvas.data[o + 2] as number];
+  };
+  const median = (pts: Array<[number, number, number]>): [number, number, number] | null => {
+    if (pts.length < 4) return null;
+    const out: number[] = [];
+    for (let c = 0; c < 3; c++) {
+      const v = pts.map((p) => p[c] as number).sort((a, b) => a - b);
+      out.push(v[Math.floor(v.length / 2)] as number);
+    }
+    return [out[0] as number, out[1] as number, out[2] as number];
+  };
+  const dist = (a: [number, number, number], b: { r: number; g: number; b: number }): number =>
+    Math.abs(a[0] - b.r) + Math.abs(a[1] - b.g) + Math.abs(a[2] - b.b);
+  const x0 = Math.round(box.x);
+  const y0 = Math.round(box.y);
+  const x1 = Math.round(box.x + box.w);
+  const y1 = Math.round(box.y + box.h);
+  // Inner ring: 4px outside the panel. Outer ring: 16px outside.
+  const ring = (off: number): Array<[number, number, number]> => {
+    const pts: Array<[number, number, number]> = [];
+    for (let x = x0 - off; x < x1 + off; x += 4) {
+      for (const y of [y0 - off, y1 + off - 1]) {
+        const p = px(x, y);
+        if (p) pts.push(p);
+      }
+    }
+    for (let y = y0 - off; y < y1 + off; y += 4) {
+      for (const x of [x0 - off, x1 + off - 1]) {
+        const p = px(x, y);
+        if (p) pts.push(p);
+      }
+    }
+    return pts;
+  };
+  const inner = median(ring(4));
+  const outer = median(ring(16));
+  if (!inner || !outer) return [];
+  const innerVsPlate = Math.abs(inner[0] - outer[0]) + Math.abs(inner[1] - outer[1]) + Math.abs(inner[2] - outer[2]);
+  const innerVsFill = dist(inner, fill);
+  if (innerVsPlate > 45 && innerVsFill > 45) {
+    return [{ code: 'panel_rim', detail: `rim band around the panel differs from the plate (Δ${Math.round(innerVsPlate)}) and the panel fill (Δ${Math.round(innerVsFill)})` }];
+  }
+  return [];
+}
+
+/**
+ * Strong horizontal plate edge through a text box (a ledge/shelf line the
+ * glyphs straddle). Reuses the sustained-step logic of findSurfaceEdge,
+ * restricted to the middle of the box so a line at the box edge (an
+ * underline or the panel top) never triggers.
+ */
+export function plateEdgeUnderText(
+  canvas: RgbaImage,
+  box: { x: number; y: number; w: number; h: number },
+): { y: number; score: number } | null {
+  const mid = { x: box.x, y: box.y + box.h * 0.2, w: box.w, h: box.h * 0.6 };
+  const edge = findSurfaceEdge(canvas, mid.x, mid.x + mid.w, mid.y + mid.h / 2, Math.max(4, Math.round(mid.h / 2)));
+  if (!edge || !edge.crisp) return null;
+  return { y: edge.y, score: edge.score };
+}
+
+/**
+ * Pick a readable colour for re-rendered text on the plate under its box:
+ * the source colour when it already clears the floor, else whichever of
+ * black/white reads better. (Yellow tagline on cream tiles scored ~1.2.)
+ */
+export function readableTextColor(
+  canvas: RgbaImage,
+  box: { x: number; y: number; w: number; h: number },
+  src: { r: number; g: number; b: number },
+): { color: { r: number; g: number; b: number }; changed: boolean; ratio: number } {
+  const cur = textContrastRatio(canvas, box, src);
+  if (cur.ratio >= 2.0) return { color: src, changed: false, ratio: cur.ratio };
+  const black = { r: 0, g: 0, b: 0 };
+  const white = { r: 255, g: 255, b: 255 };
+  const rb = textContrastRatio(canvas, box, black).ratio;
+  const rw = textContrastRatio(canvas, box, white).ratio;
+  const best = rb >= rw ? black : white;
+  const bestRatio = Math.max(rb, rw);
+  return { color: best, changed: bestRatio > cur.ratio, ratio: bestRatio };
+}
+
 /** WCAG relative luminance of an sRGB triple. */
 export function relativeLuminance(r: number, g: number, b: number): number {
   const lin = (v: number): number => {

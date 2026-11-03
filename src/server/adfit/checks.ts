@@ -1,6 +1,6 @@
 import type { ResolvedLayoutManifest } from './manifest.js';
 import { minLegiblePx } from '../repair/render.js';
-import { freeOtherTexts } from './planner.js';
+import { freeOtherTexts, isPriceText } from './planner.js';
 import type { SourceAnalysis } from '../../shared/schemas.js';
 
 /**
@@ -151,6 +151,45 @@ export function checkManifestGeometry(
     }
   }
 
+  // Reading order: headline / subtext / price / panel must keep the
+  // source's vertical order (the s18 square/story outputs read
+  // subtext → headline, with the price stranded above both).
+  {
+    const byId = new Map(manifest.elements.map((e) => [e.id, e]));
+    const seq: Array<{ id: string; srcY: number }> = [];
+    if (analysis.headline && byId.has('headline')) seq.push({ id: 'headline', srcY: analysis.headline.bbox.y });
+    if (analysis.subtext && byId.has('subtext')) seq.push({ id: 'subtext', srcY: analysis.subtext.bbox.y });
+    freeOtherTexts(analysis).forEach((t, i) => {
+      if (isPriceText(t.text) && byId.has(`other-${i}`)) seq.push({ id: `other-${i}`, srcY: t.bbox.y });
+    });
+    if (analysis.panel && byId.has('panel')) seq.push({ id: 'panel', srcY: analysis.panel.bbox.y });
+    if (seq.length >= 2) {
+      const expected = [...seq].sort((a, b) => a.srcY - b.srcY).map((s) => s.id);
+      const actual = [...seq]
+        .sort((a, b) => (byId.get(a.id)!.box.y + byId.get(a.id)!.box.h / 2) - (byId.get(b.id)!.box.y + byId.get(b.id)!.box.h / 2))
+        .map((s) => s.id);
+      if (expected.join(',') !== actual.join(',')) {
+        out.push({
+          code: 'reading_order', severity: 'fail', element: null,
+          detail: `output order ${actual.join(' → ')} differs from source order ${expected.join(' → ')}`,
+        });
+      }
+    }
+  }
+
+  // Hero size on tall canvases: a product photo under ~35% of the canvas
+  // height reads as a thumbnail in empty space (every s18 story).
+  if (tall && products.length > 0) {
+    const hero = products.reduce((a, b) => (b.box.h > a.box.h ? b : a));
+    if (hero.box.h < Math.round(H * 0.35)) {
+      out.push({ code: 'hero_too_small', severity: 'fail', element: hero.id, detail: `${hero.id} is ${hero.box.h}px tall, below 35% of the ${H}px canvas height on 9:16` });
+    }
+    const headlineEl = manifest.elements.find((e) => e.id === 'headline');
+    if (headlineEl && headlineEl.box.h < Math.round(H * 0.04)) {
+      out.push({ code: 'hero_too_small', severity: 'fail', element: 'headline', detail: `headline box ${headlineEl.box.h}px tall, below 4% of the ${H}px canvas height on 9:16` });
+    }
+  }
+
   // Legibility: rendered text must clear the floor for this canvas.
   const floor = minLegiblePx(Math.min(W, H));
   for (const [id, sizes] of Object.entries(renderedSizes)) {
@@ -161,28 +200,37 @@ export function checkManifestGeometry(
     }
   }
 
-  // Empty band > 25% of canvas height.
-  const rows = 40;
-  const rowH = H / rows;
-  const covered = new Array(rows).fill(false);
-  for (const e of manifest.elements) {
-    if (e.kind === 'frame' || e.kind === 'shadow') continue;
-    const r1 = Math.max(0, Math.floor(e.box.y / rowH));
-    const r2 = Math.min(rows - 1, Math.floor((e.box.y + e.box.h) / rowH));
-    for (let r = r1; r <= r2; r++) covered[r] = true;
-  }
-  let gapStart = -1;
-  for (let r = 0; r <= rows; r++) {
-    const isGap = r < rows && !covered[r];
-    if (isGap && gapStart < 0) gapStart = r;
-    if (!isGap && gapStart >= 0) {
-      if ((r - gapStart) * rowH > H * 0.25) {
-        // Over a third of the canvas empty is a failed layout (the ad
-        // shrunk into a small box on a tall size), not a warning.
-        const severe = (r - gapStart) * rowH > H * 0.35;
-        out.push({ code: 'empty_band', severity: severe ? 'fail' : 'warn', element: null, detail: `empty band ${Math.round(((r - gapStart) * rowH) / H * 100)}% of canvas height (rows ${gapStart}-${r})` });
+  // Empty band INSIDE the safe area: the platform safe zones (story top
+  // 14% / bottom 20%) are empty by design and never counted. Any other
+  // empty band over 20% of the canvas height means the ad shrank into
+  // part of the canvas (every s18 story) — a fail, not a warning.
+  {
+    const rows = 80;
+    const rowH = H / rows;
+    const safeTopRow = Math.max(0, Math.floor(safe.y / rowH));
+    const safeBotRow = Math.min(rows - 1, Math.floor((safe.y + safe.h) / rowH));
+    const covered = new Array(rows).fill(false);
+    for (const e of manifest.elements) {
+      if (e.kind === 'frame' || e.kind === 'shadow') continue;
+      const r1 = Math.max(0, Math.floor(e.box.y / rowH));
+      const r2 = Math.min(rows - 1, Math.floor((e.box.y + e.box.h) / rowH));
+      for (let r = r1; r <= r2; r++) covered[r] = true;
+    }
+    let gapStart = -1;
+    for (let r = safeTopRow; r <= safeBotRow + 1; r++) {
+      const isGap = r <= safeBotRow && !covered[r];
+      if (isGap && gapStart < 0) gapStart = r;
+      if (!isGap && gapStart >= 0) {
+        const gapH = (r - gapStart) * rowH;
+        // Tall canvases fail above 20% (a cramped story must not pass);
+        // other families keep the older 25% warn / 35% fail bar.
+        const failAt = tall ? H * 0.2 : H * 0.35;
+        const warnAt = tall ? H * 0.2 : H * 0.25;
+        if (gapH > warnAt) {
+          out.push({ code: 'empty_band', severity: gapH > failAt ? 'fail' : 'warn', element: null, detail: `empty band ${Math.round((gapH / H) * 100)}% of canvas height inside the safe area (rows ${gapStart}-${r})` });
+        }
+        gapStart = -1;
       }
-      gapStart = -1;
     }
   }
 

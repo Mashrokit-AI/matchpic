@@ -20,7 +20,7 @@ import {
   type SourceInput,
 } from './pipeline.js';
 import { storeCachedLayers } from './cache.js';
-import { decodeRgba, findSurfaceEdge, gapDrift, panelPixelFindings, textContrastRatio } from '../repair/composite.js';
+import { decodeRgba, findSurfaceEdge, gapDrift, panelPixelFindings, panelRimFindings, plateEdgeUnderText, textContrastRatio } from '../repair/composite.js';
 import { artifactDigest, type ElementProof } from '../repair/proof.js';
 import { brandPromptTraceTag, brandPromptUseForSize, type StoredBrandPrompt } from '../../shared/brand-prompt.js';
 import { measureTextLines, rgbFromHex, type MeasuredText } from '../repair/render.js';
@@ -69,6 +69,8 @@ export interface SizeOutcome {
   repaired: { beforePng: Buffer; patches: string[] } | null;
   textSizes: Record<string, number[]>;
   panelFlagged: boolean;
+  panelRebuilt?: boolean;
+  panelScale?: number | null;
   trace: TraceCollector;
   modelCalls: number;
   imageCalls: number;
@@ -826,6 +828,8 @@ export async function runProtectedBatch(opts: BatchOptions): Promise<BatchResult
         repaired: null,
         textSizes: comp.textSizes,
         panelFlagged: comp.panelFlagged,
+        panelRebuilt: comp.panelRebuilt,
+        panelScale: comp.panelScale,
         trace,
         modelCalls,
         imageCalls,
@@ -939,6 +943,8 @@ export async function runProtectedBatch(opts: BatchOptions): Promise<BatchResult
         o.png = comp.png;
         o.textSizes = comp.textSizes;
         o.panelFlagged = comp.panelFlagged;
+        o.panelRebuilt = comp.panelRebuilt;
+        o.panelScale = comp.panelScale;
         o.proofs = comp.placed.length > 0 ? await provePlaced(comp.png, comp.placed, o.trace) : {};
         o.findings = checkManifestGeometry(o.manifest, opts.source.analysis, comp.textSizes);
       } catch {
@@ -1078,6 +1084,8 @@ export async function runProtectedBatch(opts: BatchOptions): Promise<BatchResult
         if (result.needsPlate) o.plate = plate;
         o.textSizes = comp.textSizes;
         o.panelFlagged = comp.panelFlagged;
+        o.panelRebuilt = comp.panelRebuilt;
+        o.panelScale = comp.panelScale;
         o.proofs = comp.placed.length > 0 ? await provePlaced(comp.png, comp.placed, o.trace) : {};
         o.findings = [
           ...checkManifestGeometry(patched, opts.source.analysis, comp.textSizes),
@@ -1318,6 +1326,29 @@ export async function runProtectedBatch(opts: BatchOptions): Promise<BatchResult
         for (const f of panelPixelFindings(canvas, panelEl.box, fill, rgbFromHex(opts.source.analysis.panel.text_color))) {
           if (!o.findings.some((x) => x.code === f.code)) {
             o.findings = [...o.findings, { code: f.code, severity: 'fail' as const, element: 'panel', detail: f.detail }];
+          }
+        }
+        for (const f of panelRimFindings(canvas, panelEl.box, fill)) {
+          if (!o.findings.some((x) => x.code === f.code)) {
+            o.findings = [...o.findings, { code: f.code, severity: 'fail' as const, element: 'panel', detail: f.detail }];
+          }
+        }
+      }
+      // Pasted panel upscaled past 1.25x = blurry text, never a pass.
+      if (panelEl && o.panelRebuilt === false && o.panelScale != null && o.panelScale > 1.25) {
+        if (!o.findings.some((x) => x.code === 'panel_upscaled')) {
+          o.findings = [...o.findings, { code: 'panel_upscaled', severity: 'fail' as const, element: 'panel', detail: `pasted panel cut scaled ${o.panelScale.toFixed(2)}x (> 1.25x)` }];
+        }
+      }
+      // Text straddling a strong plate edge (judged on the PLATE, before
+      // glyphs were stamped over it).
+      if (o.plate) {
+        const plate = await decodeRgba(o.plate);
+        for (const e of o.manifest.elements) {
+          if (e.group !== 'text') continue;
+          const edge = plateEdgeUnderText(plate, e.box);
+          if (edge && !o.findings.some((x) => x.code === 'text_over_edge' && x.element === e.id)) {
+            o.findings = [...o.findings, { code: 'text_over_edge', severity: 'fail' as const, element: e.id, detail: `${e.id} straddles a strong plate edge at y=${edge.y} (score ${edge.score})` }];
           }
         }
       }
