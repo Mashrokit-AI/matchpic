@@ -204,12 +204,31 @@ let sharedBrowser: Awaited<ReturnType<typeof launchRenderBrowser>> | null = null
 let sharedBrowserPromise: Promise<Awaited<ReturnType<typeof launchRenderBrowser>>> | null = null;
 
 async function getSharedBrowser(): Promise<NonNullable<typeof sharedBrowser>> {
-  if (sharedBrowser) return sharedBrowser;
+  if (sharedBrowser?.isConnected()) return sharedBrowser;
+  if (sharedBrowser) {
+    // Crashed or killed (e.g. out of memory): drop it and launch a fresh one.
+    sharedBrowser = null;
+    sharedBrowserPromise = null;
+  }
   sharedBrowserPromise ??= launchRenderBrowser().then((b) => {
     sharedBrowser = b;
+    b.on('disconnected', () => {
+      if (sharedBrowser === b) {
+        sharedBrowser = null;
+        sharedBrowserPromise = null;
+      }
+    });
     return b;
+  }, (e: unknown) => {
+    sharedBrowserPromise = null; // let the next render try again
+    throw e;
   });
   return sharedBrowserPromise;
+}
+
+/** The current shared browser, for tests that simulate a crash. */
+export function sharedRenderBrowserForTest(): typeof sharedBrowser {
+  return sharedBrowser;
 }
 
 /** Close the shared browser (tests / process shutdown). */
@@ -237,8 +256,20 @@ async function withPage<T>(width: number, height: number, fn: (page: Page) => Pr
       await browser.close().catch(() => undefined);
     }
   }
-  const browser = await getSharedBrowser();
-  const page = await browser.newPage({ viewport: { width, height }, deviceScaleFactor: 1 });
+  let browser = await getSharedBrowser();
+  let page: Page;
+  try {
+    page = await browser.newPage({ viewport: { width, height }, deviceScaleFactor: 1 });
+  } catch (e) {
+    // The shared browser died between the check and newPage: one retry on a fresh one.
+    if (!(e instanceof Error) || !/has been closed|disconnected/i.test(e.message)) throw e;
+    if (sharedBrowser === browser) {
+      sharedBrowser = null;
+      sharedBrowserPromise = null;
+    }
+    browser = await getSharedBrowser();
+    page = await browser.newPage({ viewport: { width, height }, deviceScaleFactor: 1 });
+  }
   try {
     return await fn(page);
   } finally {

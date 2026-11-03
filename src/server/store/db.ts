@@ -53,7 +53,8 @@ CREATE TABLE IF NOT EXISTS job (
   created_at TEXT NOT NULL,
   finished_at TEXT,
   lang TEXT,
-  native_preset TEXT
+  native_preset TEXT,
+  started_at TEXT
 );
 CREATE TABLE IF NOT EXISTS output (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -149,6 +150,8 @@ export interface JobRow {
   lang: string | null;
   /** Saved-example native source preset (demo jobs only; NULL otherwise). */
   native_preset: string | null;
+  /** When the job left the queue and started running (NULL while queued; legacy rows NULL). */
+  started_at: string | null;
 }
 
 export interface OutputRow {
@@ -193,6 +196,7 @@ export class Store {
       'ALTER TABLE job ADD COLUMN native_preset TEXT',
       'ALTER TABLE brand ADD COLUMN prompt_json TEXT',
       'ALTER TABLE brand ADD COLUMN prompt_text TEXT',
+      'ALTER TABLE job ADD COLUMN started_at TEXT',
     ]) {
       try {
         db.exec(ddl);
@@ -335,10 +339,25 @@ export class Store {
 
   // --- jobs ---
 
-  insertJob(j: { id: string; brandId: string | null; mode: string; sizes: string[]; sources: string[]; lang?: string | null; nativePreset?: string | null; createdAt?: string }): void {
+  insertJob(j: { id: string; brandId: string | null; mode: string; sizes: string[]; sources: string[]; lang?: string | null; nativePreset?: string | null; createdAt?: string; status?: string }): void {
     this.db
-      .prepare('INSERT INTO job (id, brand_id, mode, sizes_json, sources_json, status, error, model_calls, image_calls, created_at, finished_at, lang, native_preset) VALUES (?, ?, ?, ?, ?, ?, NULL, 0, 0, ?, NULL, ?, ?)')
-      .run(j.id, j.brandId, j.mode, JSON.stringify(j.sizes), JSON.stringify(j.sources), 'running', j.createdAt ?? now(), j.lang ?? null, j.nativePreset ?? null);
+    const createdAt = j.createdAt ?? now();
+    const status = j.status ?? 'running';
+    this.db
+      .prepare('INSERT INTO job (id, brand_id, mode, sizes_json, sources_json, status, error, model_calls, image_calls, created_at, finished_at, lang, native_preset, started_at) VALUES (?, ?, ?, ?, ?, ?, NULL, 0, 0, ?, NULL, ?, ?, ?)')
+      .run(j.id, j.brandId, j.mode, JSON.stringify(j.sizes), JSON.stringify(j.sources), status, createdAt, j.lang ?? null, j.nativePreset ?? null, status === 'running' ? createdAt : null);
+  }
+
+  setJobStatus(id: string, status: string, at?: string): void {
+    // A queued job's run time starts when it leaves the queue, not at submission.
+    if (status === 'running') this.db.prepare('UPDATE job SET status=?, started_at=COALESCE(started_at, ?) WHERE id=?').run(status, at ?? now(), id);
+    else this.db.prepare('UPDATE job SET status=? WHERE id=?').run(status, id);
+  }
+
+  /** Jobs left `running`/`queued` by a dead process can never resume: fail them. Returns count. */
+  failStaleRunningJobs(error = 'err_job_interrupted'): number {
+    const r = this.db.prepare("UPDATE job SET status='failed', error=?, finished_at=? WHERE status IN ('running','queued')").run(error, now());
+    return Number(r.changes);
   }
 
   /** Saved demo-example jobs (seeded ids), oldest first. */

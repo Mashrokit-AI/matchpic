@@ -261,7 +261,7 @@ function jobDto(j: JobRow, outputs: OutputRow[]): JobDto {
     // Corrupt rows render with empty lists, never crash the API.
   }
   const cards = outputs.map((o) => outputCard(o, sources));
-  const created = Date.parse(j.created_at);
+  const created = Date.parse(j.started_at ?? j.created_at); // queue wait is not run time
   const landed = outputs.map((o) => Date.parse(o.created_at)).filter((t) => Number.isFinite(t));
   const finished = j.finished_at ? Date.parse(j.finished_at) : NaN;
   const models: string[] = [];

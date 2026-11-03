@@ -39,6 +39,8 @@ const en = {
   prep_cutting: 'Cutting product & logo',
   prep_planning: 'Wonder is planning {n} layouts',
   run_queue: 'Queued — starts when a slot frees.',
+  run_queue_ahead: 'Queued — {n} ahead of you',
+  run_interrupted: 'This run was interrupted by a server restart — please run it again.',
   run_spendcap: 'Spend cap reached for today — downloads of finished sizes still work.',
   run_models_line: 'Meta models: {models} · first preview {first} · all {n} in {total}',
   run_waiting: 'Waiting for first finished size',
@@ -281,6 +283,7 @@ const en = {
   err_live_off: 'Live generation is paused; showing saved results.',
   err_job_timeout: 'Generation timed out.',
   err_job_failed: 'Generation failed.',
+  err_job_interrupted: 'Interrupted by a server restart.',
   err_unknown: 'Something went wrong.',
 } as const;
 
@@ -320,6 +323,8 @@ const he: Record<MessageKey, string> = {
   prep_cutting: 'חותכים מוצר ולוגו',
   prep_planning: 'Wonder מתכנן {n} פריסות',
   run_queue: 'ממתין בתור — מתחיל כשמתפנה מקום.',
+  run_queue_ahead: 'בתור — {n} לפניך',
+  run_interrupted: 'ההרצה הופסקה בגלל הפעלה מחדש של השרת — נסו שוב.',
   run_spendcap: 'הגעתם למגבלת היום — אפשר להוריד גדלים מוכנים.',
   run_models_line: 'המודלים של Meta: {models} · תצוגה ראשונה {first} · כל {n} ב-{total}',
   run_waiting: 'מחכים לגודל מוכן ראשון',
@@ -562,6 +567,7 @@ const he: Record<MessageKey, string> = {
   err_live_off: 'היצירה החיה כבויה כרגע — מוצגות תוצאות שמורות.',
   err_job_timeout: 'היצירה לקחה יותר מדי זמן. נסו שוב.',
   err_job_failed: 'היצירה נכשלה. נסו שוב.',
+  err_job_interrupted: 'הופסק בגלל הפעלה מחדש של השרת.',
   err_unknown: 'משהו השתבש. נסו שוב.',
 };
 

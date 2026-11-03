@@ -380,6 +380,10 @@ export function enforceManifest(input: EnforceInput): ResolvedLayoutManifest {
   if (texts.length >= 2) {
     const edgeX = wantAlign === 'right' ? Math.max(...texts.map((t) => t.box.x + t.box.w)) : Math.min(...texts.map((t) => t.box.x));
     for (const t of texts) {
+      // Same-row texts (price + shipping on one line) are side-by-side by
+      // design: aligning their x would stack them onto each other.
+      const sameRow = texts.some((o) => o !== t && o.box.y < t.box.y + t.box.h && t.box.y < o.box.y + o.box.h);
+      if (sameRow) continue;
       const nx = wantAlign === 'right' ? edgeX - t.box.w : edgeX;
       const clamped = clampInto({ ...t.box, x: nx }, BB);
       if (clamped.x !== t.box.x) {
