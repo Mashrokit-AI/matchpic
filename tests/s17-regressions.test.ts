@@ -119,6 +119,24 @@ describe('bug3+4: run DTO carries final checks and real duration', () => {
     expect(dto.firstPreviewMs).toBe(110_000);
     s.close();
   });
+
+  it('a queued job is timed from when it started, not from submission', () => {
+    const s = Store.open(join(tmp(), 'q.db'));
+    s.insertJob({ id: 'q1', brandId: null, mode: 'protected', sizes: ['ig-feed-11'], sources: ['s1'], createdAt: '2026-11-03T10:00:00.000Z', status: 'queued' });
+    expect(s.getJob('q1')?.started_at).toBeNull();
+    s.setJobStatus('q1', 'running', '2026-11-03T10:07:00.000Z');
+    s.setJobStatus('q1', 'running', '2026-11-03T10:09:00.000Z'); // a second call keeps the first start
+    s.insertOutput({
+      jobId: 'q1', sourceId: 's1', preset: 'ig-feed-11', mode: 'protected', status: 'pass',
+      imagePath: 'data/x.png', planJson: '{}', proofJson: null, qaJson: null, retries: 0,
+      modelCalls: 0, imageCalls: 0, latencyMs: 1, traceJson: '[]', error: null, createdAt: '2026-11-03T10:09:00.000Z',
+    });
+    s.finishJob('q1', 'done', null, 0, 0, '2026-11-03T10:16:40.000Z');
+    const dto = buildJob(s, 'q1')!;
+    expect(dto.totalMs).toBe(580_000); // 9:40 of running, not 16:40 since submission
+    expect(dto.firstPreviewMs).toBe(120_000);
+    s.close();
+  });
 });
 
 describe('bug6: no-brand layout does not overlap text on the panel stack', () => {
