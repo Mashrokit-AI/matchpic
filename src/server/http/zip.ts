@@ -30,8 +30,8 @@ export function buildZip(entries: ZipEntry[]): Buffer {
     const local = Buffer.alloc(30 + name.length);
     local.writeUInt32LE(0x04034b50, 0);
     local.writeUInt16LE(20, 4);
-    local.writeUInt16LE(0x0800, 8); // UTF-8 names
-    local.writeUInt16LE(0, 10); // stored
+    local.writeUInt16LE(0x0800, 6); // flags: UTF-8 names
+    local.writeUInt16LE(0, 8); // method: stored
     local.writeUInt32LE(crc, 14);
     local.writeUInt32LE(e.data.length, 18);
     local.writeUInt32LE(e.data.length, 22);

@@ -33,4 +33,13 @@ describe('zip', () => {
     expect(back[1]?.data.equals(manifest)).toBe(true);
     expect(z.string().parse(back[1]?.data.toString())).toContain('j1');
   });
+
+  it('writes flags and method in the right local-header fields (macOS Archive Utility rejects a wrong method)', () => {
+    const zip = buildZip([{ name: 'a.png', data: Buffer.from([1, 2, 3]) }]);
+    expect(zip.readUInt16LE(6)).toBe(0x0800); // general purpose flags: UTF-8 names
+    expect(zip.readUInt16LE(8)).toBe(0); // compression method: stored
+    const cd = zip.indexOf(Buffer.from([0x50, 0x4b, 0x01, 0x02]));
+    expect(zip.readUInt16LE(cd + 8)).toBe(0x0800);
+    expect(zip.readUInt16LE(cd + 10)).toBe(0);
+  });
 });
