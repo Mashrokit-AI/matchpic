@@ -57,8 +57,9 @@ export function el(spec: ElSpec & { tag?: string }): HTMLElement {
   return node;
 }
 
-function isSafeHref(v: string): boolean {
-  return v.startsWith('/') || v.startsWith('#') || /^(https?):\/\//.test(v);
+/** Absolute paths, hashes, http(s) and scheme-less relative paths (api/…, media/…); never javascript: or data:. */
+export function isSafeHref(v: string): boolean {
+  return v.startsWith('/') || v.startsWith('#') || /^(https?):\/\//.test(v) || /^[\w.-]+(\/|\?|$)/.test(v);
 }
 
 export function t(lang: Lang, key: keyof typeof STRINGS.en): string {

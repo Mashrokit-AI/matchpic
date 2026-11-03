@@ -5,7 +5,7 @@ import OpenAI from 'openai';
 import sharp from 'sharp';
 import { afterEach, describe, expect, it } from 'vitest';
 import { DEMO_JOB_ID } from '../src/server/adfit/seed.js';
-import { dims } from '../src/web/lib.js';
+import { dims, isSafeHref } from '../src/web/lib.js';
 import { traceSummary } from '../src/server/http/dto.js';
 import { createApp } from '../src/server/http/app.js';
 import type { HttpConfig } from '../src/server/http/config.js';
@@ -667,5 +667,21 @@ describe('dims', () => {
   it('wraps WxH in bidi isolates so RTL never swaps the numbers', () => {
     expect(dims(1200, 628)).toBe('\u20661200\u00d7628\u2069');
     expect(dims(1080, 1080)).toContain('1080\u00d71080');
+  });
+});
+
+describe('isSafeHref', () => {
+  it('keeps the relative download links (ZIP and single size)', () => {
+    expect(isSafeHref('api/runs/demo-stride/zip')).toBe(true);
+    expect(isSafeHref('media/output/4?v=demo-stride')).toBe(true);
+    expect(isSafeHref('/matchpic/')).toBe(true);
+    expect(isSafeHref('#/brands')).toBe(true);
+    expect(isSafeHref('https://github.com/Mashrokit-AI/matchpic')).toBe(true);
+  });
+  it('drops script and data schemes', () => {
+    expect(isSafeHref('javascript:alert(1)')).toBe(false);
+    expect(isSafeHref('JavaScript:alert(1)')).toBe(false);
+    expect(isSafeHref('data:text/html,x')).toBe(false);
+    expect(isSafeHref(' javascript:alert(1)')).toBe(false);
   });
 });
