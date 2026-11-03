@@ -775,12 +775,11 @@ export function renderHome(root: HTMLElement, lang: Lang, route: Route): void {
     const totalMs = runState.done ? (runState.totalMs ?? (runState.t0 > 0 ? Date.now() - runState.t0 : null)) : null;
     const sig = [runState.jobId ?? '', runState.done ? 1 : 0, runState.rows.size, runState.failed.size, runState.models.join(','), firstMs ?? '', totalMs ?? '', runState.queueAhead].join('|');
     if (sig === runLineSig && runline.childNodes.length > 0) return;
-    // A queued job has no rows yet: say so instead of "waiting for first size".
+    // A queued job has no rows yet: the queue notice says so; don't say "waiting for first size".
     if (runState.queueAhead > 0 && runState.rows.size === 0) {
       runLineSig = sig;
       runline.textContent = '';
       zip.textContent = '';
-      runline.append(el({ tag: 'span', cls: 'muted', text: t(lang, 'run_queue_ahead').replace('{n}', String(runState.queueAhead)) }));
       return;
     }
     runLineSig = sig;
@@ -842,7 +841,10 @@ export function renderHome(root: HTMLElement, lang: Lang, route: Route): void {
       runState.firstPreviewMs = job.firstPreviewMs;
       runState.totalMs = job.totalMs;
       if (job.status === 'queued') runState.queueAhead = Math.max(1, runState.queueAhead || 1);
-      if (job.status === 'running') runState.queueAhead = 0;
+      if (job.status === 'running') {
+        runState.queueAhead = 0;
+        shell.notice?.querySelectorAll('.queue').forEach((n) => n.remove());
+      }
       for (const o of job.outputs) {
         if (o.status === 'failed') runState.failed.set(o.preset, t(lang, 'err_unknown'));
         else {
@@ -908,7 +910,7 @@ export function renderHome(root: HTMLElement, lang: Lang, route: Route): void {
         runState.queueAhead = msg.status === 'queued' ? msg.ahead : 0;
         shell.notice.textContent = '';
         if (msg.status === 'queued') {
-          shell.notice.append(el({ tag: 'div', cls: 'notice info', text: t(lang, 'run_queue_ahead').replace('{n}', String(msg.ahead)) }));
+          shell.notice.append(el({ tag: 'div', cls: 'notice info queue', text: t(lang, 'run_queue_ahead').replace('{n}', String(msg.ahead)) }));
         }
         renderRunLine(shell.runline, shell.zip);
       } catch { /* malformed queue event: polling/live rows still follow */ }
@@ -1047,7 +1049,7 @@ export function renderHome(root: HTMLElement, lang: Lang, route: Route): void {
       const created = (await res.json()) as { jobId: string; key: string; status: string; queueAhead?: number };
       if (created.status === 'queued') {
         runState.queueAhead = created.queueAhead ?? 1;
-        currentShell.notice.append(el({ tag: 'div', cls: 'notice info', text: t(lang, 'run_queue_ahead').replace('{n}', String(runState.queueAhead)) }));
+        currentShell.notice.append(el({ tag: 'div', cls: 'notice info queue', text: t(lang, 'run_queue_ahead').replace('{n}', String(runState.queueAhead)) }));
       }
       if (window.location.hash !== `#/run/${created.jobId}`) {
         history.replaceState(null, '', `#/run/${created.jobId}`);
@@ -1083,7 +1085,7 @@ export function renderHome(root: HTMLElement, lang: Lang, route: Route): void {
         if (job.status === 'running' || job.status === 'queued') {
           if (job.status === 'queued') {
             runState.queueAhead = 1;
-            currentShell.notice.append(el({ tag: 'div', cls: 'notice info', text: t(lang, 'run_queue_ahead').replace('{n}', '1') }));
+            currentShell.notice.append(el({ tag: 'div', cls: 'notice info queue', text: t(lang, 'run_queue_ahead').replace('{n}', '1') }));
           }
           runState.firstPreviewAt = job.firstPreviewMs !== null ? runState.t0 + job.firstPreviewMs : 0;
           followJob(job.id, job.sizes, false);
