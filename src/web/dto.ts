@@ -160,6 +160,7 @@ export interface JobRow {
   traceMs: number;
   pending?: boolean;
   error?: string;
+  checks?: CardChecksDto | null;
 }
 
 export interface TraceEventDto {

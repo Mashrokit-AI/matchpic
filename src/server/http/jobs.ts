@@ -23,6 +23,8 @@ export interface JobRow {
   /** True while the batch review for this streamed preview is still pending. */
   pending?: boolean;
   error?: string;
+  /** Final/preview chip states, same shape as the run-page card checks. */
+  checks?: { protected: string; text: string; layout: string; repaired: boolean } | null;
 }
 
 export interface JobProgressEvent {
@@ -59,7 +61,16 @@ export interface JobPrepEvent {
   detail?: string;
 }
 
-export type JobEvent = JobProgressEvent | JobUpdateEvent | JobTerminalEvent | JobPrepEvent;
+export interface JobQueueEvent {
+  type: 'queue';
+  status: JobStatus;
+  /** Jobs ahead of this one (running + earlier queued); 0 once running. */
+  ahead: number;
+}
+
+export type JobEvent = JobProgressEvent | JobUpdateEvent | JobTerminalEvent | JobPrepEvent | JobQueueEvent;
+
+export type JobTask = (onRow: (row: JobRow) => void, onUpdate: (row: JobRow) => void, onPrep: (step: JobPrepEvent['step'], state: 'start' | 'done', ms?: number, detail?: string) => void) => Promise<JobResult>;
 
 export interface JobResult {
   jobId?: string;
@@ -77,6 +88,9 @@ export interface Job {
   log: JobEvent[];
   listeners: Set<(e: JobEvent) => void>;
   createdAt: number;
+  startedAt: number | null;
+  finishedAt: number | null;
+  task: JobTask | null;
 }
 
 export interface JobSummary {
@@ -88,9 +102,19 @@ export interface JobSummary {
   rows: JobRow[];
   jobId?: string;
   error?: string;
+  /** Jobs ahead of this one; 0 when running/done. */
+  queueAhead: number;
+  startedAt: number | null;
+  finishedAt: number | null;
 }
 
-export function summarize(job: Job): JobSummary {
+export function queueAhead(job: Job, waiting: Job[]): number {
+  if (job.status !== 'queued') return 0;
+  const i = waiting.indexOf(job);
+  return i < 0 ? 0 : i + 1; // the running job is the +1
+}
+
+export function summarize(job: Job, waiting: Job[] = []): JobSummary {
   return {
     id: job.id,
     kind: job.kind,
@@ -100,6 +124,9 @@ export function summarize(job: Job): JobSummary {
     rows: [...job.rows],
     jobId: job.jobId,
     error: job.errorKey,
+    queueAhead: queueAhead(job, waiting),
+    startedAt: job.startedAt,
+    finishedAt: job.finishedAt,
   };
 }
 
@@ -142,6 +169,14 @@ export class JobManager {
     return this.waiting.length;
   }
 
+  queueAheadOf(job: Job): number {
+    return queueAhead(job, this.waiting);
+  }
+
+  summary(job: Job): JobSummary {
+    return summarize(job, this.waiting);
+  }
+
   isBusy(): boolean {
     return this.running !== null;
   }
@@ -152,11 +187,7 @@ export class JobManager {
    * for shared preparation steps, and resolves with the resulting store job
    * id. Returns null when the server is busy (running + queue full).
    */
-  submit(
-    kind: Job['kind'],
-    total: number,
-    task: (onRow: (row: JobRow) => void, onUpdate: (row: JobRow) => void, onPrep: (step: JobPrepEvent['step'], state: 'start' | 'done', ms?: number, detail?: string) => void) => Promise<JobResult>,
-  ): Job | null {
+  submit(kind: Job['kind'], total: number, task: JobTask): Job | null {
     if (this.running && this.waiting.length >= this.opts.queueMax) return null;
     const now = this.opts.now ?? Date.now;
     const job: Job = {
@@ -169,6 +200,9 @@ export class JobManager {
       log: [],
       listeners: new Set(),
       createdAt: now(),
+      startedAt: null,
+      finishedAt: null,
+      task,
     };
     this.jobs.set(job.id, job);
     if (this.jobs.size > 50) {
@@ -177,8 +211,9 @@ export class JobManager {
     }
     if (this.running) {
       this.waiting.push(job);
+      this.emit(job, { type: 'queue', status: 'queued', ahead: this.queueAheadOf(job) });
     } else {
-      void this.execute(job, task);
+      void this.execute(job);
     }
     return job;
   }
@@ -212,6 +247,7 @@ export class JobManager {
   }
 
   private finish(job: Job, event: JobTerminalEvent): void {
+    if (job.status === 'done' || job.status === 'failed') return; // timeout already finished it
     if (event.type === 'done') {
       job.status = 'done';
       job.jobId = event.jobId;
@@ -219,27 +255,27 @@ export class JobManager {
       job.status = 'failed';
       job.errorKey = event.error ?? 'err_job_failed';
     }
+    job.finishedAt = (this.opts.now ?? Date.now)();
     this.emit(job, event);
-    this.running = null;
+    if (this.running === job) this.running = null;
     const next = this.waiting.shift();
-    if (next) {
-      next.status = 'running';
-      void this.execute(next, (next as unknown as { task: (onRow: (r: JobRow) => void, onUpdate: (r: JobRow) => void, onPrep: (s: JobPrepEvent['step'], st: 'start' | 'done', ms?: number, detail?: string) => void) => Promise<JobResult> }).task);
+    for (const w of [...this.waiting]) this.emit(w, { type: 'queue', status: 'queued', ahead: this.queueAheadOf(w) });
+    if (next && next.task) {
+      void this.execute(next);
     }
   }
 
-  private async execute(
-    job: Job,
-    task: (onRow: (row: JobRow) => void, onUpdate: (row: JobRow) => void, onPrep: (step: JobPrepEvent['step'], state: 'start' | 'done', ms?: number, detail?: string) => void) => Promise<JobResult>,
-  ): Promise<void> {
-    // Stash the task so finish() can start queued jobs generically.
-    (job as unknown as { task: typeof task }).task = task;
-    if (this.running && this.running.id !== job.id) {
-      this.waiting.push(job);
+  private async execute(job: Job): Promise<void> {
+    const task = job.task;
+    if (!task) {
+      job.status = 'failed';
+      job.errorKey = 'err_job_failed';
       return;
     }
     this.running = job;
     job.status = 'running';
+    job.startedAt = (this.opts.now ?? Date.now)();
+    this.emit(job, { type: 'queue', status: 'running', ahead: 0 });
     let timedOut = false;
     const timer = setTimeout(() => {
       timedOut = true;

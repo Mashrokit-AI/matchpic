@@ -5,7 +5,7 @@ import type { Route } from './app.js';
 import type { ChecksDto, DetectedTextsDto, ExampleDto, JobDto, JobRow, OutputCardDto, OutputDetailDto } from './dto.js';
 import {
   api, apiPost, arrowDownSvg, checkBadge, el, fmtDur, groupOf, isOkStatus, presetDims,
-  presetLabel, statusChip, t, uploadFilesWithProgress,
+  presetLabel, responseErrorMessage, statusChip, t, uploadFilesWithProgress,
 } from './lib.js';
 
 const DEFAULT_SIZES = ['ig-feed-11', 'ig-feed-45', 'fb-link', 'ig-story-916'];
@@ -262,7 +262,11 @@ export function renderHome(root: HTMLElement, lang: Lang, route: Route): void {
   const renderTexts = (): void => {
     textsHost.textContent = '';
     const s = state.texts;
-    if (s.phase === 'idle' || s.phase === 'skipped' || s.phase === 'failed') return;
+    if (s.phase === 'failed') {
+      textsHost.append(el({ tag: 'div', cls: 'notice error', text: t(lang, 'err_unknown') }));
+      return;
+    }
+    if (s.phase === 'idle' || s.phase === 'skipped') return;
     if (s.phase === 'detecting') {
       textsHost.append(el({ tag: 'div', cls: 'small muted', text: t(lang, 'texts_detecting') }));
       return;
@@ -578,6 +582,9 @@ export function renderHome(root: HTMLElement, lang: Lang, route: Route): void {
     failed: new Map<string, string>(),
     t0: 0,
     firstPreviewAt: 0,
+    firstPreviewMs: null as number | null,
+    totalMs: null as number | null,
+    queueAhead: 0,
     prep: new Map<string, { t0: number; ms: number | null }>(),
     prepTimer: null as ReturnType<typeof setInterval> | null,
     pollTimer: null as ReturnType<typeof setInterval> | null,
@@ -592,6 +599,8 @@ export function renderHome(root: HTMLElement, lang: Lang, route: Route): void {
   };
 
   const renderRunShell = (title: string): { prep: HTMLElement; notice: HTMLElement; tiles: HTMLElement; runline: HTMLElement; zip: HTMLElement } => {
+    tileCache.clear();
+    runLineSig = '';
     runHost.textContent = '';
     runHost.append(el({ tag: 'h2', text: title }));
     const prep = el({ tag: 'div', cls: 'prep-line' });
@@ -626,7 +635,17 @@ export function renderHome(root: HTMLElement, lang: Lang, route: Route): void {
     });
   };
 
-  const chipsCache = new Map<number, { chips: HTMLElement[]; repaired: boolean }>();
+  const chipsCache = new Map<number, { sig: string; chips: HTMLElement[]; repaired: boolean }>();
+  const tileCache = new Map<string, { sig: string; el: HTMLElement }>();
+  let runLineSig = '';
+  const rowFromCard = (o: OutputCardDto): JobRow => ({
+    outputId: o.id, sourceId: o.sourceId, sourceIndex: o.sourceIndex, preset: o.preset,
+    status: o.status === 'pass' ? 'pass' : 'needs_review', retries: o.retries, models: o.models, traceMs: o.traceMs,
+    checks: o.checks,
+    pending: o.checks.protected === 'pending' || o.checks.text === 'pending' || o.checks.layout === 'pending',
+  });
+  const jobErrorText = (job: JobDto): string =>
+    job.error === 'err_job_interrupted' ? t(lang, 'run_interrupted') : t(lang, 'run_failed_all');
   const groupTitle = (g: string): string => t(lang, g === 'wide' ? 'group_landscape' : `group_${g}` as 'group_square');
 
   const renderTiles = (tiles: HTMLElement, shell: { runline: HTMLElement; zip: HTMLElement }): void => {
@@ -637,7 +656,11 @@ export function renderHome(root: HTMLElement, lang: Lang, route: Route): void {
     const tileFor = (preset: string): HTMLElement => {
       const row = [...runState.rows.values()].find((r) => r.preset === preset && r.status !== 'failed');
       const fail = runState.failed.get(preset);
+      const sig = row ? `r${row.outputId}:${row.status}:${row.retries}:${row.pending ? 1 : 0}:${JSON.stringify(row.checks ?? null)}` : fail ? `f:${fail}` : 'wait';
+      const hit = tileCache.get(preset);
+      if (hit && hit.sig === sig) return hit.el;
       const tile = el({ tag: 'article', cls: 'tile' });
+      tileCache.set(preset, { sig, el: tile });
       const dims = presetDims(preset);
       const frame = el({ tag: 'div', cls: 'frame' });
       if (dims) frame.setAttribute('style', `aspect-ratio:${dims.w}/${dims.h}`);
@@ -655,11 +678,12 @@ export function renderHome(root: HTMLElement, lang: Lang, route: Route): void {
           ],
         }));
         tile.append(body);
-        const cached = chipsCache.get(row.outputId);
-        if (cached) {
-          body.append(el({ tag: 'div', cls: 'chipsrow', children: cached.chips.map((c) => c.cloneNode(true) as HTMLElement) }));
-          if (cached.repaired) body.append(el({ tag: 'span', cls: 'fixed-badge', text: t(lang, 'fixed_badge') }));
-        } else {
+        if (row.checks) {
+          // Live rows carry their own chip states: preview = pending, final
+          // update = passed/fixed/needs_review. Never cache pending as final.
+          body.append(el({ tag: 'div', cls: 'chipsrow', children: chipsFor(lang, row.checks) }));
+          if (row.checks.repaired) body.append(el({ tag: 'span', cls: 'fixed-badge', text: t(lang, 'fixed_badge') }));
+        } else if (row.pending) {
           body.append(el({
             tag: 'div', cls: 'chipsrow', children: [
               statusChip(t(lang, 'check_protected'), 'pending', t(lang, 'check_pending')),
@@ -667,15 +691,31 @@ export function renderHome(root: HTMLElement, lang: Lang, route: Route): void {
               statusChip(t(lang, 'check_layout'), 'pending', t(lang, 'check_pending')),
             ],
           }));
-          void api<OutputDetailDto>(`api/outputs/${row.outputId}`).then(
-            (d) => {
-              const chips = detailChips(lang, d);
-              chipsCache.set(row.outputId, { chips, repaired: d.checks?.repaired != null });
-              const shell = currentShell;
-              if (shell) renderTiles(shell.tiles, shell);
-            },
-            () => undefined,
-          );
+        } else {
+          const sig = `${row.retries}:${row.status}`;
+          const cached = chipsCache.get(row.outputId);
+          if (cached && cached.sig === sig) {
+            body.append(el({ tag: 'div', cls: 'chipsrow', children: cached.chips.map((c) => c.cloneNode(true) as HTMLElement) }));
+            if (cached.repaired) body.append(el({ tag: 'span', cls: 'fixed-badge', text: t(lang, 'fixed_badge') }));
+          } else {
+            body.append(el({
+              tag: 'div', cls: 'chipsrow', children: [
+                statusChip(t(lang, 'check_protected'), 'pending', t(lang, 'check_pending')),
+                statusChip(t(lang, 'check_text'), 'pending', t(lang, 'check_pending')),
+                statusChip(t(lang, 'check_layout'), 'pending', t(lang, 'check_pending')),
+              ],
+            }));
+            void api<OutputDetailDto>(`api/outputs/${row.outputId}`).then(
+              (d) => {
+                // Only a settled (non-pending) detail may be cached.
+                const settled = !d.checks || [d.checks.protected_pixels.status, d.checks.text.status, d.checks.layout_review.status].every((s) => s !== 'pending');
+                if (settled) chipsCache.set(row.outputId, { sig, chips: detailChips(lang, d), repaired: d.checks?.repaired != null });
+                const shell = currentShell;
+                if (shell) renderTiles(shell.tiles, shell);
+              },
+              () => undefined,
+            );
+          }
         }
       } else if (fail) {
         frame.append(el({ tag: 'div', cls: 'notice error', text: fail, attrs: { style: 'margin:8px' } }));
@@ -731,15 +771,28 @@ export function renderHome(root: HTMLElement, lang: Lang, route: Route): void {
   };
 
   const renderRunLine = (runline: HTMLElement, zip: HTMLElement): void => {
+    const firstMs = runState.firstPreviewMs ?? (runState.firstPreviewAt > 0 ? runState.firstPreviewAt - runState.t0 : null);
+    const totalMs = runState.done ? (runState.totalMs ?? (runState.t0 > 0 ? Date.now() - runState.t0 : null)) : null;
+    const sig = [runState.jobId ?? '', runState.done ? 1 : 0, runState.rows.size, runState.failed.size, runState.models.join(','), firstMs ?? '', totalMs ?? '', runState.queueAhead].join('|');
+    if (sig === runLineSig && runline.childNodes.length > 0) return;
+    // A queued job has no rows yet: say so instead of "waiting for first size".
+    if (runState.queueAhead > 0 && runState.rows.size === 0) {
+      runLineSig = sig;
+      runline.textContent = '';
+      zip.textContent = '';
+      runline.append(el({ tag: 'span', cls: 'muted', text: t(lang, 'run_queue_ahead').replace('{n}', String(runState.queueAhead)) }));
+      return;
+    }
+    runLineSig = sig;
     runline.textContent = '';
     zip.textContent = '';
     if (runState.rows.size === 0 && runState.failed.size === 0) {
       if (!runState.done) runline.append(el({ tag: 'span', cls: 'muted', text: t(lang, 'run_waiting') }));
       return;
     }
-    if (runState.models.length > 0 || runState.firstPreviewAt > 0) {
-      const first = runState.firstPreviewAt > 0 ? fmtDur(runState.firstPreviewAt - runState.t0) : '—';
-      const total = runState.done ? fmtDur(Date.now() - runState.t0) : '…';
+    if (runState.models.length > 0 || firstMs !== null) {
+      const first = firstMs !== null ? fmtDur(firstMs) : '—';
+      const total = runState.done ? fmtDur(totalMs) : '…';
       const line = t(lang, 'run_models_line')
         .replace('{models}', runState.models.join(' · ') || '—')
         .replace('{first}', first)
@@ -780,26 +833,34 @@ export function renderHome(root: HTMLElement, lang: Lang, route: Route): void {
     runState.pollTimer = null;
   };
 
-  const mergePolledJob = async (shell: { tiles: HTMLElement; runline: HTMLElement; zip: HTMLElement }): Promise<boolean> => {
+  const mergePolledJob = async (shell: { tiles: HTMLElement; runline: HTMLElement; zip: HTMLElement; notice?: HTMLElement }): Promise<boolean> => {
     try {
       const job = await api<JobDto>(`api/runs/${runState.jobId}`);
       for (const m of job.models) {
         if (!runState.models.includes(m)) runState.models.push(m);
       }
+      runState.firstPreviewMs = job.firstPreviewMs;
+      runState.totalMs = job.totalMs;
+      if (job.status === 'queued') runState.queueAhead = Math.max(1, runState.queueAhead || 1);
+      if (job.status === 'running') runState.queueAhead = 0;
       for (const o of job.outputs) {
         if (o.status === 'failed') runState.failed.set(o.preset, t(lang, 'err_unknown'));
         else {
           runState.failed.delete(o.preset);
           if (runState.firstPreviewAt === 0) runState.firstPreviewAt = Date.now();
-          runState.rows.set(o.id, { outputId: o.id, sourceId: o.sourceId, sourceIndex: o.sourceIndex, preset: o.preset, status: 'pass', retries: o.retries, models: o.models, traceMs: o.traceMs });
+          runState.rows.set(o.id, rowFromCard(o));
         }
       }
       renderTiles(shell.tiles, shell);
       if (job.status === 'done' || job.status === 'failed') {
         stopPollTimer();
         runState.done = true;
+        runState.queueAhead = 0;
         state.generating = false;
         refreshGen();
+        if (job.status === 'failed' && shell.notice && shell.notice.childNodes.length === 0) {
+          shell.notice.append(el({ tag: 'div', cls: 'notice error', text: jobErrorText(job) }));
+        }
         renderRunLine(shell.runline, shell.zip);
         return true;
       }
@@ -817,6 +878,9 @@ export function renderHome(root: HTMLElement, lang: Lang, route: Route): void {
       runState.failed.clear();
       runState.t0 = Date.now();
       runState.firstPreviewAt = 0;
+      runState.firstPreviewMs = null;
+      runState.totalMs = null;
+      runState.queueAhead = 0;
       runState.prep.clear();
       runState.done = false;
       runState.models = [];
@@ -838,6 +902,17 @@ export function renderHome(root: HTMLElement, lang: Lang, route: Route): void {
     }
     const es = new EventSource(`api/live/${liveKey}/events`);
     runState.es = es;
+    es.addEventListener('queue', (ev) => {
+      try {
+        const msg = JSON.parse((ev as MessageEvent).data) as { status: string; ahead: number };
+        runState.queueAhead = msg.status === 'queued' ? msg.ahead : 0;
+        shell.notice.textContent = '';
+        if (msg.status === 'queued') {
+          shell.notice.append(el({ tag: 'div', cls: 'notice info', text: t(lang, 'run_queue_ahead').replace('{n}', String(msg.ahead)) }));
+        }
+        renderRunLine(shell.runline, shell.zip);
+      } catch { /* malformed queue event: polling/live rows still follow */ }
+    });
     es.addEventListener('prep', (ev) => {
       try {
         const msg = JSON.parse((ev as MessageEvent).data) as { step: string; state: string; ms?: number };
@@ -893,11 +968,14 @@ export function renderHome(root: HTMLElement, lang: Lang, route: Route): void {
         for (const m of job.models) {
           if (!runState.models.includes(m)) runState.models.push(m);
         }
+        runState.firstPreviewMs = job.firstPreviewMs;
+        runState.totalMs = job.totalMs;
+        runState.queueAhead = 0;
         for (const o of job.outputs) {
           if (o.status === 'failed') runState.failed.set(o.preset, t(lang, 'err_unknown'));
           else {
             runState.failed.delete(o.preset);
-            runState.rows.set(o.id, { outputId: o.id, sourceId: o.sourceId, sourceIndex: o.sourceIndex, preset: o.preset, status: 'pass', retries: o.retries, models: o.models, traceMs: o.traceMs });
+            runState.rows.set(o.id, rowFromCard(o));
           }
         }
         if (failed && runState.rows.size === 0 && runState.failed.size === 0) {
@@ -960,9 +1038,17 @@ export function renderHome(root: HTMLElement, lang: Lang, route: Route): void {
         currentShell.notice.append(el({ tag: 'div', cls: 'notice warn', text: t(lang, 'run_spendcap') }));
         return;
       }
-      if (!res.ok) throw new Error('submit failed');
-      const created = (await res.json()) as { jobId: string; key: string; status: string };
-      if (created.status === 'queued') currentShell.notice.append(el({ tag: 'div', cls: 'notice info', text: t(lang, 'run_queue') }));
+      if (!res.ok) {
+        state.generating = false;
+        refreshGen();
+        currentShell.notice.append(el({ tag: 'div', cls: 'notice error', text: await responseErrorMessage(lang, res) }));
+        return;
+      }
+      const created = (await res.json()) as { jobId: string; key: string; status: string; queueAhead?: number };
+      if (created.status === 'queued') {
+        runState.queueAhead = created.queueAhead ?? 1;
+        currentShell.notice.append(el({ tag: 'div', cls: 'notice info', text: t(lang, 'run_queue_ahead').replace('{n}', String(runState.queueAhead)) }));
+      }
       if (window.location.hash !== `#/run/${created.jobId}`) {
         history.replaceState(null, '', `#/run/${created.jobId}`);
       }
@@ -988,32 +1074,28 @@ export function renderHome(root: HTMLElement, lang: Lang, route: Route): void {
         runState.t0 = Date.parse(job.createdAt) || Date.now();
         runState.models = job.models;
         currentShell = renderRunShell(t(lang, 'run_title'));
+        runState.firstPreviewMs = job.firstPreviewMs;
+        runState.totalMs = job.totalMs;
         for (const o of job.outputs) {
           if (o.status === 'failed') runState.failed.set(o.preset, t(lang, 'err_unknown'));
-          else runState.rows.set(o.id, { outputId: o.id, sourceId: o.sourceId, sourceIndex: o.sourceIndex, preset: o.preset, status: 'pass', retries: o.retries, models: o.models, traceMs: o.traceMs });
+          else runState.rows.set(o.id, rowFromCard(o));
         }
-        if (job.status === 'running') {
+        if (job.status === 'running' || job.status === 'queued') {
+          if (job.status === 'queued') {
+            runState.queueAhead = 1;
+            currentShell.notice.append(el({ tag: 'div', cls: 'notice info', text: t(lang, 'run_queue_ahead').replace('{n}', '1') }));
+          }
           runState.firstPreviewAt = job.firstPreviewMs !== null ? runState.t0 + job.firstPreviewMs : 0;
           followJob(job.id, job.sizes, false);
           return;
         }
         runState.done = true;
         runState.firstPreviewAt = job.firstPreviewMs !== null ? runState.t0 + job.firstPreviewMs : 0;
+        if (job.status === 'failed') {
+          currentShell.notice.append(el({ tag: 'div', cls: 'notice error', text: jobErrorText(job) }));
+        }
         renderPrep(currentShell.prep);
         renderTiles(currentShell.tiles, currentShell);
-        if (job.firstPreviewMs !== null || job.totalMs !== null) {
-          const first = job.firstPreviewMs !== null ? fmtDur(job.firstPreviewMs) : '—';
-          const total = job.totalMs !== null ? fmtDur(job.totalMs) : '—';
-          const line = t(lang, 'run_models_line')
-            .replace('{models}', job.models.join(' · ') || '—')
-            .replace('{first}', first)
-            .replace('{n}', String(job.outputs.filter((o) => isOkStatus(o.status)).length))
-            .replace('{total}', total);
-          currentShell.runline.append(el({ tag: 'span', text: line }));
-        }
-        if (job.outputs.some((o) => isOkStatus(o.status))) {
-          currentShell.zip.append(el({ tag: 'a', cls: 'btn', text: t(lang, 'btn_download_all'), attrs: { href: `api/runs/${job.id}/zip` } }));
-        }
       } catch {
         currentShell = renderRunShell(t(lang, 'run_title'));
         currentShell.notice.append(el({ tag: 'div', cls: 'notice error', text: t(lang, 'detail_missing') }));

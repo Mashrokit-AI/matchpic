@@ -412,6 +412,29 @@ export function planLayout(input: PlannerInput): LayoutPlan {
   });
   if (otherTexts.length > 0) notes.push(`${otherTexts.length} other text(s): relative position`);
 
+  // No-template stack reservation: relative mapping can drop a price/CTA
+  // line straight onto the headline/subtext/panel stack the defaults just
+  // built above the panel (branded runs get separate template zones, so
+  // they never collide this way). Give colliding others the slot directly
+  // above the panel and shift headline/subtext up to make room, keeping
+  // side-by-side others on their shared row (same y, original x).
+  if (!wide && panel && (headline || subtext)) {
+    const blockers = [headline, subtext, panel].filter((b): b is PlanBox => b !== null);
+    const colliding = otherTexts.filter((o) => blockers.some((b) => overlaps(o, b)));
+    if (colliding.length > 0) {
+      const rowH = Math.max(...colliding.map((o) => o.h));
+      const slotY = panel.y - rowH - margin;
+      for (const o of colliding) o.y = slotY;
+      const stackBottom = Math.max(...[headline, subtext].filter((b): b is PlanBox => b !== null).map((b) => b.y + b.h), 0);
+      const shift = stackBottom + margin - slotY;
+      if (shift > 0) {
+        if (headline) headline = clampInto(box(headline.x, headline.y - shift, headline.w, headline.h), safe);
+        if (subtext) subtext = clampInto(box(subtext.x, subtext.y - shift, subtext.w, subtext.h), safe);
+        notes.push('other text(s): reserved a row above the panel, headline stack shifted up');
+      }
+    }
+  }
+
   if (wide) {
     const top = safe.y + margin;
     const bottom = panel ? panel.y - margin : safe.y + safe.h - margin;
@@ -428,7 +451,7 @@ export function planLayout(input: PlannerInput): LayoutPlan {
   }
   if (!wide && input.productCuts.length > 0 && products.length === 0) {
     const top = logo ? logo.y + logo.h + margin : safe.y + margin;
-    const bottoms = [panel?.y, headline?.y, subtext?.y].filter((v): v is number => typeof v === 'number');
+    const bottoms = [panel?.y, headline?.y, subtext?.y, ...otherTexts.map((o) => o.y)].filter((v): v is number => typeof v === 'number');
     const bottom = (bottoms.length > 0 ? Math.min(...bottoms) : safe.y + safe.h) - margin;
     const budget = box(safe.x + margin, top, safe.w - margin * 2, Math.max(40, bottom - top));
     const slot = Math.floor(budget.w / input.productCuts.length);

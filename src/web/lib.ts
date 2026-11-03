@@ -57,9 +57,22 @@ export function el(spec: ElSpec & { tag?: string }): HTMLElement {
   return node;
 }
 
-/** Absolute paths, hashes, http(s) and scheme-less relative paths (api/…, media/…); never javascript: or data:. */
+/** Absolute paths, hashes, http(s) and scheme-less relative paths (api/…, media/…); never javascript:, data: or protocol-relative //. */
 export function isSafeHref(v: string): boolean {
+  if (v.startsWith('//') || v.includes('\\')) return false;
   return v.startsWith('/') || v.startsWith('#') || /^(https?):\/\//.test(v) || /^[\w.-]+(\/|\?|$)/.test(v);
+}
+
+/** Translated message for a server error key; unknown keys stay generic (never raw server text). */
+export function errorMessage(lang: Lang, key?: string | null): string {
+  const dict = STRINGS[lang] as unknown as Record<string, string>;
+  return (key && dict[key]) || dict['err_unknown'] || 'Something went wrong.';
+}
+
+/** Read a failed Response's `{error}` key into a translated message. */
+export async function responseErrorMessage(lang: Lang, res: Response): Promise<string> {
+  const body = (await res.clone().json().catch(() => ({}))) as { error?: string };
+  return errorMessage(lang, body.error);
 }
 
 export function t(lang: Lang, key: keyof typeof STRINGS.en): string {

@@ -3,7 +3,7 @@ import { nativeName, type Lang } from '../shared/i18n.js';
 import { PRESETS } from '../shared/presets.js';
 import type { Route } from './app.js';
 import type { BrandDto, BrandPromptDto } from './dto.js';
-import { api, apiDelete, apiPatch, apiPost, el, t, uploadFilesWithProgress } from './lib.js';
+import { api, apiDelete, apiPatch, apiPost, el, responseErrorMessage, t, uploadFilesWithProgress } from './lib.js';
 
 function swatches(colors: Array<{ hex: string }>): HTMLElement {
   const row = el({ tag: 'div', cls: 'swatches' });
@@ -409,7 +409,10 @@ async function renderOpenBrand(host: HTMLElement, lang: Lang, id: string): Promi
           fonts: fontsInput.value.split(',').map((f) => f.trim()).filter(Boolean),
         });
         if (res.ok) await refresh();
-        else save.disabled = false;
+        else {
+          save.disabled = false;
+          basicsHost.append(el({ tag: 'div', cls: 'notice error', text: await responseErrorMessage(lang, res) }));
+        }
       });
       basicsHost.append(el({ tag: 'div', cls: 'toolbar', children: [save] }));
     }
@@ -497,6 +500,9 @@ async function renderOpenBrand(host: HTMLElement, lang: Lang, id: string): Promi
           if (res.ok) {
             await refresh();
             scheduleAutoGenerate();
+          } else {
+            cell.append(el({ tag: 'div', cls: 'notice error', text: await responseErrorMessage(lang, res) }));
+            await refresh();
           }
         });
         bar.append(sel);
@@ -517,6 +523,8 @@ async function renderOpenBrand(host: HTMLElement, lang: Lang, id: string): Promi
                   if (res.ok) {
                     await refresh();
                     scheduleAutoGenerate();
+                  } else {
+                    cell.append(el({ tag: 'div', cls: 'notice error', text: await responseErrorMessage(lang, res) }));
                   }
                 });
                 return yes;
@@ -604,6 +612,7 @@ async function renderOpenBrand(host: HTMLElement, lang: Lang, id: string): Promi
           await refresh();
         } else {
           save.disabled = false;
+          promptHost.append(el({ tag: 'div', cls: 'notice error', text: await responseErrorMessage(lang, res) }));
         }
       });
       const cancel = el({ tag: 'button', cls: 'btn small secondary', text: t(lang, 'prompt_cancel'), attrs: { type: 'button' } }) as HTMLButtonElement;
@@ -676,6 +685,7 @@ async function renderOpenBrand(host: HTMLElement, lang: Lang, id: string): Promi
               else {
                 yes.disabled = false;
                 del.disabled = false;
+                danger.append(el({ tag: 'div', cls: 'notice error', text: await responseErrorMessage(lang, res) }));
               }
             });
             return yes;

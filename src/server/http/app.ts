@@ -27,7 +27,7 @@ import { Store } from '../store/db.js';
 import { TraceCollector } from '../workflow/trace.js';
 import { loadHttpConfig, type HttpConfig } from './config.js';
 import { buildBrand, buildBrands, buildExamples, buildJob, buildOutput, traceSummaryOf } from './dto.js';
-import { JobManager, RateLimiter, sseResponse, summarize, type JobRow } from './jobs.js';
+import { JobManager, RateLimiter, sseResponse, type JobRow } from './jobs.js';
 import { MEDIA_KINDS, invalidateThumb, readContainedFile, resolveMask, resolveMedia, type MediaKind } from './media.js';
 import { UploadError, validateAndStoreUpload, validateImageBytes } from './uploads.js';
 import { buildZip, sha256Hex } from './zip.js';
@@ -192,15 +192,26 @@ export function createApp(deps: AppDeps): Hono {
 
   const jobs = new JobManager({ queueMax: cfg.queueMax, jobTimeoutMs: cfg.jobTimeoutMs });
   const limiter = new RateLimiter(cfg.ratePerHour);
-
-  const withStore = <T>(fn: (s: Store) => T): T => {
+  // Bug 2: a previous process may have died mid-run. Those DB rows can never
+  // resume (the in-memory task is gone), so fail them instead of hanging.
+  try {
     const store = Store.open(dbPath);
-    try {
-      return fn(store);
-    } finally {
-      store.close();
-    }
+    try { store.failStaleRunningJobs('err_job_interrupted'); } finally { store.close(); }
+  } catch { /* DB not ready yet; routes surface the error */ }
+
+  // One shared connection per app: opening + schema + migrations on every
+  // call made 2s polling needlessly expensive. better-sqlite3 is synchronous
+  // and this process is single-threaded, so sharing is safe.
+  let sharedStore: Store | null = null;
+  const withStore = <T>(fn: (s: Store) => T): T => {
+    sharedStore ??= Store.open(dbPath);
+    return fn(sharedStore);
   };
+
+  const cardChecks = (checks: { protected_pixels: { status: string }; text: { status: string }; layout_review: { status: string }; repaired: unknown }): JobRow['checks'] => ({
+    protected: checks.protected_pixels.status, text: checks.text.status, layout: checks.layout_review.status,
+    repaired: checks.repaired !== null && checks.repaired !== undefined,
+  });
 
   const capped = (kind: 'model' | 'image'): boolean => {
     const limit = kind === 'model' ? cfg.dailyModelCalls : cfg.dailyImages;
@@ -491,7 +502,7 @@ export function createApp(deps: AppDeps): Hono {
           s.recordUsage('image', outcome.imageCalls);
           return id;
         });
-        onRow({ outputId, sourceId: cell.source.id, sourceIndex: cell.sourceIndex, preset: preset.id, status, retries: outcome.retries, ...traceSummaryOf(trace.all()) });
+        onRow({ outputId, sourceId: cell.source.id, sourceIndex: cell.sourceIndex, preset: preset.id, status, retries: outcome.retries, checks: cardChecks(checks), ...traceSummaryOf(trace.all()) });
       } catch (e) {
         const message = `${e instanceof Error ? e.message : String(e)}`.slice(0, 300);
         const outputId = withStore((s) =>
@@ -575,7 +586,7 @@ export function createApp(deps: AppDeps): Hono {
               }),
             );
             previewIds.set(o.preset.id, outputId);
-            onRow({ outputId, sourceId: raw.id, sourceIndex, preset: o.preset.id, status: 'needs_review', retries: 0, pending: true, ...traceSummaryOf(o.trace.all()) });
+            onRow({ outputId, sourceId: raw.id, sourceIndex, preset: o.preset.id, status: 'needs_review', retries: 0, pending: true, checks: cardChecks(o.checks), ...traceSummaryOf(o.trace.all()) });
           },
         });
       } catch (e) {
@@ -633,7 +644,7 @@ export function createApp(deps: AppDeps): Hono {
           });
           s.recordUsage('image', o.imageCalls);
         });
-        onUpdate({ outputId, sourceId: raw.id, sourceIndex, preset: o.preset.id, status, retries: o.repaired ? 1 : 0, ...traceSummaryOf(o.trace.all()) });
+        onUpdate({ outputId, sourceId: raw.id, sourceIndex, preset: o.preset.id, status, retries: o.repaired ? 1 : 0, pending: false, checks: cardChecks(o.checks), ...traceSummaryOf(o.trace.all()) });
       }
       withStore((s) => s.recordUsage('model', batch.source.modelCalls + batch.modelCalls));
     }
@@ -1218,11 +1229,12 @@ export function createApp(deps: AppDeps): Hono {
       withStore((s) => s.insertSource({ id: r.id, imagePath: r.relPath, width: r.width, height: r.height, expiresAt: dayFromNow() }));
     }
     const storeJobId = newId('job');
-    withStore((s) => s.insertJob({ id: storeJobId, brandId, mode, sizes, sources: raws.map((r) => r.id) }));
+    withStore((s) => s.insertJob({ id: storeJobId, brandId, mode, sizes, sources: raws.map((r) => r.id), status: jobs.isBusy() ? 'queued' : 'running' }));
 
     const total = raws.length * sizes.length;
     const textsBySource = parseTextsField(parsed.texts);
     const job = jobs.submit('generate', total, async (onRow, onUpdate, onPrep) => {
+      withStore((s) => s.setJobStatus(storeJobId, 'running'));
       if (mode === 'protected') {
         return executeProtected(storeJobId, raws, sizes, brandId, brand?.name ?? null, onRow, onUpdate, onPrep, textsBySource);
       }
@@ -1252,10 +1264,11 @@ export function createApp(deps: AppDeps): Hono {
       return executeJob(storeJobId, cells, mode, brandId, brand?.name ?? null, traces, onRow);
     });
     if (!job) {
+      withStore((s) => s.finishJob(storeJobId, 'failed', 'err_busy', 0, 0));
       await unlinkData(raws.filter((r) => !r.fixture).map((r) => r.relPath));
       return err(c, 429, 'err_busy');
     }
-    return c.json({ key: job.id, status: job.status, jobId: storeJobId }, 202);
+    return c.json({ key: job.id, status: job.status, queueAhead: jobs.queueAheadOf(job), jobId: storeJobId }, 202);
   });
 
   inner.post('/api/outputs/:id/regenerate', async (c) => {
@@ -1275,9 +1288,10 @@ export function createApp(deps: AppDeps): Hono {
     if (!bytes) return err(c, 404, 'err_not_found');
     const storeJobId = newId('job');
     const mode = (prev.mode === 'fast' ? 'fast' : 'protected') as FitMode;
-    withStore((s) => s.insertJob({ id: storeJobId, brandId: prevJob.brand_id, mode, sizes: [prev.preset], sources: [source.id] }));
+    withStore((s) => s.insertJob({ id: storeJobId, brandId: prevJob.brand_id, mode, sizes: [prev.preset], sources: [source.id], status: jobs.isBusy() ? 'queued' : 'running' }));
     const brand = prevJob.brand_id ? withStore((s) => s.getBrand(prevJob.brand_id as string)) : null;
     const job = jobs.submit('regenerate', 1, async (onRow, onUpdate, onPrep) => {
+      withStore((s) => s.setJobStatus(storeJobId, 'running'));
       if (mode === 'protected') {
         return executeProtected(storeJobId, [{ id: source.id, bytes, width: source.width, height: source.height }], [prev.preset], prevJob.brand_id, brand?.name ?? null, onRow, onUpdate, onPrep);
       }
@@ -1305,14 +1319,17 @@ export function createApp(deps: AppDeps): Hono {
         onRow,
       );
     });
-    if (!job) return err(c, 429, 'err_busy');
-    return c.json({ key: job.id, status: job.status, jobId: storeJobId }, 202);
+    if (!job) {
+      withStore((s) => s.finishJob(storeJobId, 'failed', 'err_busy', 0, 0));
+      return err(c, 429, 'err_busy');
+    }
+    return c.json({ key: job.id, status: job.status, queueAhead: jobs.queueAheadOf(job), jobId: storeJobId }, 202);
   });
 
   inner.get('/api/live/:key', (c) => {
     const job = jobs.get(c.req.param('key'));
     if (!job) return err(c, 404, 'err_not_found');
-    return c.json({ job: summarize(job) });
+    return c.json({ job: jobs.summary(job) });
   });
 
   inner.get('/api/live/:key/events', (c) => {
