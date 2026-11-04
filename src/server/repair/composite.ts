@@ -552,6 +552,9 @@ export function resolveGroupTextColors(
 ): GroupColorDecision {
   if (items.length === 0) return { mode: 'source' };
   if (items.every((i) => i.srcRatio >= floor)) return { mode: 'source' };
+  // A near miss keeps the brand's colour with a shadow: flipping white copy to
+  // black over one light ledge looked worse than the contrast it gained.
+  if (items.every((i) => i.srcRatio >= 1.5)) return { mode: 'source-shadow' };
   const blackMin = Math.min(...items.map((i) => i.blackRatio));
   const whiteMin = Math.min(...items.map((i) => i.whiteRatio));
   if (Math.max(blackMin, whiteMin) >= floor) {

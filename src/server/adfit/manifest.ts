@@ -311,6 +311,29 @@ export function enforceManifest(input: EnforceInput): ResolvedLayoutManifest {
         const uy = Math.min(...prods.map((e) => e.box.y));
         const desired = targetH / hero.box.h;
         let applied = false;
+        // Square/portrait: a spread-out group reaches the floor by growing each
+        // product around its centre; the union scale below would hit the
+        // canvas width long before the hero reaches the floor.
+        if (!wide) {
+          const grown = prods.map((e) => {
+            const nw = Math.round(e.box.w * desired);
+            const nh = Math.round(e.box.h * desired);
+            return clampInto({ x: Math.round(e.box.x + e.box.w / 2 - nw / 2), y: Math.round(e.box.y + e.box.h / 2 - nh / 2), w: nw, h: nh }, BB);
+          });
+          const fits = grown.every((g, i) => g.w === Math.round((prods[i] as ManifestElement).box.w * desired)
+            && !solids.some((o) => overlaps(g, o.box))
+            && !grown.some((o, j) => j !== i && overlaps(g, o)));
+          if (fits) {
+            prods.forEach((e, i) => {
+              const prevW = e.box.w;
+              e.box = grown[i] as PlanBox;
+              if (e.scale !== null) e.scale = (e.scale * e.box.w) / Math.max(1, prevW);
+              e.source = 'corrected';
+            });
+            corrections.push(`products: group grew around centres to the 40% safe-height hero floor (${targetH}px)`);
+            applied = true;
+          }
+        }
         for (let step = 0; step < 14 && !applied; step++) {
           const factor = desired * Math.pow(0.92, step);
           if (factor <= 1.02) break;
@@ -881,6 +904,90 @@ export function enforceManifest(input: EnforceInput): ResolvedLayoutManifest {
     }
   }
 
+  // Re-lay a product group from its source arrangement inside a region: one
+  // uniform scale, centred. Occlusions survive this way: separating cans that
+  // overlap in the source exposes the flat cut where one hid the other.
+  const placeProductGroup = (prods: ManifestElement[], boxes: PlanBox[], region: PlanBox, maxScale: number): number | null => {
+    const ux = Math.min(...boxes.map((b) => b.x));
+    const uy = Math.min(...boxes.map((b) => b.y));
+    const uw = Math.max(...boxes.map((b) => b.x + b.w)) - ux;
+    const uh = Math.max(...boxes.map((b) => b.y + b.h)) - uy;
+    if (region.w <= 0 || region.h <= 0) return null;
+    const base = Math.min(region.w / Math.max(1, uw), region.h / Math.max(1, uh), maxScale);
+    // Rounding can push the placed union past the region: step the scale down.
+    for (let step = 0; step < 8; step++) {
+      const scale = base * Math.pow(0.96, step);
+      const ox = region.x + (region.w - uw * scale) / 2;
+      const oy = region.y + (region.h - uh * scale) / 2;
+      const placed = boxes.map((b) => ({
+        x: Math.round(ox + (b.x - ux) * scale),
+        y: Math.round(oy + (b.y - uy) * scale),
+        w: Math.max(8, Math.round(b.w * scale)),
+        h: Math.max(8, Math.round(b.h * scale)),
+      }));
+      const x1 = Math.min(...placed.map((g) => g.x));
+      const x2 = Math.max(...placed.map((g) => g.x + g.w));
+      const y1 = Math.min(...placed.map((g) => g.y));
+      const y2 = Math.max(...placed.map((g) => g.y + g.h));
+      if (x1 < region.x - 1 || x2 > region.x + region.w + 1 || y1 < region.y - 1 || y2 > region.y + region.h + 1) continue;
+      prods.forEach((e, i) => {
+        const prevW = e.box.w;
+        e.box = placed[i] as PlanBox;
+        if (e.scale !== null) e.scale = (e.scale * e.box.w) / Math.max(1, prevW);
+        e.source = 'corrected';
+      });
+      return scale;
+    }
+    return null;
+  };
+
+  // 6c-bis. Landscape multi-product groups: re-lay the whole group from its
+  // source arrangement in the side opposite the text column (NORTHBEAN fb-link
+  // ended up with thumbnail cans of unequal scale: per-product shrink steps
+  // and over-wide text boxes kept the group from growing).
+  if (wide) {
+    const prods = m.elements.filter((e) => e.kind === 'product');
+    const srcs = prods.map((e) => (input.productSrcBoxes ?? [])[Number(e.id.split('-')[1])] ?? null);
+    if (prods.length > 1 && srcs.every(Boolean) && prods.every((e) => e.scale !== null)) {
+      const textEls = m.elements.filter((e) => e.group === 'text');
+      const maxColW = Math.round(W * 0.42);
+      const fitted = new Map(textEls.map((e) => {
+        const nw = Math.min(e.box.w, maxColW);
+        return [e, { ...e.box, w: nw, x: wantAlign === 'right' ? e.box.x + e.box.w - nw : e.box.x }] as const;
+      }));
+      const column = [...fitted.values(), ...m.elements.filter((e) => e.kind === 'panel' || e.kind === 'logo').map((e) => e.box)];
+      const sideGap = Math.round(W * 0.02);
+      const colEdge = wantAlign === 'right' ? Math.min(...column.map((b) => b.x)) : Math.max(...column.map((b) => b.x + b.w));
+      const region = wantAlign === 'right'
+        ? { x: BB.x, w: colEdge - sideGap - BB.x }
+        : { x: colEdge + sideGap, w: BB.x + BB.w - colEdge - sideGap };
+      const boxes = srcs as PlanBox[];
+      const ux = Math.min(...boxes.map((b) => b.x));
+      const uy = Math.min(...boxes.map((b) => b.y));
+      const uw = Math.max(...boxes.map((b) => b.x + b.w)) - ux;
+      const uh = Math.max(...boxes.map((b) => b.y + b.h)) - uy;
+      const s = Math.min(region.w / Math.max(1, uw), BB.h / Math.max(1, uh));
+      const heroIdx = boxes.reduce((best, b, i) => (b.h > (boxes[best] as PlanBox).h ? i : best), 0);
+      const heroNow = (prods[heroIdx] as ManifestElement).box.h;
+      // Unequal scales mean the source proportions are already lost (a middle
+      // can smaller than its twin), so re-lay even when the hero would not grow.
+      const scales = prods.map((e) => e.scale as number);
+      const scalesDiffer = Math.max(...scales) > Math.min(...scales) * 1.05;
+      if (region.w > 0 && (scalesDiffer || s * (boxes[heroIdx] as PlanBox).h > heroNow * 1.05)) {
+        const placedScale = placeProductGroup(prods, boxes, { x: region.x, y: BB.y, w: region.w, h: BB.h }, Number.POSITIVE_INFINITY);
+        if (placedScale !== null) {
+          for (const [e, b] of fitted) {
+            if (b.w !== e.box.w) {
+              e.box = b;
+              e.source = 'corrected';
+            }
+          }
+          corrections.push(`products: landscape group re-laid from the source arrangement beside the text column (x${placedScale.toFixed(2)})`);
+        }
+      }
+    }
+  }
+
   // 6d. Source-order restack (runs last, after every planner/patch move):
   // the text group — logo, headline, subtext, price/other texts, panel —
   // keeps the SOURCE vertical order with consistent gaps, so no Wonder
@@ -918,15 +1025,16 @@ export function enforceManifest(input: EnforceInput): ResolvedLayoutManifest {
               const cur = desired.get((sorted[i] as (typeof sorted)[number]).el.id) as PlanBox;
               if (cur.y < prev.y + prev.h + minGap) cur.y = prev.y + prev.h + minGap;
             }
-            const lastEl = desired.get((sorted[sorted.length - 1] as (typeof sorted)[number]).el.id) as PlanBox;
-            const overflow = lastEl.y + lastEl.h - (BB.y + BB.h);
-            if (overflow > 0) {
-              for (const mm of sorted) {
-                const d = desired.get(mm.el.id) as PlanBox;
-                d.y -= overflow;
-              }
+            // Bottom-up: only what actually collides moves. Shifting the whole
+            // stack pushed a logo already at the top margin out of the bound
+            // and blocked the restack (STRIDE square: price over the subtext).
+            let limit = BB.y + BB.h;
+            for (let i = sorted.length - 1; i >= 0; i--) {
+              const d = desired.get((sorted[i] as (typeof sorted)[number]).el.id) as PlanBox;
+              if (d.y + d.h > limit) d.y = limit - d.h;
+              limit = d.y - minGap;
             }
-            const solids = m.elements.filter((e) => !group.some((mm) => mm.el === e) && e.kind !== 'shadow' && e.kind !== 'frame');
+            const solids = m.elements.filter((e) => !group.some((mm) => mm.el === e) && e.kind !== 'shadow' && e.kind !== 'frame' && e.kind !== 'product');
             const blocked = sorted.some((mm) => {
               const d = desired.get(mm.el.id) as PlanBox;
               const clamped = clampInto(d, BB);
@@ -934,7 +1042,68 @@ export function enforceManifest(input: EnforceInput): ResolvedLayoutManifest {
             });
             const stillOverlap = sorted.some((a, i) => sorted.some((b, j) => j > i
               && overlaps(desired.get(a.el.id) as PlanBox, desired.get(b.el.id) as PlanBox)));
-            if (!blocked && !stillOverlap) {
+            // A settled stack that only hits products: the products make room,
+            // scaled as one group into the band next to the stack.
+            let roomForStack = true;
+            const prodEls = m.elements.filter((e) => e.kind === 'product');
+            if (!blocked && !stillOverlap && prodEls.length > 0
+              && sorted.some((mm) => prodEls.some((p) => overlaps(desired.get(mm.el.id) as PlanBox, p.box)))) {
+              const stack = sorted.filter((mm) => mm.el.kind !== 'logo').map((mm) => desired.get(mm.el.id) as PlanBox);
+              const stackTop = Math.min(...stack.map((b) => b.y));
+              const stackBot = Math.max(...stack.map((b) => b.y + b.h));
+              const ux1 = Math.min(...prodEls.map((p) => p.box.x));
+              const ux2 = Math.max(...prodEls.map((p) => p.box.x + p.box.w));
+              const uy1 = Math.min(...prodEls.map((p) => p.box.y));
+              const uy2 = Math.max(...prodEls.map((p) => p.box.y + p.box.h));
+              const logoEl = m.elements.find((e) => e.kind === 'logo');
+              const logoBox = logoEl ? (desired.get(logoEl.id) ?? logoEl.box) : null;
+              const above = (uy1 + uy2) / 2 < stackTop;
+              const bandTop = above ? (logoBox && logoBox.y < stackTop ? logoBox.y + logoBox.h + minGap : BB.y) : stackBot + minGap;
+              const bandBot = above ? stackTop - minGap : BB.y + BB.h;
+              let useTop = bandTop;
+              let useBot = bandBot;
+              if ((useBot - useTop) / Math.max(1, uy2 - uy1) < 0.6) {
+                // No room beside the stack: split it around the products. What
+                // reads before the CTA packs from the top, the CTA and anything
+                // after it from the bottom, keeping source order.
+                const panelAt = sorted.findIndex((mm) => mm.el.kind === 'panel');
+                const split = panelAt >= 0 ? panelAt : sorted.length;
+                let y = BB.y;
+                for (const mm of sorted.slice(0, split)) {
+                  const d = desired.get(mm.el.id) as PlanBox;
+                  d.y = y;
+                  y += d.h + minGap;
+                }
+                let bottom = BB.y + BB.h;
+                for (const mm of [...sorted.slice(split)].reverse()) {
+                  const d = desired.get(mm.el.id) as PlanBox;
+                  d.y = bottom - d.h;
+                  bottom = d.y - minGap;
+                }
+                useTop = y;
+                useBot = bottom;
+              }
+              const k = Math.min(1, (useBot - useTop) / Math.max(1, uy2 - uy1));
+              if (k >= 0.6) {
+                const cx = (ux1 + ux2) / 2;
+                const top = useTop + ((useBot - useTop) - (uy2 - uy1) * k) / 2;
+                for (const p of prodEls) {
+                  const prevW = p.box.w;
+                  p.box = {
+                    x: Math.round(cx + (p.box.x - cx) * k),
+                    y: Math.round(top + (p.box.y - uy1) * k),
+                    w: Math.max(8, Math.round(p.box.w * k)),
+                    h: Math.max(8, Math.round(p.box.h * k)),
+                  };
+                  if (p.scale !== null) p.scale = (p.scale * p.box.w) / Math.max(1, prevW);
+                  p.source = 'corrected';
+                }
+                corrections.push(`products: scaled x${k.toFixed(2)} to make room for the text stack`);
+              } else {
+                roomForStack = false;
+              }
+            }
+            if (!blocked && !stillOverlap && roomForStack) {
               for (const mm of sorted) {
                 const d = desired.get(mm.el.id) as PlanBox;
                 if (d.y !== mm.el.box.y) {
@@ -948,6 +1117,52 @@ export function enforceManifest(input: EnforceInput): ResolvedLayoutManifest {
             }
           }
         }
+      }
+    }
+  }
+
+  // 6d-bis. Square/portrait/tall groups that overlap in the source keep that
+  // overlap: the group is re-laid in the largest free vertical band (planner
+  // spreading exposed the flat cut on NORTHBEAN's lying can in every size).
+  if (!wide) {
+    const prods = m.elements.filter((e) => e.kind === 'product');
+    const srcs = prods.map((e) => (input.productSrcBoxes ?? [])[Number(e.id.split('-')[1])] ?? null);
+    const occluded = srcs.some((a, i) => a && srcs.some((b, j) => j > i && b && intersectArea(a, b) > 0));
+    if (prods.length > 1 && srcs.every(Boolean) && occluded) {
+      const taken = m.elements
+        .filter((e) => e.kind !== 'product' && e.kind !== 'shadow' && e.kind !== 'frame')
+        .map((e) => [e.box.y, e.box.y + e.box.h] as const)
+        .sort((a, b) => a[0] - b[0]);
+      let cursor = BB.y;
+      let band = { top: BB.y, bottom: BB.y };
+      for (const [top, bottom] of [...taken, [BB.y + BB.h, BB.y + BB.h] as const]) {
+        if (top - cursor > band.bottom - band.top) band = { top: cursor, bottom: top };
+        cursor = Math.max(cursor, bottom);
+      }
+      const pad = Math.max(minGap, Math.round(H * 0.025));
+      const region = { x: BB.x, y: band.top + pad, w: BB.w, h: band.bottom - band.top - 2 * pad };
+      // Past ~1.6x a source cut turns visibly soft.
+      const placedScale = placeProductGroup(prods, srcs as PlanBox[], region, 1.6);
+      if (placedScale !== null) corrections.push(`products: group kept its source overlap, re-laid in the free band (x${placedScale.toFixed(2)})`);
+    }
+  }
+
+  // 6e. The CTA follows the text column once the stack has settled: at step 3
+  // a price pushed into the panel's row made it skip the snap.
+  {
+    const panelEl = m.elements.find((e) => e.kind === 'panel');
+    const columnTexts = m.elements.filter((e) => e.group === 'text');
+    if (panelEl && columnTexts.length > 0
+      && !columnTexts.some((t) => t.box.y < panelEl.box.y + panelEl.box.h && panelEl.box.y < t.box.y + t.box.h)) {
+      const edge = wantAlign === 'right'
+        ? Math.max(...columnTexts.map((t) => t.box.x + t.box.w))
+        : Math.min(...columnTexts.map((t) => t.box.x));
+      const next = clampInto({ ...panelEl.box, x: wantAlign === 'right' ? edge - panelEl.box.w : edge }, BB);
+      const others = m.elements.filter((e) => e !== panelEl && e.kind !== 'shadow' && e.kind !== 'frame');
+      if (next.x !== panelEl.box.x && !others.some((o) => overlaps(next, o.box))) {
+        panelEl.box = next;
+        panelEl.source = 'corrected';
+        corrections.push(`panel: snapped to the text column ${wantAlign} edge after the restack`);
       }
     }
   }

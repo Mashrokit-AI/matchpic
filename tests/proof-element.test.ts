@@ -2,6 +2,12 @@ import { describe, expect, it } from 'vitest';
 import { pasteWithFeather, scaleRgbaNearest, type RgbaImage } from '../src/server/repair/composite.js';
 import { elementProof } from '../src/server/repair/proof.js';
 
+function canvasOf(width: number, height: number, rgb: [number, number, number], alpha: number): RgbaImage {
+  const data = Buffer.alloc(width * height * 4);
+  for (let i = 0; i < width * height; i++) { data[i * 4] = rgb[0]; data[i * 4 + 1] = rgb[1]; data[i * 4 + 2] = rgb[2]; data[i * 4 + 3] = alpha; }
+  return { data, width, height };
+}
+
 function solid(w: number, h: number, rgb: [number, number, number], opaque = true): RgbaImage {
   const data = Buffer.alloc(w * h * 4);
   for (let i = 0; i < w * h; i++) {
@@ -76,4 +82,24 @@ describe('element proof', () => {
     expect(pr.pass).toBe(false);
     expect(pr.core_total).toBe(0);
   });
+
+  it('does not count pixels a later element covers, and still catches real changes', () => {
+    const cut = canvasOf(20, 20, [10, 20, 30], 255);
+    const front = canvasOf(8, 20, [200, 0, 0], 255);
+    const output = canvasOf(60, 60, [0, 0, 0], 255);
+    const paint = (c: ReturnType<typeof canvasOf>, left: number, top: number): void => {
+      for (let y = 0; y < c.height; y++) for (let x = 0; x < c.width; x++) {
+        const o = ((top + y) * output.width + left + x) * 4;
+        for (let k = 0; k < 4; k++) output.data[o + k] = c.data[(y * c.width + x) * 4 + k] as number;
+      }
+    };
+    paint(cut, 5, 5);
+    paint(front, 15, 5);
+    const occluders = [{ sourceCut: front, left: 15, top: 5, scale: 1, featherPx: 2 }];
+    expect(elementProof({ sourceCut: cut, output, left: 5, top: 5, scale: 1, featherPx: 2 }).pass).toBe(false);
+    expect(elementProof({ sourceCut: cut, output, left: 5, top: 5, scale: 1, featherPx: 2, occluders }).pass).toBe(true);
+    output.data[((10 * output.width + 8) * 4)] = 99;
+    expect(elementProof({ sourceCut: cut, output, left: 5, top: 5, scale: 1, featherPx: 2, occluders }).pass).toBe(false);
+  });
 });
+

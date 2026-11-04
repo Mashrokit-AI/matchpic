@@ -70,6 +70,12 @@ export function checkManifestGeometry(
       const a = els[i]!;
       const b = els[j]!;
       if (!overlaps(a.box, b.box)) continue;
+      // Products that overlap in the source keep that overlap by design.
+      if (a.kind === 'product' && b.kind === 'product') {
+        const sa = analysis.products[Number(a.id.split('-')[1])]?.bbox;
+        const sb = analysis.products[Number(b.id.split('-')[1])]?.bbox;
+        if (sa && sb && overlaps(sa, sb)) continue;
+      }
       out.push({ code: 'overlap', severity: 'fail', element: a.id, detail: `${a.id} overlaps ${b.id}` });
     }
   }

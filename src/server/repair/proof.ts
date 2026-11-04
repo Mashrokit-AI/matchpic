@@ -95,6 +95,8 @@ export interface ElementProofInput {
   scale: number;
   /** Feather width used at paste time (proof erodes the core by this). */
   featherPx: number;
+  /** Elements painted later: pixels they cover are not this element's to prove. */
+  occluders?: Array<{ sourceCut: RgbaImage; left: number; top: number; scale: number; featherPx: number }>;
 }
 
 export interface ElementProof {
@@ -136,6 +138,20 @@ export function elementProof(input: ElementProofInput): ElementProof {
     }
     return true;
   };
+  const occluded = (ox: number, oy: number): boolean => (input.occluders ?? []).some((o) => {
+    const reach = o.featherPx + 1;
+    const ow = Math.round(o.sourceCut.width * o.scale);
+    const oh = Math.round(o.sourceCut.height * o.scale);
+    if (ox < o.left - reach || oy < o.top - reach || ox >= o.left + ow + reach || oy >= o.top + oh + reach) return false;
+    for (let dy = -reach; dy <= reach; dy++) {
+      for (let dx = -reach; dx <= reach; dx++) {
+        const cx = Math.floor((ox + dx - o.left) / o.scale);
+        const cy = Math.floor((oy + dy - o.top) / o.scale);
+        if (cx >= 0 && cy >= 0 && cx < o.sourceCut.width && cy < o.sourceCut.height && at(o.sourceCut, cx, cy, 3) > 0) return true;
+      }
+    }
+    return false;
+  });
   let core_differ = 0;
   let core_total = 0;
   let feather_total = 0;
@@ -145,6 +161,7 @@ export function elementProof(input: ElementProofInput): ElementProof {
       const ox = left + x;
       const oy = top + y;
       if (ox < 0 || oy < 0 || ox >= output.width || oy >= output.height) continue;
+      if (occluded(ox, oy)) continue;
       if (!inCore(x, y)) {
         feather_total++;
         continue;

@@ -1516,9 +1516,12 @@ export async function provePlaced(
   const proofStart = Date.now();
   const proofs: Record<string, ElementProof> = {};
   const outRgba = await decodeRgba(png);
-  for (const p of placed) {
-    proofs[p.id] = elementProof({ sourceCut: p.cut.rgba, output: outRgba, left: p.left, top: p.top, scale: p.scale, featherPx: p.featherPx });
-  }
+  placed.forEach((p, i) => {
+    proofs[p.id] = elementProof({
+      sourceCut: p.cut.rgba, output: outRgba, left: p.left, top: p.top, scale: p.scale, featherPx: p.featherPx,
+      occluders: placed.slice(i + 1).map((o) => ({ sourceCut: o.cut.rgba, left: o.left, top: o.top, scale: o.scale, featherPx: o.featherPx })),
+    });
+  });
   const summary = Object.entries(proofs).map(([id, pr]) => `${id}:${pr.core_differ}/${pr.core_total} (${Math.round(pr.coverage * 100)}% compared)`).join(' ');
   trace.emit({
     step: 'adfit_proof',
@@ -1615,9 +1618,13 @@ export async function runOutput(
       const proofStart = Date.now();
       proofs = {};
       const outRgba = await decodeRgba(png);
-      for (const p of placed) {
-        proofs[p.id] = elementProof({ sourceCut: p.cut.rgba, output: outRgba, left: p.left, top: p.top, scale: p.scale, featherPx: p.featherPx });
-      }
+      const proved: Record<string, ElementProof> = proofs;
+      placed.forEach((p, i, all) => {
+        proved[p.id] = elementProof({
+          sourceCut: p.cut.rgba, output: outRgba, left: p.left, top: p.top, scale: p.scale, featherPx: p.featherPx,
+          occluders: all.slice(i + 1).map((o) => ({ sourceCut: o.cut.rgba, left: o.left, top: o.top, scale: o.scale, featherPx: o.featherPx })),
+        });
+      });
       const summary = Object.entries(proofs).map(([id, pr]) => `${id}:${pr.core_differ}/${pr.core_total} (${Math.round(pr.coverage * 100)}% compared)`).join(' ');
       trace.emit({
         step: 'adfit_proof',

@@ -4,7 +4,7 @@
  * outDirs (which must already contain per-size .export.json files).
  * Sizes that failed or produced nothing are LEFT OUT (curate, don't fake).
  *
- *   npx tsx scripts/assemble-demo.ts
+ *   npx tsx scripts/assemble-demo.ts [key]      (one demo only, others untouched)
  */
 import { copyFile, mkdir, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
@@ -28,7 +28,7 @@ interface DemoDef {
 const DEMOS: DemoDef[] = [
   { key: 'luma', brand: 'luma', outDir: 'artifacts/demo-v3/luma', sourceFile: 'source-en.png', sizes: ['ig-feed-45', 'ig-story-916', 'fb-link'] },
   { key: 'stride', brand: 'stride', outDir: 'artifacts/demo-nb/stride', sourceFile: 'source-en.png', sizes: ['ig-feed-11', 'ig-feed-45', 'fb-link'] },
-  { key: 'northbean', brand: 'northbean', outDir: 'artifacts/demo-v3/northbean', sourceFile: 'source-en.png', sizes: ['ig-feed-11', 'ig-feed-45', 'ig-story-916'] },
+  { key: 'northbean', brand: 'northbean', outDir: 'artifacts/demo-s20/northbean', sourceFile: 'source-en.png', sizes: ['ig-feed-11', 'ig-feed-45', 'ig-story-916'] },
   { key: 'teva', brand: 'teva', outDir: 'artifacts/demo-v3/teva', sourceFile: 'source-he.png', sizes: ['ig-feed-11', 'ig-feed-45'] },
   { key: 'sheket', brand: 'sheket', outDir: 'artifacts/demo-v3/sheket2', sourceFile: 'source-he.png', sizes: ['ig-feed-11', 'ig-feed-45'] },
 ];
@@ -43,7 +43,8 @@ async function exists(path: string): Promise<boolean> {
 }
 
 async function main(): Promise<void> {
-  for (const d of DEMOS) {
+  const only = process.argv[2];
+  for (const d of DEMOS.filter((x) => !only || x.key === only)) {
     const src = join(REPO_ROOT, d.outDir);
     const files = await readdir(src).catch(() => null);
     if (!files) {

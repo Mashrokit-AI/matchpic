@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { presetById } from '../src/shared/presets.js';
 import type { LayoutPlan, SourceAnalysis } from '../src/shared/schemas.js';
 import { samplePanelColor, samplePanelTextColor, tightenPanelRect } from '../src/server/adfit/snap.js';
-import { manifestFromPlan, enforceManifest, sourceOrderFor, productSrcBoxesFor } from '../src/server/adfit/manifest.js';
+import { manifestFromPlan, enforceManifest, sourceOrderFor, productSrcBoxesFor, type ResolvedLayoutManifest } from '../src/server/adfit/manifest.js';
 import { checkManifestGeometry } from '../src/server/adfit/checks.js';
 import { cleanProductCutBase, inpaintRectSmooth, resolveGroupTextColors, trimLogoBottomStrip, type RgbaImage } from '../src/server/repair/composite.js';
 
@@ -239,6 +239,9 @@ describe('s20 D6 group text colour', () => {
     expect(d.mode).toBe('uniform');
     if (d.mode === 'uniform') expect(d.color).toEqual({ r: 0, g: 0, b: 0 });
   });
+  it('keeps a near-miss source colour with a shadow instead of flipping the group', () => {
+    expect(resolveGroupTextColors([{ srcRatio: 1.7, blackRatio: 8, whiteRatio: 1.7 }]).mode).toBe('source-shadow');
+  });
   it('falls back to source colours + shadow when no single colour works for all', () => {
     const d = resolveGroupTextColors([
       { srcRatio: 1.5, blackRatio: 1.8, whiteRatio: 1.9 },
@@ -284,3 +287,122 @@ describe('s20 D7 smooth plate inpaint under the badge', () => {
     expect(lum).toBeLessThan(210); // follows the gradient, not a flat block
   });
 });
+
+describe('Nov 4 hotfix: stack, CTA column and landscape product group', () => {
+  const box = (x: number, y: number, w: number, h: number) => ({ x, y, w, h });
+  const element = (id: string, kind: string, b: ReturnType<typeof box>, extra: Record<string, unknown> = {}) => ({
+    id, kind, box: b, scale: null, source: 'plan', group: kind === 'headline' || kind === 'subtext' || kind === 'other_text' ? 'text' : kind, align: 'left', ...extra,
+  });
+
+  it('settles an overflowing stack without moving the logo, and the CTA joins the column (STRIDE square)', () => {
+    const manifest = {
+      preset: 'ig-feed-11', width: 1080, height: 1080, family: 'square_balanced', planner: 'wonder',
+      safe: box(43, 43, 994, 994),
+      elements: [
+        element('product-0', 'product', box(316, 338, 448, 439), { scale: 0.8, group: 'product' }),
+        element('panel', 'panel', box(65, 885, 440, 97), { group: 'panel' }),
+        element('headline', 'headline', box(111, 135, 756, 181)),
+        element('subtext', 'subtext', box(111, 799, 432, 62)),
+        element('other-0', 'other_text', box(111, 877, 144, 41)),
+        element('logo', 'logo', box(111, 65, 221, 49), { scale: 0.7, group: 'logo' }),
+      ],
+      templateZones: {}, corrections: [], rationale: null,
+    } as unknown as ResolvedLayoutManifest;
+    const out = enforceManifest({
+      manifest, direction: 'ltr',
+      sourceOrder: [
+        { id: 'logo', srcY: 40, srcH: 30 }, { id: 'headline', srcY: 100, srcH: 60 },
+        { id: 'subtext', srcY: 170, srcH: 30 }, { id: 'other-0', srcY: 210, srcH: 24 }, { id: 'panel', srcY: 800, srcH: 50 },
+      ],
+    });
+    const at = (id: string) => out.elements.find((e) => e.id === id)!.box;
+    expect(at('logo').y).toBe(65);
+    expect(at('subtext').y + at('subtext').h).toBeLessThanOrEqual(at('other-0').y);
+    expect(at('other-0').y + at('other-0').h).toBeLessThanOrEqual(at('panel').y);
+    expect(at('panel').x).toBe(at('headline').x);
+  });
+
+  it('re-lays a landscape product group from its source arrangement beside the text (NORTHBEAN fb-link)', () => {
+    const manifest = {
+      preset: 'fb-link', width: 1200, height: 628, family: 'landscape_split', planner: 'code',
+      safe: box(48, 25, 1104, 578),
+      elements: [
+        element('product-0', 'product', box(823, 356, 64, 140), { scale: 0.4258, group: 'product' }),
+        element('product-1', 'product', box(887, 410, 42, 86), { scale: 0.2642, group: 'product' }),
+        element('product-2', 'product', box(929, 427, 85, 69), { scale: 0.3259, group: 'product' }),
+        element('panel', 'panel', box(48, 522, 188, 68), { group: 'panel' }),
+        element('headline', 'headline', box(48, 333, 614, 100)),
+        element('subtext', 'subtext', box(48, 446, 614, 63)),
+        element('logo', 'logo', box(48, 38, 200, 95), { scale: 0.96, group: 'logo' }),
+      ],
+      templateZones: {}, corrections: [], rationale: null,
+    } as unknown as ResolvedLayoutManifest;
+    const out = enforceManifest({
+      manifest, direction: 'ltr',
+      productSrcBoxes: [box(585, 70, 150, 330), box(740, 140, 160, 360), box(895, 265, 240, 210)],
+    });
+    const prods = out.elements.filter((e) => e.kind === 'product');
+    const headline = out.elements.find((e) => e.id === 'headline')!;
+    const scales = prods.map((p) => p.scale as number);
+    expect(Math.max(...scales) / Math.min(...scales)).toBeLessThan(1.15);
+    expect(Math.max(...prods.map((p) => p.box.h))).toBeGreaterThan(300);
+    expect(Math.min(...prods.map((p) => p.box.x))).toBeGreaterThanOrEqual(headline.box.x + headline.box.w);
+  });
+
+  it('keeps source-overlapping products together on square, in the free band (NORTHBEAN)', () => {
+    const manifest = {
+      preset: 'ig-feed-11', width: 1080, height: 1080, family: 'square_balanced', planner: 'wonder',
+      safe: box(43, 43, 994, 994),
+      elements: [
+        element('product-0', 'product', box(140, 476, 182, 418), { scale: 1.1, group: 'product' }),
+        element('product-1', 'product', box(360, 451, 193, 443), { scale: 1.1, group: 'product' }),
+        element('product-2', 'product', box(612, 638, 307, 256), { scale: 1.1, group: 'product' }),
+        element('panel', 'panel', box(76, 931, 173, 58), { group: 'panel' }),
+        element('headline', 'headline', box(76, 194, 929, 162)),
+        element('subtext', 'subtext', box(76, 376, 497, 54)),
+        element('logo', 'logo', box(76, 76, 205, 95), { scale: 1, group: 'logo' }),
+      ],
+      templateZones: {}, corrections: [], rationale: null,
+    } as unknown as ResolvedLayoutManifest;
+    const srcs = [box(585, 70, 150, 330), box(740, 140, 160, 360), box(895, 265, 240, 210)];
+    const out = enforceManifest({ manifest, direction: 'ltr', productSrcBoxes: [box(585, 70, 170, 330), box(740, 140, 170, 360), srcs[2]!] });
+    const prods = out.elements.filter((e) => e.kind === 'product').map((e) => e.box);
+    const overlap = (a: (typeof prods)[number], b: (typeof prods)[number]) => a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
+    expect(overlap(prods[0]!, prods[1]!)).toBe(true);
+    const subtext = out.elements.find((e) => e.id === 'subtext')!.box;
+    const panel = out.elements.find((e) => e.id === 'panel')!.box;
+    for (const p of prods) {
+      expect(p.y).toBeGreaterThanOrEqual(subtext.y + subtext.h);
+      expect(p.y + p.h).toBeLessThanOrEqual(panel.y);
+    }
+  });
+
+  it('makes room when a settled stack hits the product instead of giving up (STRIDE square)', () => {
+    const manifest = {
+      preset: 'ig-feed-11', width: 1080, height: 1080, family: 'square_balanced', planner: 'wonder',
+      safe: box(43, 43, 994, 994),
+      elements: [
+        element('product-0', 'product', box(335, 155, 411, 403), { scale: 0.7, group: 'product' }),
+        element('panel', 'panel', box(65, 918, 440, 97), { group: 'panel' }),
+        element('headline', 'headline', box(65, 585, 950, 210)),
+        element('subtext', 'subtext', box(65, 800, 795, 95)),
+        element('other-0', 'other_text', box(65, 911, 196, 41)),
+        element('logo', 'logo', box(65, 65, 302, 68), { scale: 1, group: 'logo' }),
+      ],
+      templateZones: {}, corrections: [], rationale: null,
+    } as unknown as ResolvedLayoutManifest;
+    const out = enforceManifest({
+      manifest, direction: 'ltr',
+      sourceOrder: [
+        { id: 'logo', srcY: 40, srcH: 30 }, { id: 'headline', srcY: 100, srcH: 60 },
+        { id: 'subtext', srcY: 170, srcH: 30 }, { id: 'other-0', srcY: 210, srcH: 24 }, { id: 'panel', srcY: 800, srcH: 50 },
+      ],
+    });
+    const at = (id: string) => out.elements.find((e) => e.id === id)!.box;
+    expect(at('other-0').y + at('other-0').h).toBeLessThanOrEqual(at('panel').y);
+    expect(at('subtext').y + at('subtext').h).toBeLessThanOrEqual(at('other-0').y);
+    expect(at('product-0').y + at('product-0').h).toBeLessThanOrEqual(at('headline').y);
+    expect(at('product-0').y).toBeGreaterThanOrEqual(at('logo').y + at('logo').h);
+  });
+});
+
