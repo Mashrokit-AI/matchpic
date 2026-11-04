@@ -41,6 +41,8 @@ brands are synthetic and fictional; nothing is ever published.
    respected (judged against the exact safe-area pixel lines, never eyeballed
    percents), no invented text.
 
+When the Wonder budget allows, **Wonder** (`muse-wonder-1.0`) proposes the per-size layout boxes and later suggests element-level patches, with code enforcing every constraint and at most one repair pass.
+
 ## Meta models used where
 
 | Step | Model | What |
@@ -51,6 +53,8 @@ brands are synthetic and fictional; nothing is ever published.
 | Generation | `muse-image-1.0` | background plate or full recompose |
 | QA | `muse-spark-1.3` | fresh PASS/FAIL read of every output |
 | Brand match | `muse-spark-1.3` | propose a brand for an upload |
+| Layout planning | `muse-wonder-1.0` | per-size layout boxes (one call, code-enforced) |
+| Layout review | `muse-wonder-1.0` | element-level patches with one repair pass |
 
 ## Getting started
 
