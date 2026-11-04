@@ -1,20 +1,20 @@
 {
   "brand": "northbean",
   "mode": "protected",
-  "finishedAt": "2026-11-02T22:05:38.011Z",
-  "modelCalls": 25,
+  "finishedAt": "2026-11-04T09:11:48.477Z",
+  "modelCalls": 4,
   "imageCalls": 6,
-  "firstPreviewMs": 171768,
-  "totalMs": 535957,
+  "firstPreviewMs": 140045,
+  "totalMs": 377384,
   "outputs": [
     {
       "source": "demo-src-northbean",
       "sourceLabel": "source-en.png",
       "preset": "ig-feed-11",
       "mode": "protected",
-      "status": "needs_review",
+      "status": "pass",
       "image": "ig-feed-11.png",
-      "before": "before-ig-feed-11.png",
+      "before": null,
       "plan": {
         "preset": "ig-feed-11",
         "width": 1080,
@@ -29,58 +29,58 @@
         },
         "logo": {
           "x": 76,
-          "y": 72,
-          "w": 135,
-          "h": 61
+          "y": 68,
+          "w": 216,
+          "h": 98
         },
         "products": [
           {
-            "x": 147,
-            "y": 405,
-            "w": 186,
-            "h": 432
+            "x": 214,
+            "y": 330,
+            "w": 177,
+            "h": 410
           },
           {
-            "x": 369,
-            "y": 383,
-            "w": 198,
-            "h": 454
+            "x": 426,
+            "y": 341,
+            "w": 175,
+            "h": 400
           },
           {
-            "x": 613,
-            "y": 577,
-            "w": 310,
-            "h": 260
+            "x": 641,
+            "y": 557,
+            "w": 220,
+            "h": 184
           }
         ],
         "headline": {
           "x": 76,
-          "y": 157,
+          "y": 190,
           "w": 929,
           "h": 119
         },
         "subtext": {
           "x": 76,
-          "y": 297,
-          "w": 648,
-          "h": 59
+          "y": 762,
+          "w": 929,
+          "h": 71
         },
         "panel": {
           "x": 76,
-          "y": 859,
-          "w": 432,
-          "h": 86
+          "y": 855,
+          "w": 929,
+          "h": 94
         },
         "other_texts": [],
         "product_scales": [
-          1.2413793103448276,
-          1.2404371584699454,
-          1.2264150943396226
+          1.1781609195402298,
+          1.092896174863388,
+          0.8679245283018868
         ],
-        "logo_scale": 0.6553398058252428,
+        "logo_scale": 1.0485436893203883,
         "notes": [
           "wonder: square_balanced",
-          "wonder rationale: Square balanced stack with full-width headline above a centered, bottom-aligned product row and panel below."
+          "wonder rationale: Square balanced layout with logo and headline above the centered product row and subtext and panel below on a shared left edge."
         ],
         "manifest": {
           "preset": "ig-feed-11",
@@ -99,15 +99,15 @@
               "id": "product-0",
               "kind": "product",
               "box": {
-                "x": 147,
-                "y": 405,
-                "w": 186,
-                "h": 432
+                "x": 289,
+                "y": 336,
+                "w": 147,
+                "h": 321
               },
               "group": "products",
               "z": 20,
               "align": null,
-              "scale": 1.2413793103448276,
+              "scale": 0.9784726280927332,
               "source": "corrected",
               "srcBox": {
                 "x": 570,
@@ -120,16 +120,16 @@
               "id": "product-1",
               "kind": "product",
               "box": {
-                "x": 369,
-                "y": 383,
-                "w": 198,
-                "h": 454
+                "x": 424,
+                "y": 419,
+                "w": 150,
+                "h": 316
               },
               "group": "products",
               "z": 21,
               "align": null,
-              "scale": 1.2404371584699454,
-              "source": "default",
+              "scale": 0.936768149882904,
+              "source": "corrected",
               "srcBox": {
                 "x": 725,
                 "y": 163,
@@ -141,16 +141,16 @@
               "id": "product-2",
               "kind": "product",
               "box": {
-                "x": 613,
-                "y": 577,
-                "w": 310,
-                "h": 260
+                "x": 553,
+                "y": 529,
+                "w": 238,
+                "h": 182
               },
               "group": "products",
               "z": 22,
               "align": null,
-              "scale": 1.2264150943396226,
-              "source": "default",
+              "scale": 0.9389365351629503,
+              "source": "corrected",
               "srcBox": {
                 "x": 872,
                 "y": 289,
@@ -162,10 +162,10 @@
               "id": "panel",
               "kind": "panel",
               "box": {
-                "x": 73,
-                "y": 924,
-                "w": 267,
-                "h": 86
+                "x": 76,
+                "y": 888,
+                "w": 173,
+                "h": 61
               },
               "group": "offer",
               "z": 10,
@@ -179,7 +179,7 @@
               "kind": "headline",
               "box": {
                 "x": 76,
-                "y": 157,
+                "y": 190,
                 "w": 929,
                 "h": 119
               },
@@ -195,9 +195,9 @@
               "kind": "subtext",
               "box": {
                 "x": 76,
-                "y": 297,
-                "w": 648,
-                "h": 59
+                "y": 762,
+                "w": 929,
+                "h": 71
               },
               "group": "text",
               "z": 31,
@@ -211,14 +211,14 @@
               "kind": "logo",
               "box": {
                 "x": 76,
-                "y": 72,
-                "w": 135,
-                "h": 61
+                "y": 68,
+                "w": 216,
+                "h": 98
               },
               "group": "logo",
               "z": 40,
               "align": null,
-              "scale": 0.6553398058252428,
+              "scale": 1.0485436893203883,
               "source": "default",
               "srcBox": {
                 "x": 77,
@@ -230,44 +230,45 @@
           ],
           "templateZones": null,
           "corrections": [
+            "products: 1 aligned to the shared surface line y=741",
             "text group: 2 boxes share the left edge",
-            "products: 1 aligned to the shared surface line y=837",
-            "text group: 2 boxes share the left edge"
+            "panel: snapped to the text column left edge",
+            "products: group kept its source overlap, re-laid in the free band (x0.87)"
           ],
-          "rationale": "Square balanced stack with full-width headline above a centered, bottom-aligned product row and panel below."
+          "rationale": "Square balanced layout with logo and headline above the centered product row and subtext and panel below on a shared left edge."
         }
       },
       "proof": {
         "product-0": {
-          "scale": 1.2413793103448276,
+          "scale": 0.9784726280927332,
           "core_differ": 0,
-          "core_total": 70333,
-          "feather_total": 2510,
-          "coverage": 0.9655423307661684,
+          "core_total": 41532,
+          "feather_total": 1525,
+          "coverage": 0.9645818333836542,
           "pass": true
         },
         "product-1": {
-          "scale": 1.2404371584699454,
+          "scale": 0.936768149882904,
           "core_differ": 0,
-          "core_total": 78640,
-          "feather_total": 2970,
-          "coverage": 0.9636074010537924,
+          "core_total": 43970,
+          "feather_total": 1665,
+          "coverage": 0.9635148460611372,
           "pass": true
         },
         "product-2": {
-          "scale": 1.2264150943396226,
+          "scale": 0.9389365351629503,
           "core_differ": 0,
-          "core_total": 53211,
-          "feather_total": 2769,
-          "coverage": 0.9505359056806002,
+          "core_total": 29674,
+          "feather_total": 1709,
+          "coverage": 0.9455437657330402,
           "pass": true
         },
         "logo": {
-          "scale": 0.6553398058252428,
+          "scale": 1.0485436893203883,
           "core_differ": 0,
-          "core_total": 2096,
-          "feather_total": 903,
-          "coverage": 0.6988996332110704,
+          "core_total": 6144,
+          "feather_total": 1472,
+          "coverage": 0.8067226890756303,
           "pass": true
         }
       },
@@ -275,14 +276,14 @@
       "retries": 0,
       "modelCalls": 0,
       "imageCalls": 2,
-      "latencyMs": 28582,
+      "latencyMs": 17955,
       "trace": [
         {
           "step": "adfit_analyze",
           "tool_or_model": "model:muse-spark-1.3",
-          "input_summary": "source 1200x628",
-          "output_summary": "lang=en products=3 logo=yes headline=\"Cold brew, done right\" panel=transparent bg=photo coords=pixels",
-          "duration_ms": 16273,
+          "input_summary": "source 1200x628 digest 16a9a359e8cd",
+          "output_summary": "lang=en products=3 (layer cache hit)",
+          "duration_ms": 0,
           "evidence_ids": [
             "src:analysis"
           ],
@@ -293,9 +294,9 @@
         {
           "step": "adfit_masks",
           "tool_or_model": "model:sam-3.1",
-          "input_summary": "product-0[can] product-1[can] product-2[can] logo[logo]",
-          "output_summary": "ok: product-0,product-1,product-2,logo coverage: products 3/3; product-0 clipped to its box (removed 59% cross-coverage); product-0 instance-separated (removed 7301px detached); product-1 clipped to its box (removed 51% cross-coverage); product-1 instance-separated (removed 13269px detached); product-2 clipped to its box (removed 66% cross-coverage); product-2 sparse mask retried box-only (fill 0.68 → 0.74); product-2 contested pixels assigned to the nearer product (-10275px); product-1 contested pixels assigned to the nearer product (-109px)",
-          "duration_ms": 34007,
+          "input_summary": "digest 16a9a359e8cd",
+          "output_summary": "ok: product-0,product-1,product-2,logo (layer cache hit)",
+          "duration_ms": 0,
           "evidence_ids": [
             "src:product-0",
             "src:product-1",
@@ -310,7 +311,7 @@
           "step": "adfit_plan",
           "tool_or_model": "model:muse-wonder-1.0",
           "input_summary": "ig-feed-11 protected no-template family=square_balanced",
-          "output_summary": "wonder: square_balanced; wonder rationale: Square balanced stack with full-width headline above a centered, bottom-aligned product row and panel below. | corrections: text group: 2 boxes share the left edge",
+          "output_summary": "wonder: square_balanced; wonder rationale: Square balanced layout with logo and headline above the centered product row and subtext and panel below on a shared left edge. | corrections: products: 1 aligned to the shared surface line y=741; text group: 2 boxes share the left edge; panel: snapped to the text column left edge; products: group kept its source overlap, re-laid in the free band (x0.87)",
           "duration_ms": 0,
           "evidence_ids": [
             "out:plan"
@@ -323,8 +324,8 @@
           "step": "adfit_generate",
           "tool_or_model": "model:muse-image-1.0",
           "input_summary": "protected plate 1080x1080",
-          "output_summary": "wire bytes=3305476",
-          "duration_ms": 27636,
+          "output_summary": "wire bytes=3492260",
+          "duration_ms": 17233,
           "evidence_ids": [
             "out:plate"
           ],
@@ -335,9 +336,9 @@
         {
           "step": "adfit_composite",
           "tool_or_model": "code:composite+chromium",
-          "input_summary": "plate + product-0@1.241x product-1@1.240x product-2@1.226x logo@0.655x + text(panel,headline,subtext) panel:rebuilt",
-          "output_summary": "1080x1080 product-0: grounded on the plate surface (shifted -40px to y=795); product-0: contact shadow at support y=795; product-1: contact shadow at support y=836; product-2: contact shadow at support y=830; cta rebuilt in code as outlined button (Order now)",
-          "duration_ms": 789,
+          "input_summary": "plate + product-0@0.978x product-1@0.937x product-2@0.939x logo@1.049x + text(panel,headline,subtext) panel:rebuilt",
+          "output_summary": "1080x1080 product-0: floating shadow on surface y=775 (base y=664); product-1: contact shadow at support y=748; product-2: contact shadow at support y=714; cta rebuilt in code as outlined button (Order now)",
+          "duration_ms": 482,
           "evidence_ids": [
             "out:product-0",
             "out:product-1",
@@ -352,8 +353,8 @@
           "step": "adfit_proof",
           "tool_or_model": "code:elementProof",
           "input_summary": "4 pasted elements",
-          "output_summary": "product-0:0/70333 (97% compared) product-1:0/78640 (96% compared) product-2:0/53211 (95% compared) logo:0/2096 (70% compared) feather outside core only",
-          "duration_ms": 76,
+          "output_summary": "product-0:0/41532 (96% compared) product-1:0/43970 (96% compared) product-2:0/29674 (95% compared) logo:0/6144 (81% compared) feather outside core only",
+          "duration_ms": 69,
           "evidence_ids": [
             "out:product-0",
             "out:product-1",
@@ -367,9 +368,9 @@
         {
           "step": "adfit_generate",
           "tool_or_model": "model:muse-image-1.0",
-          "input_summary": "protected plate 1080x1080 (retry)",
-          "output_summary": "wire bytes=3501863",
-          "duration_ms": 19286,
+          "input_summary": "protected plate 1080x1080 (retry) text-only",
+          "output_summary": "wire bytes=3300896",
+          "duration_ms": 24804,
           "evidence_ids": [
             "out:plate"
           ],
@@ -380,9 +381,9 @@
         {
           "step": "adfit_composite",
           "tool_or_model": "code:composite+chromium",
-          "input_summary": "plate + product-0@1.241x product-1@1.240x product-2@1.226x logo@0.655x + text(panel,headline,subtext) panel:rebuilt",
-          "output_summary": "1080x1080 product-0: contact shadow at support y=795; product-1: contact shadow at support y=836; product-2: contact shadow at support y=830; cta rebuilt in code as outlined button (Order now)",
-          "duration_ms": 415,
+          "input_summary": "plate + product-0@0.978x product-1@0.937x product-2@0.939x logo@1.049x + text(panel,headline,subtext) panel:rebuilt",
+          "output_summary": "1080x1080 product-0: floating shadow on surface y=752 (base y=664); product-1: contact shadow at support y=748; product-2: contact shadow at support y=714; cta rebuilt in code as outlined button (Order now)",
+          "duration_ms": 414,
           "evidence_ids": [
             "out:product-0",
             "out:product-1",
@@ -397,8 +398,8 @@
           "step": "adfit_proof",
           "tool_or_model": "code:elementProof",
           "input_summary": "4 pasted elements",
-          "output_summary": "product-0:0/70333 (97% compared) product-1:0/78640 (96% compared) product-2:0/53211 (95% compared) logo:0/2096 (70% compared) feather outside core only",
-          "duration_ms": 77,
+          "output_summary": "product-0:0/41532 (96% compared) product-1:0/43970 (96% compared) product-2:0/29674 (95% compared) logo:0/6144 (81% compared) feather outside core only",
+          "duration_ms": 64,
           "evidence_ids": [
             "out:product-0",
             "out:product-1",
@@ -410,162 +411,73 @@
           "seq": 9
         },
         {
-          "step": "adfit_repair",
-          "tool_or_model": "code:recompose",
-          "input_summary": "flag:product-2, move:panel",
-          "output_summary": "applied: panel: move (-86,65)",
-          "duration_ms": 0,
-          "evidence_ids": [
-            "out:repair"
-          ],
-          "next_state": "done",
-          "cached": false,
-          "seq": 10
-        },
-        {
-          "step": "adfit_composite",
-          "tool_or_model": "code:composite+chromium",
-          "input_summary": "plate + product-0@1.241x product-1@1.240x product-2@1.226x logo@0.655x + text(panel,headline,subtext) panel:rebuilt",
-          "output_summary": "1080x1080 product-0: contact shadow at support y=835; product-1: contact shadow at support y=836; product-2: contact shadow at support y=830; cta rebuilt in code as outlined button (Order now)",
-          "duration_ms": 448,
-          "evidence_ids": [
-            "out:product-0",
-            "out:product-1",
-            "out:product-2",
-            "out:logo"
-          ],
-          "next_state": "adfit_proof",
-          "cached": false,
-          "seq": 11
-        },
-        {
-          "step": "adfit_proof",
-          "tool_or_model": "code:elementProof",
-          "input_summary": "4 pasted elements",
-          "output_summary": "product-0:0/70333 (97% compared) product-1:0/78640 (96% compared) product-2:0/53211 (95% compared) logo:0/2096 (70% compared) feather outside core only",
-          "duration_ms": 74,
-          "evidence_ids": [
-            "out:product-0",
-            "out:product-1",
-            "out:product-2",
-            "out:logo"
-          ],
-          "next_state": "adfit_review",
-          "cached": false,
-          "seq": 12
-        },
-        {
-          "step": "adfit_repair",
-          "tool_or_model": "code:recompose",
-          "input_summary": "retry: flag:product-2, scale:logo",
-          "output_summary": "flagged: product-2: Lying can has a flat truncated left end and a black rectangular mask remnant hanging below its lower edge; needs re-extraction, cannot be fixed by move or scale; logo (would touch headline): patch reverted, needs human review",
-          "duration_ms": 0,
-          "evidence_ids": [
-            "out:repair"
-          ],
-          "next_state": "done",
-          "cached": false,
-          "seq": 13
-        },
-        {
           "step": "adfit_wonder_plan",
           "tool_or_model": "model:muse-wonder-1.0",
           "input_summary": "1 source x 3 sizes",
           "output_summary": "families: ig-feed-11=square_balanced ig-feed-45=portrait_stack ig-story-916=portrait_stack",
-          "duration_ms": 126013,
+          "duration_ms": 121807,
           "evidence_ids": [
             "out:plan"
           ],
           "next_state": "adfit_generate",
           "cached": false,
-          "seq": 14
+          "seq": 10
         },
         {
           "step": "adfit_plate_check",
           "tool_or_model": "model:muse-spark-1.3",
           "input_summary": "3 plates",
-          "output_summary": "dirty (regenerate once): ig-feed-11: foreground objects on surface: scattered coffee beans and multiple ice cubes | ig-feed-45: foreground objects on surface: scattered coffee beans and multiple ice cubes | ig-story-916: foreground objects on surface: scattered coffee beans and multiple ice cubes in lower frame",
-          "duration_ms": 24125,
+          "output_summary": "dirty (regenerate once): ig-feed-11: Not empty: multiple ice cubes and scattered coffee beans sitting on wood surface - foreground products/objects. | ig-feed-45: Not empty: multiple ice cubes and scattered coffee beans sitting on wood surface - foreground products/objects. | ig-story-916: Not empty: multiple ice cubes and scattered coffee beans sitting on wood surface - foreground products/objects.",
+          "duration_ms": 20988,
           "evidence_ids": [
             "out:plate"
           ],
           "next_state": "adfit_review",
           "cached": false,
-          "seq": 15
+          "seq": 11
         },
         {
           "step": "adfit_text_check",
           "tool_or_model": "model:muse-spark-1.3",
           "input_summary": "3 outputs with re-rendered text",
           "output_summary": "all exact",
-          "duration_ms": 35867,
+          "duration_ms": 43801,
           "evidence_ids": [
             "out:text"
           ],
           "next_state": "adfit_review",
           "cached": false,
-          "seq": 16
+          "seq": 12
         },
         {
           "step": "adfit_review",
           "tool_or_model": "model:muse-wonder-1.0",
           "input_summary": "source + 3 outputs + deterministic findings",
-          "output_summary": "7 defects: ig-feed-11/product-2, ig-feed-11/panel, ig-feed-45/product-2, ig-feed-45/panel, ig-story-916/product-2, ig-story-916/panel, ig-story-916/logo",
-          "duration_ms": 97500,
+          "output_summary": "0 defects",
+          "duration_ms": 94889,
           "evidence_ids": [
             "out:review"
           ],
           "next_state": "adfit_repair",
           "cached": false,
-          "seq": 17
-        },
-        {
-          "step": "adfit_repair",
-          "tool_or_model": "code:recompose",
-          "input_summary": "3 sizes with defects",
-          "output_summary": "2 recomposed from cached layers (before kept)",
-          "duration_ms": 0,
-          "evidence_ids": [
-            "out:repair"
-          ],
-          "next_state": "done",
-          "cached": false,
-          "seq": 18
-        },
-        {
-          "step": "adfit_review_retry",
-          "tool_or_model": "model:muse-wonder-1.0",
-          "input_summary": "second chance for 1 reverted size(s)",
-          "output_summary": "7 re-proposed defects: ig-feed-11/product-2, ig-feed-11/logo, ig-feed-45/panel, ig-feed-45/logo, ig-story-916/product-2, ig-story-916/products, ig-story-916/headline",
-          "duration_ms": 114109,
-          "evidence_ids": [
-            "out:review"
-          ],
-          "next_state": "adfit_repair",
-          "cached": false,
-          "seq": 19
+          "seq": 13
         }
       ],
       "error": null,
       "checks": {
         "protected_pixels": {
           "status": "passed",
-          "detail": "Protected core matches the resized source (70% compared)"
+          "detail": "Protected core matches the resized source (81% compared)"
         },
         "text": {
-          "status": "fixed",
-          "detail": "re-rendered text verified exact after repair"
+          "status": "passed",
+          "detail": "re-rendered text verified exact"
         },
         "layout_review": {
-          "status": "needs_review",
-          "detail": "deterministic: wonder_flag"
+          "status": "passed",
+          "detail": "deterministic + Wonder review passed"
         },
-        "repaired": {
-          "before": "fixtures/brands/northbean/demo/before-ig-feed-11.png",
-          "patches": [
-            "panel: move (-86,65)"
-          ]
-        }
+        "repaired": null
       }
     },
     {
@@ -573,9 +485,9 @@
       "sourceLabel": "source-en.png",
       "preset": "ig-feed-45",
       "mode": "protected",
-      "status": "needs_review",
+      "status": "pass",
       "image": "ig-feed-45.png",
-      "before": "before-ig-feed-45.png",
+      "before": null,
       "plan": {
         "preset": "ig-feed-45",
         "width": 1080,
@@ -590,58 +502,58 @@
         },
         "logo": {
           "x": 76,
-          "y": 97,
-          "w": 127,
-          "h": 57
+          "y": 84,
+          "w": 216,
+          "h": 98
         },
         "products": [
           {
-            "x": 82,
-            "y": 486,
-            "w": 221,
-            "h": 513
+            "x": 102,
+            "y": 509,
+            "w": 225,
+            "h": 522
           },
           {
-            "x": 336,
-            "y": 459,
-            "w": 236,
-            "h": 540
+            "x": 386,
+            "y": 502,
+            "w": 240,
+            "h": 549
           },
           {
-            "x": 616,
-            "y": 689,
-            "w": 371,
-            "h": 311
+            "x": 679,
+            "y": 806,
+            "w": 307,
+            "h": 257
           }
         ],
         "headline": {
           "x": 76,
-          "y": 196,
+          "y": 218,
           "w": 929,
-          "h": 122
+          "h": 119
         },
         "subtext": {
           "x": 76,
-          "y": 358,
-          "w": 648,
-          "h": 57
+          "y": 371,
+          "w": 929,
+          "h": 71
         },
         "panel": {
           "x": 76,
-          "y": 1040,
-          "w": 432,
-          "h": 95
+          "y": 1097,
+          "w": 929,
+          "h": 94
         },
         "other_texts": [],
         "product_scales": [
-          1.4741379310344827,
-          1.4754098360655739,
-          1.4669811320754718
+          1.5,
+          1.5,
+          1.2122641509433962
         ],
-        "logo_scale": 0.616504854368932,
+        "logo_scale": 1.0485436893203883,
         "notes": [
           "wonder: portrait_stack",
-          "wonder rationale: Portrait stack with consistent 0.03 text gaps, a wide bottom-aligned product row, and panel below."
+          "wonder rationale: Portrait stack with logo, headline and subtext above a wide product row and panel below on a shared left edge."
         ],
         "manifest": {
           "preset": "ig-feed-45",
@@ -660,15 +572,15 @@
               "id": "product-0",
               "kind": "product",
               "box": {
-                "x": 82,
-                "y": 467,
-                "w": 221,
-                "h": 513
+                "x": 150,
+                "y": 476,
+                "w": 228,
+                "h": 499
               },
               "group": "products",
               "z": 20,
               "align": null,
-              "scale": 1.4741379310344827,
+              "scale": 1.52,
               "source": "corrected",
               "srcBox": {
                 "x": 570,
@@ -681,15 +593,15 @@
               "id": "product-1",
               "kind": "product",
               "box": {
-                "x": 336,
-                "y": 460,
-                "w": 236,
-                "h": 540
+                "x": 360,
+                "y": 605,
+                "w": 233,
+                "h": 491
               },
               "group": "products",
               "z": 21,
               "align": null,
-              "scale": 1.4754098360655739,
+              "scale": 1.45625,
               "source": "corrected",
               "srcBox": {
                 "x": 725,
@@ -702,16 +614,16 @@
               "id": "product-2",
               "kind": "product",
               "box": {
-                "x": 616,
-                "y": 689,
-                "w": 371,
-                "h": 311
+                "x": 560,
+                "y": 776,
+                "w": 370,
+                "h": 282
               },
               "group": "products",
               "z": 22,
               "align": null,
-              "scale": 1.4669811320754718,
-              "source": "default",
+              "scale": 1.4610349701923668,
+              "source": "corrected",
               "srcBox": {
                 "x": 872,
                 "y": 289,
@@ -723,10 +635,10 @@
               "id": "panel",
               "kind": "panel",
               "box": {
-                "x": 145,
-                "y": 1135,
-                "w": 295,
-                "h": 95
+                "x": 76,
+                "y": 1130,
+                "w": 173,
+                "h": 61
               },
               "group": "offer",
               "z": 10,
@@ -740,9 +652,9 @@
               "kind": "headline",
               "box": {
                 "x": 76,
-                "y": 196,
+                "y": 218,
                 "w": 929,
-                "h": 122
+                "h": 119
               },
               "group": "text",
               "z": 30,
@@ -756,9 +668,9 @@
               "kind": "subtext",
               "box": {
                 "x": 76,
-                "y": 358,
-                "w": 648,
-                "h": 57
+                "y": 371,
+                "w": 929,
+                "h": 71
               },
               "group": "text",
               "z": 31,
@@ -771,16 +683,16 @@
               "id": "logo",
               "kind": "logo",
               "box": {
-                "x": 65,
-                "y": 89,
-                "w": 165,
-                "h": 74
+                "x": 76,
+                "y": 84,
+                "w": 216,
+                "h": 98
               },
               "group": "logo",
               "z": 40,
               "align": null,
-              "scale": 0.8009708737864077,
-              "source": "corrected",
+              "scale": 1.0485436893203883,
+              "source": "default",
               "srcBox": {
                 "x": 77,
                 "y": 52,
@@ -791,47 +703,45 @@
           ],
           "templateZones": null,
           "corrections": [
-            "products: 2 aligned to the shared surface line y=1000",
+            "products: 2 aligned to the shared surface line y=1063",
             "text group: 2 boxes share the left edge",
-            "products: 1 aligned to the shared surface line y=1000",
-            "text group: 2 boxes share the left edge",
-            "logo: clamped into safe area + 6% margin",
-            "text group: 2 boxes share the left edge"
+            "panel: snapped to the text column left edge",
+            "products: group kept its source overlap, re-laid in the free band (x1.36)"
           ],
-          "rationale": "Portrait stack with consistent 0.03 text gaps, a wide bottom-aligned product row, and panel below."
+          "rationale": "Portrait stack with logo, headline and subtext above a wide product row and panel below on a shared left edge."
         }
       },
       "proof": {
         "product-0": {
-          "scale": 1.4741379310344827,
+          "scale": 1.52,
           "core_differ": 0,
-          "core_total": 99896,
-          "feather_total": 3004,
-          "coverage": 0.9708066083576288,
+          "core_total": 101961,
+          "feather_total": 2381,
+          "coverage": 0.9771808092618505,
           "pass": true
         },
         "product-1": {
-          "scale": 1.4754098360655739,
+          "scale": 1.45625,
           "core_differ": 0,
-          "core_total": 111939,
-          "feather_total": 3542,
-          "coverage": 0.9693282877702826,
+          "core_total": 107696,
+          "feather_total": 2636,
+          "coverage": 0.9761084726099409,
           "pass": true
         },
         "product-2": {
-          "scale": 1.4669811320754718,
+          "scale": 1.4610349701923668,
           "core_differ": 0,
-          "core_total": 76817,
-          "feather_total": 3340,
-          "coverage": 0.9583317738937336,
+          "core_total": 73443,
+          "feather_total": 2686,
+          "coverage": 0.9647177816600769,
           "pass": true
         },
         "logo": {
-          "scale": 0.8009708737864077,
+          "scale": 1.0485436893203883,
           "core_differ": 0,
-          "core_total": 3323,
-          "feather_total": 1090,
-          "coverage": 0.7530024926353954,
+          "core_total": 6144,
+          "feather_total": 1472,
+          "coverage": 0.8067226890756303,
           "pass": true
         }
       },
@@ -839,14 +749,14 @@
       "retries": 0,
       "modelCalls": 0,
       "imageCalls": 2,
-      "latencyMs": 28660,
+      "latencyMs": 22154,
       "trace": [
         {
           "step": "adfit_analyze",
           "tool_or_model": "model:muse-spark-1.3",
-          "input_summary": "source 1200x628",
-          "output_summary": "lang=en products=3 logo=yes headline=\"Cold brew, done right\" panel=transparent bg=photo coords=pixels",
-          "duration_ms": 16273,
+          "input_summary": "source 1200x628 digest 16a9a359e8cd",
+          "output_summary": "lang=en products=3 (layer cache hit)",
+          "duration_ms": 0,
           "evidence_ids": [
             "src:analysis"
           ],
@@ -857,9 +767,9 @@
         {
           "step": "adfit_masks",
           "tool_or_model": "model:sam-3.1",
-          "input_summary": "product-0[can] product-1[can] product-2[can] logo[logo]",
-          "output_summary": "ok: product-0,product-1,product-2,logo coverage: products 3/3; product-0 clipped to its box (removed 59% cross-coverage); product-0 instance-separated (removed 7301px detached); product-1 clipped to its box (removed 51% cross-coverage); product-1 instance-separated (removed 13269px detached); product-2 clipped to its box (removed 66% cross-coverage); product-2 sparse mask retried box-only (fill 0.68 → 0.74); product-2 contested pixels assigned to the nearer product (-10275px); product-1 contested pixels assigned to the nearer product (-109px)",
-          "duration_ms": 34007,
+          "input_summary": "digest 16a9a359e8cd",
+          "output_summary": "ok: product-0,product-1,product-2,logo (layer cache hit)",
+          "duration_ms": 0,
           "evidence_ids": [
             "src:product-0",
             "src:product-1",
@@ -874,7 +784,7 @@
           "step": "adfit_plan",
           "tool_or_model": "model:muse-wonder-1.0",
           "input_summary": "ig-feed-45 protected no-template family=portrait_stack",
-          "output_summary": "wonder: portrait_stack; wonder rationale: Portrait stack with consistent 0.03 text gaps, a wide bottom-aligned product row, and panel below. | corrections: products: 2 aligned to the shared surface line y=1000; text group: 2 boxes share the left edge",
+          "output_summary": "wonder: portrait_stack; wonder rationale: Portrait stack with logo, headline and subtext above a wide product row and panel below on a shared left edge. | corrections: products: 2 aligned to the shared surface line y=1063; text group: 2 boxes share the left edge; panel: snapped to the text column left edge; products: group kept its source overlap, re-laid in the free band (x1.36)",
           "duration_ms": 0,
           "evidence_ids": [
             "out:plan"
@@ -887,8 +797,8 @@
           "step": "adfit_generate",
           "tool_or_model": "model:muse-image-1.0",
           "input_summary": "protected plate 1080x1350",
-          "output_summary": "wire bytes=3485402",
-          "duration_ms": 27869,
+          "output_summary": "wire bytes=3557558",
+          "duration_ms": 21323,
           "evidence_ids": [
             "out:plate"
           ],
@@ -899,9 +809,9 @@
         {
           "step": "adfit_composite",
           "tool_or_model": "code:composite+chromium",
-          "input_summary": "plate + product-0@1.474x product-1@1.475x product-2@1.467x logo@0.617x + text(panel,headline,subtext) panel:rebuilt",
-          "output_summary": "1080x1350 product-0: contact shadow at support y=998; product-1: contact shadow at support y=999; product-2: contact shadow at support y=992; cta rebuilt in code as outlined button (Order now)",
-          "duration_ms": 558,
+          "input_summary": "plate + product-0@1.520x product-1@1.456x product-2@1.461x logo@1.049x + text(panel,headline,subtext) panel:rebuilt",
+          "output_summary": "1080x1350 product-0: floating shadow on surface y=1108 (base y=986); product-1: contact shadow at support y=1116; product-2: floating shadow on surface y=1145 (base y=1062); cta rebuilt in code as outlined button (Order now)",
+          "duration_ms": 493,
           "evidence_ids": [
             "out:product-0",
             "out:product-1",
@@ -916,8 +826,8 @@
           "step": "adfit_proof",
           "tool_or_model": "code:elementProof",
           "input_summary": "4 pasted elements",
-          "output_summary": "product-0:0/99896 (97% compared) product-1:0/111939 (97% compared) product-2:0/76817 (96% compared) logo:0/1833 (69% compared) feather outside core only",
-          "duration_ms": 153,
+          "output_summary": "product-0:0/101961 (98% compared) product-1:0/107696 (98% compared) product-2:0/73443 (96% compared) logo:0/6144 (81% compared) feather outside core only",
+          "duration_ms": 133,
           "evidence_ids": [
             "out:product-0",
             "out:product-1",
@@ -931,9 +841,9 @@
         {
           "step": "adfit_generate",
           "tool_or_model": "model:muse-image-1.0",
-          "input_summary": "protected plate 1080x1350 (retry)",
-          "output_summary": "wire bytes=3424271",
-          "duration_ms": 17808,
+          "input_summary": "protected plate 1080x1350 (retry) text-only",
+          "output_summary": "wire bytes=2304362",
+          "duration_ms": 28772,
           "evidence_ids": [
             "out:plate"
           ],
@@ -944,9 +854,9 @@
         {
           "step": "adfit_composite",
           "tool_or_model": "code:composite+chromium",
-          "input_summary": "plate + product-0@1.474x product-1@1.475x product-2@1.467x logo@0.617x + text(panel,headline,subtext) panel:rebuilt",
-          "output_summary": "1080x1350 product-0: grounded on the plate surface (shifted -20px to y=978); product-0: contact shadow at support y=978; product-1: contact shadow at support y=999; product-2: contact shadow at support y=992; cta rebuilt in code as outlined button (Order now)",
-          "duration_ms": 429,
+          "input_summary": "plate + product-0@1.520x product-1@1.456x product-2@1.461x logo@1.049x + text(panel,headline,subtext) panel:rebuilt",
+          "output_summary": "1080x1350 product-0: contact shadow at support y=986; product-1: contact shadow at support y=1116; product-2: contact shadow at support y=1062; cta rebuilt in code as outlined button (Order now)",
+          "duration_ms": 479,
           "evidence_ids": [
             "out:product-0",
             "out:product-1",
@@ -961,8 +871,8 @@
           "step": "adfit_proof",
           "tool_or_model": "code:elementProof",
           "input_summary": "4 pasted elements",
-          "output_summary": "product-0:0/99896 (97% compared) product-1:0/111939 (97% compared) product-2:0/76817 (96% compared) logo:0/1833 (69% compared) feather outside core only",
-          "duration_ms": 102,
+          "output_summary": "product-0:0/101961 (98% compared) product-1:0/107696 (98% compared) product-2:0/73443 (96% compared) logo:0/6144 (81% compared) feather outside core only",
+          "duration_ms": 128,
           "evidence_ids": [
             "out:product-0",
             "out:product-1",
@@ -974,163 +884,73 @@
           "seq": 9
         },
         {
-          "step": "adfit_repair",
-          "tool_or_model": "code:recompose",
-          "input_summary": "flag:product-2, move:panel",
-          "output_summary": "flagged: product-2: Lying can has a flat truncated left end and a black rectangular mask remnant hanging below its lower edge; needs re-extraction, cannot be fixed by move or scale; panel (would touch product-0): patch reverted, needs human review",
-          "duration_ms": 0,
-          "evidence_ids": [
-            "out:repair"
-          ],
-          "next_state": "done",
-          "cached": false,
-          "seq": 10
-        },
-        {
-          "step": "adfit_repair",
-          "tool_or_model": "code:recompose",
-          "input_summary": "retry: move:panel, scale:logo",
-          "output_summary": "applied: panel: move (0,95); logo: scale x1.3",
-          "duration_ms": 0,
-          "evidence_ids": [
-            "out:repair"
-          ],
-          "next_state": "done",
-          "cached": false,
-          "seq": 11
-        },
-        {
-          "step": "adfit_composite",
-          "tool_or_model": "code:composite+chromium",
-          "input_summary": "plate + product-0@1.474x product-1@1.475x product-2@1.467x logo@0.801x + text(panel,headline,subtext) panel:rebuilt",
-          "output_summary": "1080x1350 product-0: grounded on the plate surface (shifted -20px to y=978); product-0: contact shadow at support y=978; product-1: contact shadow at support y=999; product-2: contact shadow at support y=992; cta rebuilt in code as outlined button (Order now)",
-          "duration_ms": 492,
-          "evidence_ids": [
-            "out:product-0",
-            "out:product-1",
-            "out:product-2",
-            "out:logo"
-          ],
-          "next_state": "adfit_proof",
-          "cached": false,
-          "seq": 12
-        },
-        {
-          "step": "adfit_proof",
-          "tool_or_model": "code:elementProof",
-          "input_summary": "4 pasted elements",
-          "output_summary": "product-0:0/99896 (97% compared) product-1:0/111939 (97% compared) product-2:0/76817 (96% compared) logo:0/3323 (75% compared) feather outside core only",
-          "duration_ms": 102,
-          "evidence_ids": [
-            "out:product-0",
-            "out:product-1",
-            "out:product-2",
-            "out:logo"
-          ],
-          "next_state": "adfit_review",
-          "cached": false,
-          "seq": 13
-        },
-        {
           "step": "adfit_wonder_plan",
           "tool_or_model": "model:muse-wonder-1.0",
           "input_summary": "1 source x 3 sizes",
           "output_summary": "families: ig-feed-11=square_balanced ig-feed-45=portrait_stack ig-story-916=portrait_stack",
-          "duration_ms": 126013,
+          "duration_ms": 121807,
           "evidence_ids": [
             "out:plan"
           ],
           "next_state": "adfit_generate",
           "cached": true,
-          "seq": 14
+          "seq": 10
         },
         {
           "step": "adfit_plate_check",
           "tool_or_model": "model:muse-spark-1.3",
           "input_summary": "3 plates",
-          "output_summary": "dirty (regenerate once): ig-feed-11: foreground objects on surface: scattered coffee beans and multiple ice cubes | ig-feed-45: foreground objects on surface: scattered coffee beans and multiple ice cubes | ig-story-916: foreground objects on surface: scattered coffee beans and multiple ice cubes in lower frame",
-          "duration_ms": 24125,
+          "output_summary": "dirty (regenerate once): ig-feed-11: Not empty: multiple ice cubes and scattered coffee beans sitting on wood surface - foreground products/objects. | ig-feed-45: Not empty: multiple ice cubes and scattered coffee beans sitting on wood surface - foreground products/objects. | ig-story-916: Not empty: multiple ice cubes and scattered coffee beans sitting on wood surface - foreground products/objects.",
+          "duration_ms": 20988,
           "evidence_ids": [
             "out:plate"
           ],
           "next_state": "adfit_review",
           "cached": true,
-          "seq": 15
+          "seq": 11
         },
         {
           "step": "adfit_text_check",
           "tool_or_model": "model:muse-spark-1.3",
           "input_summary": "3 outputs with re-rendered text",
           "output_summary": "all exact",
-          "duration_ms": 35867,
+          "duration_ms": 43801,
           "evidence_ids": [
             "out:text"
           ],
           "next_state": "adfit_review",
           "cached": true,
-          "seq": 16
+          "seq": 12
         },
         {
           "step": "adfit_review",
           "tool_or_model": "model:muse-wonder-1.0",
           "input_summary": "source + 3 outputs + deterministic findings",
-          "output_summary": "7 defects: ig-feed-11/product-2, ig-feed-11/panel, ig-feed-45/product-2, ig-feed-45/panel, ig-story-916/product-2, ig-story-916/panel, ig-story-916/logo",
-          "duration_ms": 97500,
+          "output_summary": "0 defects",
+          "duration_ms": 94889,
           "evidence_ids": [
             "out:review"
           ],
           "next_state": "adfit_repair",
           "cached": true,
-          "seq": 17
-        },
-        {
-          "step": "adfit_repair",
-          "tool_or_model": "code:recompose",
-          "input_summary": "3 sizes with defects",
-          "output_summary": "2 recomposed from cached layers (before kept)",
-          "duration_ms": 0,
-          "evidence_ids": [
-            "out:repair"
-          ],
-          "next_state": "done",
-          "cached": true,
-          "seq": 18
-        },
-        {
-          "step": "adfit_review_retry",
-          "tool_or_model": "model:muse-wonder-1.0",
-          "input_summary": "second chance for 1 reverted size(s)",
-          "output_summary": "7 re-proposed defects: ig-feed-11/product-2, ig-feed-11/logo, ig-feed-45/panel, ig-feed-45/logo, ig-story-916/product-2, ig-story-916/products, ig-story-916/headline",
-          "duration_ms": 114109,
-          "evidence_ids": [
-            "out:review"
-          ],
-          "next_state": "adfit_repair",
-          "cached": true,
-          "seq": 19
+          "seq": 13
         }
       ],
       "error": null,
       "checks": {
         "protected_pixels": {
           "status": "passed",
-          "detail": "Protected core matches the resized source (75% compared)"
+          "detail": "Protected core matches the resized source (81% compared)"
         },
         "text": {
-          "status": "fixed",
-          "detail": "re-rendered text verified exact after repair"
+          "status": "passed",
+          "detail": "re-rendered text verified exact"
         },
         "layout_review": {
-          "status": "needs_review",
-          "detail": "Lying can has a flat truncated left end and a black rectangular mask remnant hanging below its lower edge; needs re-extraction, cannot be fixed by move or scale"
+          "status": "passed",
+          "detail": "deterministic + Wonder review passed"
         },
-        "repaired": {
-          "before": "fixtures/brands/northbean/demo/before-ig-feed-45.png",
-          "patches": [
-            "panel: move (0,95)",
-            "logo: scale x1.3"
-          ]
-        }
+        "repaired": null
       }
     },
     {
@@ -1138,9 +958,9 @@
       "sourceLabel": "source-en.png",
       "preset": "ig-story-916",
       "mode": "protected",
-      "status": "needs_review",
+      "status": "pass",
       "image": "ig-story-916.png",
-      "before": "before-ig-story-916.png",
+      "before": null,
       "plan": {
         "preset": "ig-story-916",
         "width": 1080,
@@ -1154,59 +974,59 @@
           "h": 1267
         },
         "logo": {
-          "x": 76,
-          "y": 280,
-          "w": 96,
-          "h": 43
+          "x": 86,
+          "y": 272,
+          "w": 194,
+          "h": 88
         },
         "products": [
           {
-            "x": 602,
-            "y": 549,
+            "x": 282,
+            "y": 648,
             "w": 225,
             "h": 522
           },
           {
-            "x": 210,
-            "y": 791,
+            "x": 565,
+            "y": 645,
             "w": 240,
             "h": 549
           },
           {
-            "x": 534,
-            "y": 1108,
-            "w": 362,
-            "h": 303
+            "x": 431,
+            "y": 1229,
+            "w": 217,
+            "h": 182
           }
         ],
         "headline": {
-          "x": 76,
-          "y": 348,
-          "w": 929,
-          "h": 92
+          "x": 86,
+          "y": 389,
+          "w": 907,
+          "h": 116
         },
         "subtext": {
-          "x": 76,
-          "y": 463,
-          "w": 648,
-          "h": 50
+          "x": 86,
+          "y": 532,
+          "w": 756,
+          "h": 58
         },
         "panel": {
-          "x": 76,
-          "y": 1440,
-          "w": 432,
-          "h": 77
+          "x": 86,
+          "y": 1438,
+          "w": 864,
+          "h": 88
         },
         "other_texts": [],
         "product_scales": [
           1.5,
           1.5,
-          1.429245283018868
+          0.8584905660377359
         ],
-        "logo_scale": 0.46601941747572817,
+        "logo_scale": 0.941747572815534,
         "notes": [
           "wonder: portrait_stack",
-          "wonder rationale: Story stack inside the safe area with tallest can at 55% of safe height in a two-column product cluster."
+          "wonder rationale: Story stack inside the safe area with headline above, standing cans over the lying can, and panel below on a shared left edge."
         ],
         "manifest": {
           "preset": "ig-story-916",
@@ -1225,15 +1045,15 @@
               "id": "product-0",
               "kind": "product",
               "box": {
-                "x": 592,
-                "y": 841,
-                "w": 246,
-                "h": 570
+                "x": 80,
+                "y": 662,
+                "w": 269,
+                "h": 589
               },
               "group": "products",
               "z": 20,
               "align": null,
-              "scale": 1.64,
+              "scale": 1.793333333333333,
               "source": "corrected",
               "srcBox": {
                 "x": 570,
@@ -1246,15 +1066,15 @@
               "id": "product-1",
               "kind": "product",
               "box": {
-                "x": 206,
-                "y": 841,
-                "w": 249,
-                "h": 570
+                "x": 328,
+                "y": 814,
+                "w": 275,
+                "h": 579
               },
               "group": "products",
               "z": 21,
               "align": null,
-              "scale": 1.55625,
+              "scale": 1.71875,
               "source": "corrected",
               "srcBox": {
                 "x": 725,
@@ -1267,15 +1087,15 @@
               "id": "product-2",
               "kind": "product",
               "box": {
-                "x": 534,
-                "y": 1108,
-                "w": 362,
-                "h": 303
+                "x": 563,
+                "y": 1016,
+                "w": 437,
+                "h": 333
               },
               "group": "products",
               "z": 22,
               "align": null,
-              "scale": 1.429245283018868,
+              "scale": 1.7288496652465006,
               "source": "corrected",
               "srcBox": {
                 "x": 872,
@@ -1288,10 +1108,10 @@
               "id": "panel",
               "kind": "panel",
               "box": {
-                "x": 76,
-                "y": 1459,
-                "w": 239,
-                "h": 77
+                "x": 86,
+                "y": 1465,
+                "w": 173,
+                "h": 61
               },
               "group": "offer",
               "z": 10,
@@ -1304,26 +1124,26 @@
               "id": "headline",
               "kind": "headline",
               "box": {
-                "x": 76,
-                "y": 367,
-                "w": 929,
-                "h": 92
+                "x": 86,
+                "y": 389,
+                "w": 907,
+                "h": 116
               },
               "group": "text",
               "z": 30,
               "align": "left",
               "scale": null,
-              "source": "corrected",
+              "source": "default",
               "srcBox": null
             },
             {
               "id": "subtext",
               "kind": "subtext",
               "box": {
-                "x": 76,
-                "y": 463,
-                "w": 648,
-                "h": 50
+                "x": 86,
+                "y": 532,
+                "w": 756,
+                "h": 58
               },
               "group": "text",
               "z": 31,
@@ -1336,16 +1156,16 @@
               "id": "logo",
               "kind": "logo",
               "box": {
-                "x": 65,
-                "y": 269,
-                "w": 182,
-                "h": 82
+                "x": 86,
+                "y": 272,
+                "w": 194,
+                "h": 88
               },
               "group": "logo",
               "z": 40,
               "align": null,
-              "scale": 0.883495145631068,
-              "source": "corrected",
+              "scale": 0.941747572815534,
+              "source": "default",
               "srcBox": {
                 "x": 77,
                 "y": 52,
@@ -1358,66 +1178,52 @@
           "corrections": [
             "product-0: grew toward 45% safe-height floor (246x570)",
             "product-1: grew toward 45% safe-height floor (249x570)",
-            "products: 2 aligned to the shared surface line y=1411",
+            "product-2: grew toward 45% safe-height floor (274x230)",
+            "products: 2 aligned to the shared surface line y=1435",
+            "products: group re-laid in source arrangement (overlapping products separated)",
             "text group: 2 boxes share the left edge",
+            "panel: snapped to the text column left edge",
+            "product-0: below size floor but blocked from growing — needs review",
+            "product-1: below size floor but blocked from growing — needs review",
             "product-2: below size floor but blocked from growing — needs review",
-            "product-0: still overlaps product-2 after shrinking — needs review",
-            "product-2: still overlaps product-0 after shrinking — needs review",
-            "products: 1 aligned to the shared surface line y=1411",
-            "text group: 2 boxes share the left edge",
-            "product-2: below size floor but blocked from growing — needs review",
-            "product-0: still overlaps product-2 after shrinking — needs review",
-            "product-2: still overlaps product-0 after shrinking — needs review",
-            "logo: clamped into safe area + 6% margin",
-            "text group: 2 boxes share the left edge",
-            "headline: pushed clear of logo",
-            "product-2: below size floor but blocked from growing — needs review",
-            "product-0: still overlaps product-2 after shrinking — needs review",
-            "product-2: still overlaps product-0 after shrinking — needs review",
-            "repair reverted for product-0 (would touch product-2) (separation < 16px)",
-            "products: 1 aligned to the shared surface line y=1411",
-            "text group: 2 boxes share the left edge",
-            "product-2: below size floor but blocked from growing — needs review",
-            "product-0: still overlaps product-2 after shrinking — needs review",
-            "product-2: still overlaps product-0 after shrinking — needs review",
-            "repair reverted for product-2 (would touch product-0) (separation < 16px)",
-            "repair reverted for headline (would touch logo) (separation < 16px)",
-            "repair reverted for subtext (would touch headline) (separation < 16px)"
+            "product-0: shrunk to clear overlap",
+            "product-1: shrunk to clear overlap",
+            "products: group kept its source overlap, re-laid in the free band (x1.60)"
           ],
-          "rationale": "Story stack inside the safe area with tallest can at 55% of safe height in a two-column product cluster."
+          "rationale": "Story stack inside the safe area with headline above, standing cans over the lying can, and panel below on a shared left edge."
         }
       },
       "proof": {
         "product-0": {
-          "scale": 1.64,
-          "core_differ": 53134,
-          "core_total": 123903,
-          "feather_total": 3332,
-          "coverage": 0.973812237198884,
-          "pass": false
+          "scale": 1.793333333333333,
+          "core_differ": 0,
+          "core_total": 142825,
+          "feather_total": 2824,
+          "coverage": 0.9806109207752886,
+          "pass": true
         },
         "product-1": {
-          "scale": 1.55625,
+          "scale": 1.71875,
           "core_differ": 0,
-          "core_total": 124733,
-          "feather_total": 3739,
-          "coverage": 0.9708963820910393,
+          "core_total": 150560,
+          "feather_total": 3124,
+          "coverage": 0.9796725748939382,
           "pass": true
         },
         "product-2": {
-          "scale": 1.429245283018868,
+          "scale": 1.7288496652465006,
           "core_differ": 0,
-          "core_total": 72828,
-          "feather_total": 3253,
-          "coverage": 0.9572429384471813,
+          "core_total": 103326,
+          "feather_total": 3185,
+          "coverage": 0.9700969852879046,
           "pass": true
         },
         "logo": {
-          "scale": 0.883495145631068,
+          "scale": 0.941747572815534,
           "core_differ": 0,
-          "core_total": 4237,
-          "feather_total": 1200,
-          "coverage": 0.7792900496597388,
+          "core_total": 4819,
+          "feather_total": 1290,
+          "coverage": 0.788836143394991,
           "pass": true
         }
       },
@@ -1425,14 +1231,14 @@
       "retries": 0,
       "modelCalls": 0,
       "imageCalls": 2,
-      "latencyMs": 30607,
+      "latencyMs": 23143,
       "trace": [
         {
           "step": "adfit_analyze",
           "tool_or_model": "model:muse-spark-1.3",
-          "input_summary": "source 1200x628",
-          "output_summary": "lang=en products=3 logo=yes headline=\"Cold brew, done right\" panel=transparent bg=photo coords=pixels",
-          "duration_ms": 16273,
+          "input_summary": "source 1200x628 digest 16a9a359e8cd",
+          "output_summary": "lang=en products=3 (layer cache hit)",
+          "duration_ms": 0,
           "evidence_ids": [
             "src:analysis"
           ],
@@ -1443,9 +1249,9 @@
         {
           "step": "adfit_masks",
           "tool_or_model": "model:sam-3.1",
-          "input_summary": "product-0[can] product-1[can] product-2[can] logo[logo]",
-          "output_summary": "ok: product-0,product-1,product-2,logo coverage: products 3/3; product-0 clipped to its box (removed 59% cross-coverage); product-0 instance-separated (removed 7301px detached); product-1 clipped to its box (removed 51% cross-coverage); product-1 instance-separated (removed 13269px detached); product-2 clipped to its box (removed 66% cross-coverage); product-2 sparse mask retried box-only (fill 0.68 → 0.74); product-2 contested pixels assigned to the nearer product (-10275px); product-1 contested pixels assigned to the nearer product (-109px)",
-          "duration_ms": 34007,
+          "input_summary": "digest 16a9a359e8cd",
+          "output_summary": "ok: product-0,product-1,product-2,logo (layer cache hit)",
+          "duration_ms": 0,
           "evidence_ids": [
             "src:product-0",
             "src:product-1",
@@ -1460,7 +1266,7 @@
           "step": "adfit_plan",
           "tool_or_model": "model:muse-wonder-1.0",
           "input_summary": "ig-story-916 protected no-template family=portrait_stack",
-          "output_summary": "wonder: portrait_stack; wonder rationale: Story stack inside the safe area with tallest can at 55% of safe height in a two-column product cluster. | corrections: product-0: grew toward 45% safe-height floor (246x570); product-1: grew toward 45% safe-height floor (249x570); products: 2 aligned to the shared surface line y=1411; text group: 2 boxes share the left edge; product-2: below size floor but blocked from growing — needs review; product-0: still overla",
+          "output_summary": "wonder: portrait_stack; wonder rationale: Story stack inside the safe area with headline above, standing cans over the lying can, and panel below on a shared left edge. | corrections: product-0: grew toward 45% safe-height floor (246x570); product-1: grew toward 45% safe-height floor (249x570); product-2: grew toward 45% safe-height floor (274x230); products: 2 aligned to the shared surface line y=1435; products: group re-laid in source arrangement (overlapping products separated",
           "duration_ms": 0,
           "evidence_ids": [
             "out:plan"
@@ -1473,8 +1279,8 @@
           "step": "adfit_generate",
           "tool_or_model": "model:muse-image-1.0",
           "input_summary": "protected plate 1080x1920",
-          "output_summary": "wire bytes=3041967",
-          "duration_ms": 29877,
+          "output_summary": "wire bytes=3472944",
+          "duration_ms": 22150,
           "evidence_ids": [
             "out:plate"
           ],
@@ -1485,9 +1291,9 @@
         {
           "step": "adfit_composite",
           "tool_or_model": "code:composite+chromium",
-          "input_summary": "plate + product-0@1.640x product-1@1.556x product-2@1.429x logo@0.466x + text(panel,headline,subtext) panel:rebuilt",
-          "output_summary": "1080x1920 product-0: contact shadow at support y=1410; product-1: grounded on the plate surface (shifted -19px to y=1391); product-1: contact shadow at support y=1391; product-2: contact shadow at support y=1403; cta rebuilt in code as outlined button (Order now)",
-          "duration_ms": 509,
+          "input_summary": "plate + product-0@1.793x product-1@1.719x product-2@1.729x logo@0.942x + text(panel,headline,subtext) panel:rebuilt",
+          "output_summary": "1080x1920 product-0: contact shadow at support y=1265; product-1: floating shadow on surface y=1548 (base y=1417); product-2: floating shadow on surface y=1493 (base y=1355); cta rebuilt in code as outlined button (Order now)",
+          "duration_ms": 561,
           "evidence_ids": [
             "out:product-0",
             "out:product-1",
@@ -1502,8 +1308,8 @@
           "step": "adfit_proof",
           "tool_or_model": "code:elementProof",
           "input_summary": "4 pasted elements",
-          "output_summary": "product-0:53134/123903 (97% compared) product-1:0/124733 (97% compared) product-2:0/72828 (96% compared) logo:0/865 (59% compared) feather outside core only",
-          "duration_ms": 118,
+          "output_summary": "product-0:0/142825 (98% compared) product-1:0/150560 (98% compared) product-2:0/103326 (97% compared) logo:0/4819 (79% compared) feather outside core only",
+          "duration_ms": 182,
           "evidence_ids": [
             "out:product-0",
             "out:product-1",
@@ -1517,9 +1323,9 @@
         {
           "step": "adfit_generate",
           "tool_or_model": "model:muse-image-1.0",
-          "input_summary": "protected plate 1080x1920 (retry)",
-          "output_summary": "wire bytes=2959836",
-          "duration_ms": 17717,
+          "input_summary": "protected plate 1080x1920 (retry) text-only",
+          "output_summary": "wire bytes=2314390",
+          "duration_ms": 12234,
           "evidence_ids": [
             "out:plate"
           ],
@@ -1530,9 +1336,9 @@
         {
           "step": "adfit_composite",
           "tool_or_model": "code:composite+chromium",
-          "input_summary": "plate + product-0@1.640x product-1@1.556x product-2@1.429x logo@0.466x + text(panel,headline,subtext) panel:rebuilt",
-          "output_summary": "1080x1920 product-0: contact shadow at support y=1410; product-1: contact shadow at support y=1391; product-2: contact shadow at support y=1403; cta rebuilt in code as outlined button (Order now)",
-          "duration_ms": 537,
+          "input_summary": "plate + product-0@1.793x product-1@1.719x product-2@1.729x logo@0.942x + text(panel,headline,subtext) panel:rebuilt",
+          "output_summary": "1080x1920 product-0: contact shadow at support y=1265; product-1: contact shadow at support y=1417; product-2: contact shadow at support y=1355; cta rebuilt in code as outlined button (Order now)",
+          "duration_ms": 573,
           "evidence_ids": [
             "out:product-0",
             "out:product-1",
@@ -1547,8 +1353,8 @@
           "step": "adfit_proof",
           "tool_or_model": "code:elementProof",
           "input_summary": "4 pasted elements",
-          "output_summary": "product-0:53134/123903 (97% compared) product-1:0/124733 (97% compared) product-2:0/72828 (96% compared) logo:0/865 (59% compared) feather outside core only",
-          "duration_ms": 113,
+          "output_summary": "product-0:0/142825 (98% compared) product-1:0/150560 (98% compared) product-2:0/103326 (97% compared) logo:0/4819 (79% compared) feather outside core only",
+          "duration_ms": 180,
           "evidence_ids": [
             "out:product-0",
             "out:product-1",
@@ -1560,196 +1366,73 @@
           "seq": 9
         },
         {
-          "step": "adfit_repair",
-          "tool_or_model": "code:recompose",
-          "input_summary": "flag:product-2, move:panel, scale:logo",
-          "output_summary": "applied: panel: move (-97,173); logo: scale x1.9",
-          "duration_ms": 0,
-          "evidence_ids": [
-            "out:repair"
-          ],
-          "next_state": "done",
-          "cached": false,
-          "seq": 10
-        },
-        {
-          "step": "adfit_composite",
-          "tool_or_model": "code:composite+chromium",
-          "input_summary": "plate + product-0@1.640x product-1@1.556x product-2@1.429x logo@0.883x + text(panel,headline,subtext) panel:rebuilt",
-          "output_summary": "1080x1920 product-0: contact shadow at support y=1410; product-1: contact shadow at support y=1410; product-2: contact shadow at support y=1403; cta rebuilt in code as outlined button (Order now)",
-          "duration_ms": 506,
-          "evidence_ids": [
-            "out:product-0",
-            "out:product-1",
-            "out:product-2",
-            "out:logo"
-          ],
-          "next_state": "adfit_proof",
-          "cached": false,
-          "seq": 11
-        },
-        {
-          "step": "adfit_proof",
-          "tool_or_model": "code:elementProof",
-          "input_summary": "4 pasted elements",
-          "output_summary": "product-0:53134/123903 (97% compared) product-1:0/124733 (97% compared) product-2:0/72828 (96% compared) logo:0/4237 (78% compared) feather outside core only",
-          "duration_ms": 117,
-          "evidence_ids": [
-            "out:product-0",
-            "out:product-1",
-            "out:product-2",
-            "out:logo"
-          ],
-          "next_state": "adfit_review",
-          "cached": false,
-          "seq": 12
-        },
-        {
-          "step": "adfit_repair",
-          "tool_or_model": "code:recompose",
-          "input_summary": "retry: flag:product-2, move:products, move:product-0, move:product-1, move:product-2, scale:headline, scale:subtext",
-          "output_summary": "applied: product-1: move (0,-154)",
-          "duration_ms": 0,
-          "evidence_ids": [
-            "out:repair"
-          ],
-          "next_state": "done",
-          "cached": false,
-          "seq": 13
-        },
-        {
-          "step": "adfit_composite",
-          "tool_or_model": "code:composite+chromium",
-          "input_summary": "plate + product-0@1.640x product-1@1.556x product-2@1.429x logo@0.883x + text(panel,headline,subtext) panel:rebuilt",
-          "output_summary": "1080x1920 product-0: contact shadow at support y=1410; product-1: contact shadow at support y=1410; product-2: contact shadow at support y=1403; cta rebuilt in code as outlined button (Order now)",
-          "duration_ms": 506,
-          "evidence_ids": [
-            "out:product-0",
-            "out:product-1",
-            "out:product-2",
-            "out:logo"
-          ],
-          "next_state": "adfit_proof",
-          "cached": false,
-          "seq": 14
-        },
-        {
-          "step": "adfit_proof",
-          "tool_or_model": "code:elementProof",
-          "input_summary": "4 pasted elements",
-          "output_summary": "product-0:53134/123903 (97% compared) product-1:0/124733 (97% compared) product-2:0/72828 (96% compared) logo:0/4237 (78% compared) feather outside core only",
-          "duration_ms": 115,
-          "evidence_ids": [
-            "out:product-0",
-            "out:product-1",
-            "out:product-2",
-            "out:logo"
-          ],
-          "next_state": "adfit_review",
-          "cached": false,
-          "seq": 15
-        },
-        {
           "step": "adfit_wonder_plan",
           "tool_or_model": "model:muse-wonder-1.0",
           "input_summary": "1 source x 3 sizes",
           "output_summary": "families: ig-feed-11=square_balanced ig-feed-45=portrait_stack ig-story-916=portrait_stack",
-          "duration_ms": 126013,
+          "duration_ms": 121807,
           "evidence_ids": [
             "out:plan"
           ],
           "next_state": "adfit_generate",
           "cached": true,
-          "seq": 16
+          "seq": 10
         },
         {
           "step": "adfit_plate_check",
           "tool_or_model": "model:muse-spark-1.3",
           "input_summary": "3 plates",
-          "output_summary": "dirty (regenerate once): ig-feed-11: foreground objects on surface: scattered coffee beans and multiple ice cubes | ig-feed-45: foreground objects on surface: scattered coffee beans and multiple ice cubes | ig-story-916: foreground objects on surface: scattered coffee beans and multiple ice cubes in lower frame",
-          "duration_ms": 24125,
+          "output_summary": "dirty (regenerate once): ig-feed-11: Not empty: multiple ice cubes and scattered coffee beans sitting on wood surface - foreground products/objects. | ig-feed-45: Not empty: multiple ice cubes and scattered coffee beans sitting on wood surface - foreground products/objects. | ig-story-916: Not empty: multiple ice cubes and scattered coffee beans sitting on wood surface - foreground products/objects.",
+          "duration_ms": 20988,
           "evidence_ids": [
             "out:plate"
           ],
           "next_state": "adfit_review",
           "cached": true,
-          "seq": 17
+          "seq": 11
         },
         {
           "step": "adfit_text_check",
           "tool_or_model": "model:muse-spark-1.3",
           "input_summary": "3 outputs with re-rendered text",
           "output_summary": "all exact",
-          "duration_ms": 35867,
+          "duration_ms": 43801,
           "evidence_ids": [
             "out:text"
           ],
           "next_state": "adfit_review",
           "cached": true,
-          "seq": 18
+          "seq": 12
         },
         {
           "step": "adfit_review",
           "tool_or_model": "model:muse-wonder-1.0",
           "input_summary": "source + 3 outputs + deterministic findings",
-          "output_summary": "7 defects: ig-feed-11/product-2, ig-feed-11/panel, ig-feed-45/product-2, ig-feed-45/panel, ig-story-916/product-2, ig-story-916/panel, ig-story-916/logo",
-          "duration_ms": 97500,
+          "output_summary": "0 defects",
+          "duration_ms": 94889,
           "evidence_ids": [
             "out:review"
           ],
           "next_state": "adfit_repair",
           "cached": true,
-          "seq": 19
-        },
-        {
-          "step": "adfit_repair",
-          "tool_or_model": "code:recompose",
-          "input_summary": "3 sizes with defects",
-          "output_summary": "2 recomposed from cached layers (before kept)",
-          "duration_ms": 0,
-          "evidence_ids": [
-            "out:repair"
-          ],
-          "next_state": "done",
-          "cached": true,
-          "seq": 20
-        },
-        {
-          "step": "adfit_review_retry",
-          "tool_or_model": "model:muse-wonder-1.0",
-          "input_summary": "second chance for 1 reverted size(s)",
-          "output_summary": "7 re-proposed defects: ig-feed-11/product-2, ig-feed-11/logo, ig-feed-45/panel, ig-feed-45/logo, ig-story-916/product-2, ig-story-916/products, ig-story-916/headline",
-          "duration_ms": 114109,
-          "evidence_ids": [
-            "out:review"
-          ],
-          "next_state": "adfit_repair",
-          "cached": true,
-          "seq": 21
+          "seq": 13
         }
       ],
       "error": null,
       "checks": {
         "protected_pixels": {
-          "status": "needs_review",
-          "detail": "core differs: product-0"
+          "status": "passed",
+          "detail": "Protected core matches the resized source (79% compared)"
         },
         "text": {
-          "status": "fixed",
-          "detail": "re-rendered text verified exact after repair"
+          "status": "passed",
+          "detail": "re-rendered text verified exact"
         },
         "layout_review": {
-          "status": "needs_review",
-          "detail": "deterministic: overlap, wonder_flag"
+          "status": "passed",
+          "detail": "deterministic + Wonder review passed"
         },
-        "repaired": {
-          "before": "fixtures/brands/northbean/demo/before-ig-story-916.png",
-          "patches": [
-            "panel: move (-97,173)",
-            "logo: scale x1.9",
-            "product-1: move (0,-154)"
-          ]
-        }
+        "repaired": null
       }
     }
   ]
