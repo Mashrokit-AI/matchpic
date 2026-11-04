@@ -58,7 +58,7 @@ function fakeSource(): PreparedSource {
     id: 's', digest: 'test-digest', bytes: Buffer.alloc(10), mimeType: 'image/png', width: 10, height: 10, analysis,
     products: [{ id: 'product-0', rgba, srcX: 0, srcY: 0, fallbackRect: false }],
     logo: { id: 'logo', rgba, srcX: 0, srcY: 0, fallbackRect: false },
-    panel: null, panelFill: null, panelComplex: false, masks: new Map(), maskLabels: {}, modelCalls: 0,
+    panel: null, panelFill: null, panelTextColor: null, panelComplex: false, masks: new Map(), maskLabels: {}, modelCalls: 0,
   };
 }
 

@@ -10,6 +10,7 @@ import type { WonderSizePlan } from '../models/wonder.js';
 import { clipProductMask, completeLogoMask, dropSmallComponents, fillMaskHoles, keepInstanceComponent, maskFillInBox, resolveMaskOverlaps, segmentTargets } from '../repair/masks.js';
 import { buildBoxPromptText, segment } from '../models/sam.js';
 import {
+  cleanProductCutBase,
   completeOccludedBase,
   debandFlatPlate,
   decodeRgba,
@@ -20,22 +21,25 @@ import {
   findSurfaceEdge,
   gapDrift,
   insetPanelCutToFill,
+  inpaintRectSmooth,
   pasteWithFeather,
   readableTextColor,
+  resolveGroupTextColors,
   textContrastRatio,
   roundPanelCorners,
   scaleRgbaNearest,
   trimFlatBorders,
   supportPoint,
+  trimLogoBottomStrip,
   type RgbaImage,
 } from '../repair/composite.js';
 import { artifactDigest, elementProof, type ArtifactDigest, type ElementProof } from '../repair/proof.js';
 import { ensureTextContrast, minLegiblePx, renderRebuiltPanel, renderTextBlock, rgbFromHex, RenderBlocker, type TextLine } from '../repair/render.js';
 import { maskBoundingBox, padBox, unionMasks, type PixelBox } from '../../shared/geometry.js';
 import { freeHeadlineSubtext, freeOtherTexts, isCtaPanel, planLayout, shiftBoxAbovePanel, tallProductCell } from './planner.js';
-import { panelComplexity, samplePanelColor, snapPanelRect } from './snap.js';
+import { panelComplexity, samplePanelColor, samplePanelTextColor, snapPanelRect, tightenPanelRect } from './snap.js';
 import { loadCachedLayers, sourceDigest, storeCachedLayers } from './cache.js';
-import { enforceManifest, familyForPreset, manifestFromPlan, templateZonesPx, type ResolvedLayoutManifest } from './manifest.js';
+import { enforceManifest, familyForPreset, manifestFromPlan, productSrcBoxesFor, sourceOrderFor, templateZonesPx, type ResolvedLayoutManifest } from './manifest.js';
 import { TraceCollector } from '../workflow/trace.js';
 
 export interface PipelineModels {
@@ -71,6 +75,8 @@ export interface PreparedSource {
   panel: ElementCut | null;
   /** Pixel-sampled panel fill (median of the panel bbox grid). */
   panelFill: string | null;
+  /** Pixel-sampled panel text colour (median of glyph pixels in the tightened box). */
+  panelTextColor: string | null;
   /** True when the panel carries photo texture/illustration (paste, don't rebuild). */
   panelComplex: boolean;
   /** Full-frame SAM masks by element id (for overlays + proof records). */
@@ -459,23 +465,43 @@ export async function assemblePreparedSource(
       if (!cut.fallbackRect) {
         const filled = completeOccludedBase(cut.rgba);
         if (filled > 0) maskLabels[cut.id] = `${maskLabels[cut.id] ?? ''} +base-complete(+${filled}px)`;
+        // Drop thin dark mask shards hanging below the product base
+        // (shadow/background SAM picked up under the NORTHBEAN cans).
+        const shards = cleanProductCutBase(cut.rgba);
+        if (shards > 0) maskLabels[cut.id] = `${maskLabels[cut.id] ?? ''} +base-shard-clean(-${shards}px)`;
       }
       products.push(cut);
     }
   });
   const logo = logoBox ? cutOrRect('logo', { ...logoBox }) : null;
-  // The opaque panel travels as pixels; snap Spark's box out to the panel's
-  // visual edges first so padding (and descenders) are never clipped.
-  const panel = analysis.panel?.opaque
-    ? cutFromRect(rgba, snapPanelRect(rgba, { ...analysis.panel.bbox }), 'panel')
-    : null;
-  // Pixel-sampled fill + complexity for the rebuild-or-paste decision.
+  if (logo && !logo.fallbackRect) {
+    // Drop a fragmented strip grabbed from a band printed under the badge
+    // (pastes as a ghost streak under the lockup in every size).
+    const strip = trimLogoBottomStrip(logo.rgba);
+    if (strip > 0) maskLabels['logo'] = `${maskLabels['logo'] ?? ''} +bottom-strip-trim(-${strip}px)`;
+  }
+  // The opaque panel travels as pixels. First tighten Spark's box to the
+  // button's own fill region (the connected fill-coloured region around the
+  // CTA): Spark/snap boxes can swallow the next text line (LUMA's "Free
+  // shipping" inside the "Shop now" cut), which then bakes a second line
+  // into the pasted panel. Snap out to the visual edges only when the
+  // tightener did not move the box.
+  let panel: ElementCut | null = null;
   let panelFill: string | null = null;
+  let panelTextColor: string | null = null;
   let panelComplex = false;
-  if (analysis.panel && panel) {
+  if (analysis.panel?.opaque) {
+    const sparkBox = { ...analysis.panel.bbox };
+    const fillGuess = samplePanelColor(rgba, sparkBox);
+    const tight = tightenPanelRect(rgba, sparkBox, fillGuess);
+    const tightened = tight.x !== sparkBox.x || tight.y !== sparkBox.y || tight.w !== sparkBox.w || tight.h !== sparkBox.h;
+    const panelBox = tightened ? tight : snapPanelRect(rgba, sparkBox);
+    panel = cutFromRect(rgba, panelBox, 'panel');
     const box = { x: panel.srcX, y: panel.srcY, w: panel.rgba.width, h: panel.rgba.height };
     panelFill = samplePanelColor(rgba, box);
+    panelTextColor = samplePanelTextColor(rgba, box, panelFill);
     panelComplex = panelComplexity(rgba, box).complex;
+    if (tightened) maskLabels['panel'] = `panel box tightened to the fill region (${panelBox.w}x${panelBox.h})`;
   }
   return {
     id: input.id,
@@ -489,6 +515,7 @@ export async function assemblePreparedSource(
     logo,
     panel,
     panelFill,
+    panelTextColor,
     panelComplex,
     masks,
     maskLabels,
@@ -847,7 +874,19 @@ export async function compositeProtected(
       try {
         const sampled = req.source.panelFill ?? a.panel.bg_color;
         const fill = rgbFromHex(sampled);
-        const textColor = isCta ? rgbFromHex(a.panel.text_color) : ensureTextContrast(fill, rgbFromHex(a.panel.text_color));
+        // Text colour from the button's own glyph pixels when the model's
+        // guess disagrees strongly with them (the sampled fill region is
+        // the button, so its non-fill pixels are the glyphs).
+        let baseText = rgbFromHex(a.panel.text_color);
+        if (req.source.panelTextColor) {
+          const sampledText = rgbFromHex(req.source.panelTextColor);
+          const disagree = Math.abs(sampledText.r - baseText.r) + Math.abs(sampledText.g - baseText.g) + Math.abs(sampledText.b - baseText.b);
+          if (disagree > 90) baseText = sampledText;
+        }
+        // A pixel-sampled text colour is the source design (white on the
+        // gold LUMA button): trust it over the generic 4.5 contrast swap,
+        // which recoloured it black. The swap stays for model-only colours.
+        const textColor = isCta || req.source.panelTextColor ? baseText : ensureTextContrast(fill, baseText);
         // A flat panel whose fill matches the plate vanishes (LUMA's cream
         // button on a cream plate): give it the text colour as an outline.
         const fillVsPlate = textContrastRatio(canvas, panelDst, fill).ratio;
@@ -883,7 +922,13 @@ export async function compositeProtected(
   const align = req.template?.spec.text_align ?? 'center';
   const nestedInPanel = (dst: PlanBox): boolean =>
     !!panelDst && dst.x < panelDst.x + panelDst.w && panelDst.x < dst.x + dst.w && dst.y < panelDst.y + panelDst.h && panelDst.y < dst.y + dst.h;
-  const renderOne = async (text: { text: string; bold: boolean; color: string } | null, dstIn: LayoutPlan['headline'], key: string): Promise<void> => {
+  interface TextJob {
+    key: string;
+    text: { text: string; bold: boolean; color: string };
+    dst: PlanBox;
+  }
+  const jobs: TextJob[] = [];
+  const addJob = (text: TextJob['text'] | null, dstIn: PlanBox | null, key: string): void => {
     if (!text || !dstIn) return;
     let dst = dstIn;
     if (nestedInPanel(dst)) {
@@ -897,33 +942,57 @@ export async function compositeProtected(
       notes.push(`${key}: moved above the panel to avoid collision`);
       dst = moved;
     }
-    // Contrast: re-rendered text must read against the plate under its
-    // box (the Hebrew yellow tagline on cream tiles scored ~1.2). The
-    // analysis carries no backing-shape field, so a failing source
-    // colour is swapped for black/white, whichever reads better.
-    const picked = readableTextColor(canvas, dst, rgbFromHex(text.color));
-    if (picked.changed) notes.push(`${key}: text colour swapped for contrast (${picked.ratio.toFixed(2)} vs plate)`);
-    const line: TextLine = { text: text.text, px: Math.max(24, Math.round(dst.h * 0.62)), weight: text.bold ? 700 : 400, color: picked.color };
+    jobs.push({ key, text, dst });
+  };
+  const free = freeHeadlineSubtext(a, plan);
+  const headlineDst = mBox('headline') ?? plan.headline;
+  const subtextDst = mBox('subtext') ?? plan.subtext;
+  if (headlineDst && free.headline && a.headline) addJob(a.headline, headlineDst, 'headline');
+  if (subtextDst && free.subtext && a.subtext) addJob(a.subtext, subtextDst, 'subtext');
+  const freeOthers = freeOtherTexts(a);
+  for (let i = 0; i < freeOthers.length; i++) {
+    const dst = mBox(`other-${i}`) ?? plan.other_texts[i];
+    const text = freeOthers[i];
+    if (dst && text) addJob(text, dst, `other-${i}`);
+  }
+  // ONE colour decision for the whole text group: a contrast swap is made
+  // for every line together (or not at all, with a glyph shadow instead) —
+  // never for one line alone (STRIDE's subtext flipping black under a
+  // white headline). Panel text is its own group and not included here.
+  const black = { r: 0, g: 0, b: 0 };
+  const white = { r: 255, g: 255, b: 255 };
+  const decision = resolveGroupTextColors(jobs.map((j) => {
+    const src = rgbFromHex(j.text.color);
+    return {
+      srcRatio: textContrastRatio(canvas, j.dst, src).ratio,
+      blackRatio: textContrastRatio(canvas, j.dst, black).ratio,
+      whiteRatio: textContrastRatio(canvas, j.dst, white).ratio,
+    };
+  }));
+  if (decision.mode === 'uniform') {
+    notes.push(`text group: one colour for all lines (contrast floor)`);
+  } else if (decision.mode === 'source-shadow') {
+    notes.push('text group: source colours kept with glyph shadow (no single colour reads for all lines)');
+  }
+  for (const job of jobs) {
+    const src = rgbFromHex(job.text.color);
+    const color = decision.mode === 'uniform' ? decision.color : src;
+    const line: TextLine = {
+      text: job.text.text,
+      px: Math.max(24, Math.round(job.dst.h * 0.62)),
+      weight: job.text.bold ? 700 : 400,
+      color,
+      shadow: decision.mode === 'source-shadow',
+    };
     // Free text shares the manifest's alignment edge (left LTR / right
     // RTL): rendering centered inside differently-sized boxes made every
     // line start at a different x (the ragged column Wonder then tried
     // to fix with clamped ±162px group moves). A template's explicit
     // center alignment is brand design and is kept.
     const textAlign = align === 'center' && !req.template ? 'start' : align;
-    const rendered = await renderTextBlock({ width: dst.w, height: dst.h, lines: [line], lang: a.language, align: textAlign });
-    textSizes[key] = rendered.sizes;
-    stampLayer(canvas, await decodeRgba(rendered.png), dst.x, dst.y);
-  };
-  const free = freeHeadlineSubtext(a, plan);
-  const headlineDst = mBox('headline') ?? plan.headline;
-  const subtextDst = mBox('subtext') ?? plan.subtext;
-  if (headlineDst && free.headline && a.headline) await renderOne(a.headline, headlineDst, 'headline');
-  if (subtextDst && free.subtext && a.subtext) await renderOne(a.subtext, subtextDst, 'subtext');
-  const freeOthers = freeOtherTexts(a);
-  for (let i = 0; i < freeOthers.length; i++) {
-    const dst = mBox(`other-${i}`) ?? plan.other_texts[i];
-    const text = freeOthers[i];
-    if (dst && text) await renderOne(text, dst, `other-${i}`);
+    const rendered = await renderTextBlock({ width: job.dst.w, height: job.dst.h, lines: [line], lang: a.language, align: textAlign });
+    textSizes[job.key] = rendered.sizes;
+    stampLayer(canvas, await decodeRgba(rendered.png), job.dst.x, job.dst.y);
   }
 
   // Frame overlay, last. Must match the preset exactly or it is skipped.
@@ -1211,8 +1280,12 @@ export function planForSize(req: OutputRequest, wonder: WonderSizePlan | null): 
           rationale: wonder.rationale,
           freeText: freeHeadlineSubtext(req.source.analysis, converted.plan),
           ctaPanel: isCtaPanel(req.source.analysis.panel),
+          panelSrcBox: req.source.analysis.panel?.bbox ?? null,
+          sourceWidth: req.source.width,
         }),
         direction: req.source.analysis.direction,
+        sourceOrder: sourceOrderFor(req.source.analysis),
+        productSrcBoxes: productSrcBoxesFor(req.source.analysis),
       });
       recordDroppedElements(manifest, req, 'wonder');
       stampSourceBoxes(manifest, req);
@@ -1228,8 +1301,12 @@ export function planForSize(req: OutputRequest, wonder: WonderSizePlan | null): 
       templateZones: zones,
       freeText: freeHeadlineSubtext(req.source.analysis, codePlan),
       ctaPanel: isCtaPanel(req.source.analysis.panel),
+      panelSrcBox: req.source.analysis.panel?.bbox ?? null,
+      sourceWidth: req.source.width,
     }),
     direction: req.source.analysis.direction,
+    sourceOrder: sourceOrderFor(req.source.analysis),
+    productSrcBoxes: productSrcBoxesFor(req.source.analysis),
   });
   recordDroppedElements(manifest, req, 'code');
   stampSourceBoxes(manifest, req);
@@ -1338,6 +1415,29 @@ export function logoOnBandPlaced(
   return logoOnBandFromNotes(notes, true);
 }
 
+/**
+ * Clean the plate region the logo/badge will cover (plus a strip below it):
+ * plate painters leave a dark ghost remnant of the source badge there,
+ * which peeks out under the pasted logo as a streak (Hebrew poster). A
+ * smooth bilinear inpaint of that region cannot streak on gradients/tiles.
+ */
+export async function inpaintLogoRegionOnPlate(platePng: Buffer, manifest: ResolvedLayoutManifest | null): Promise<Buffer> {
+  const logo = manifest?.elements.find((e) => e.kind === 'logo');
+  if (!logo) return platePng;
+  try {
+    const canvas = await decodeRgba(platePng);
+    inpaintRectSmooth(canvas, {
+      x: logo.box.x - 10,
+      y: logo.box.y - 8,
+      w: logo.box.w + 20,
+      h: logo.box.h + Math.round(logo.box.h * 0.45) + 8,
+    });
+    return await rgbaToPng(canvas);
+  } catch {
+    return platePng;
+  }
+}
+
 /** Generate one background plate (exact-sized) with ledger + trace. Shared by runOutput and the batch engine. */
 export async function generatePlate(
   models: PipelineModels,
@@ -1398,13 +1498,13 @@ export async function generatePlate(
           next_state: 'adfit_composite',
           cached: false,
         });
-        return await rgbaToPng(canvas);
+        return inpaintLogoRegionOnPlate(await rgbaToPng(canvas), manifest);
       }
     } catch {
       // An unreadable plate keeps flowing (the plate check fails closed).
     }
   }
-  return sized;
+  return inpaintLogoRegionOnPlate(sized, manifest);
 }
 
 /** Per-element proof with trace. Shared by runOutput and the batch engine. */

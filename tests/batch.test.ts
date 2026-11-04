@@ -30,7 +30,7 @@ function source(over: Partial<PreparedSource> = {}): PreparedSource {
     analysis: analysis(),
     products: [{ id: 'product-0', rgba, srcX: 0, srcY: 0, fallbackRect: false }],
     logo: { id: 'logo', rgba: logoRgba, srcX: 0, srcY: 0, fallbackRect: false },
-    panel: null, panelFill: '#ff5a3c', panelComplex: false,
+    panel: null, panelFill: '#ff5a3c', panelTextColor: null, panelComplex: false,
     masks: new Map(), maskLabels: {}, modelCalls: 0,
     ...over,
   };

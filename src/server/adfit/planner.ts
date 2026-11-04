@@ -123,9 +123,15 @@ export function ctaPanelSize(
   const wideCanvas = W / H > 1.3;
   const maxW = W * (wideCanvas ? 0.4 : 0.45);
   const maxH = H * (wideCanvas ? 0.2 : 0.09);
-  const s = Math.min(1, maxW / w, maxH / h);
-  w *= s;
-  h *= s;
+  // Width carries the source proportion (a button is sized by its label);
+  // the height cap only flattens, never shrinks the width with it — a
+  // uniform shrink made LUMA's 438x90 source button a 486x43 strip whose
+  // text fell below the legible floor.
+  if (w > maxW) {
+    h *= maxW / w;
+    w = maxW;
+  }
+  if (h > maxH) h = maxH;
   if (h < 44 && h < maxH) {
     const grow = Math.min(maxH / h, maxW / Math.max(1, w));
     if (grow > 1) {

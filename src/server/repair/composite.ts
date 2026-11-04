@@ -278,6 +278,288 @@ export function completeOccludedBase(cut: RgbaImage): number {
   return filled;
 }
 
+/**
+ * Clean a product cut's base: drop thin dark protrusions hanging below the
+ * product's base line (SAM picking up the shadow/background under a can).
+ * Two conservative passes, both leaving wide shapes untouched:
+ * 1. narrow columns whose bottom sticks well below the median bottom are
+ *    truncated at the base line when the protruding segment is dark;
+ * 2. a radius-2 morphological opening on the alpha in the bottom band
+ *    removes sparse spikes thinner than the kernel.
+ * Returns the number of alpha pixels removed. Mutates the cut.
+ */
+export function cleanProductCutBase(cut: RgbaImage): number {
+  const { width: W, height: H } = cut;
+  if (W < 8 || H < 8) return 0;
+  const alphaAt = (x: number, y: number): number => cut.data[(y * W + x) * 4 + 3] as number;
+  const colBottom = new Array<number>(W).fill(-1);
+  const bottoms: number[] = [];
+  for (let x = 0; x < W; x++) {
+    for (let y = H - 1; y >= 0; y--) {
+      if (alphaAt(x, y) > 0) { colBottom[x] = y; break; }
+    }
+    if (colBottom[x]! >= 0) bottoms.push(colBottom[x]!);
+  }
+  if (bottoms.length < 8) return 0;
+  const sorted = [...bottoms].sort((a, b) => a - b);
+  const median = sorted[Math.floor((sorted.length - 1) * 0.5)] as number;
+  const tol = Math.max(3, Math.round(H * 0.01));
+  let removed = 0;
+  // Pass 1: narrow dark protrusions below the base line.
+  const maxRun = Math.max(4, Math.round(W * 0.12));
+  let runStart = -1;
+  const flushRun = (end: number): void => {
+    if (runStart < 0) return;
+    if (end - runStart <= maxRun) {
+      for (let x = runStart; x < end; x++) {
+        // Dark segment only: a light rim/silver edge is product, not shard.
+        let lumSum = 0;
+        let n = 0;
+        for (let y = median + tol + 1; y <= (colBottom[x] as number); y++) {
+          const o = (y * W + x) * 4;
+          lumSum += 0.299 * (cut.data[o] as number) + 0.587 * (cut.data[o + 1] as number) + 0.114 * (cut.data[o + 2] as number);
+          n++;
+        }
+        if (n === 0 || lumSum / n >= 90) continue;
+        for (let y = median + tol + 1; y < H; y++) {
+          const o = (y * W + x) * 4 + 3;
+          if ((cut.data[o] as number) > 0) { cut.data[o] = 0; removed++; }
+        }
+      }
+    }
+    runStart = -1;
+  };
+  for (let x = 0; x <= W; x++) {
+    const deep = x < W && (colBottom[x] as number) > median + tol;
+    if (deep && runStart < 0) runStart = x;
+    if (!deep) flushRun(x);
+  }
+  // Pass 2: opening (erode then dilate, radius 2) on the bottom band.
+  const bandTop = Math.max(0, median - Math.round(H * 0.08));
+  const bin = new Uint8Array(W * H);
+  for (let i = 0; i < W * H; i++) bin[i] = (cut.data[i * 4 + 3] as number) > 0 ? 1 : 0;
+  const erode = (srcBin: Uint8Array, r: number): Uint8Array => {
+    const out = new Uint8Array(W * H);
+    for (let y = 0; y < H; y++) {
+      for (let x = 0; x < W; x++) {
+        let ok = 1;
+        for (let dy = -r; dy <= r && ok; dy++) {
+          for (let dx = -r; dx <= r && ok; dx++) {
+            const nx = x + dx;
+            const ny = y + dy;
+            if (nx < 0 || ny < 0 || nx >= W || ny >= H || !srcBin[ny * W + nx]) ok = 0;
+          }
+        }
+        out[y * W + x] = ok;
+      }
+    }
+    return out;
+  };
+  const dilate = (srcBin: Uint8Array, r: number): Uint8Array => {
+    const out = new Uint8Array(W * H);
+    for (let y = 0; y < H; y++) {
+      for (let x = 0; x < W; x++) {
+        let any = 0;
+        for (let dy = -r; dy <= r && !any; dy++) {
+          for (let dx = -r; dx <= r && !any; dx++) {
+            const nx = x + dx;
+            const ny = y + dy;
+            if (nx >= 0 && ny >= 0 && nx < W && ny < H && srcBin[ny * W + nx]) any = 1;
+          }
+        }
+        out[y * W + x] = any;
+      }
+    }
+    return out;
+  };
+  const opened = dilate(erode(bin, 2), 2);
+  for (let y = bandTop; y < H; y++) {
+    for (let x = 0; x < W; x++) {
+      const i = y * W + x;
+      if (bin[i] && !opened[i]) {
+        cut.data[i * 4 + 3] = 0;
+        removed++;
+      }
+    }
+  }
+  // Pass 3: fill legs. Base completion above (and in completeOccludedBase)
+  // extends torn columns to a flat line, copying ONE pixel's colour down
+  // the column. Where the real base curves away, those columns stick out
+  // below the product as uniform dark legs (the NORTHBEAN shards). A leg
+  // column carries a long run of identical RGB at its bottom; a group of
+  // them whose bottom sits well below the neighbouring non-leg columns
+  // is truncated to the shallower neighbour's base line.
+  {
+    const bot = new Array<number>(W).fill(-1);
+    const runLen = new Array<number>(W).fill(0);
+    for (let x = 0; x < W; x++) {
+      for (let y = H - 1; y >= 0; y--) {
+        if (alphaAt(x, y) > 0) { bot[x] = y; break; }
+      }
+      if (bot[x]! < 0) continue;
+      const o = (bot[x]! * W + x) * 4;
+      let run = 0;
+      for (let y = bot[x]!; y >= 0; y--) {
+        const p = (y * W + x) * 4;
+        if ((cut.data[p + 3] as number) > 0
+          && (cut.data[p] as number) === (cut.data[o] as number)
+          && (cut.data[p + 1] as number) === (cut.data[o + 1] as number)
+          && (cut.data[p + 2] as number) === (cut.data[o + 2] as number)) run++;
+        else break;
+      }
+      runLen[x] = run;
+    }
+    const isLeg = (x: number): boolean => (runLen[x] as number) >= 8 && (bot[x] as number) >= 0;
+    let gs = -1;
+    const flushGroup = (end: number): void => {
+      if (gs < 0) return;
+      const groupW = end - gs;
+      if (groupW <= Math.max(6, Math.round(W * 0.35))) {
+        const groupBottom = Math.max(...bot.slice(gs, end));
+        const neighBottom = (from: number, dir: -1 | 1): number | null => {
+          for (let x = from; x >= 0 && x < W; x += dir) {
+            if (!isLeg(x) && (bot[x] as number) >= 0) return bot[x] as number;
+            if (Math.abs(x - from) > 6) break;
+          }
+          return null;
+        };
+        const left = neighBottom(gs - 1, -1);
+        const right = neighBottom(end, 1);
+        const sides = [left, right].filter((v): v is number => v !== null);
+        if (sides.length > 0) {
+          const cutLine = Math.min(...sides);
+          if (groupBottom > cutLine + 6) {
+            for (let x = gs; x < end; x++) {
+              for (let y = cutLine + 3; y < H; y++) {
+                const o = (y * W + x) * 4 + 3;
+                if ((cut.data[o] as number) > 0) { cut.data[o] = 0; removed++; }
+              }
+            }
+          }
+        }
+      }
+      gs = -1;
+    };
+    for (let x = 0; x <= W; x++) {
+      const leg = x < W && isLeg(x);
+      if (leg && gs < 0) gs = x;
+      if (!leg) flushGroup(x);
+    }
+  }
+  return removed;
+}
+
+/**
+ * Inpaint a rect on a plate with a smooth bilinear patch from the rect's
+ * border ring (never a streak: every interior pixel blends the four edge
+ * tones by distance). Used under pasted logos/badges where plate painters
+ * leave a dark ghost remnant; the element stamped over it hides the patch
+ * centre and the feathered border hides the seam.
+ */
+export function inpaintRectSmooth(
+  canvas: RgbaImage,
+  box: { x: number; y: number; w: number; h: number },
+  featherPx = 10,
+): void {
+  const W = canvas.width;
+  const H = canvas.height;
+  const x0 = Math.max(1, Math.round(box.x));
+  const y0 = Math.max(1, Math.round(box.y));
+  const x1 = Math.min(W - 1, Math.round(box.x + box.w));
+  const y1 = Math.min(H - 1, Math.round(box.y + box.h));
+  if (x1 - x0 < 4 || y1 - y0 < 4) return;
+  const px = (x: number, y: number, c: number): number => canvas.data[(y * W + x) * 4 + c] as number;
+  for (let y = y0; y < y1; y++) {
+    for (let x = x0; x < x1; x++) {
+      const tx = (x - x0) / Math.max(1, x1 - 1 - x0);
+      const ty = (y - y0) / Math.max(1, y1 - 1 - y0);
+      const o = (y * W + x) * 4;
+      const edgeD = Math.min(x - x0, x1 - 1 - x, y - y0, y1 - 1 - y);
+      const a = Math.max(0, Math.min(1, edgeD / Math.max(1, featherPx)));
+      for (let c = 0; c < 3; c++) {
+        const horiz = px(x0 - 1, y, c) * (1 - tx) + px(x1, y, c) * tx;
+        const vert = px(x, y0 - 1, c) * (1 - ty) + px(x, y1, c) * ty;
+        const fill = horiz * 0.5 + vert * 0.5;
+        canvas.data[o + c] = Math.round(fill * a + (canvas.data[o + c] as number) * (1 - a));
+      }
+      canvas.data[o + 3] = 255;
+    }
+  }
+}
+
+/**
+ * Trim a fragmented strip hanging below a logo cut: contrast growth/SAM
+ * can grab the top sliver of a dark band printed under the badge (the
+ * Hebrew poster's black text band), which pastes as a ghost streak under
+ * the lockup. Signature: in the bottom quarter, a row whose opaque
+ * fraction drops sharply (but not to a clean gap — a real tagline sits
+ * below an EMPTY gap and is kept) with only fragmented rows beneath it.
+ * Returns removed alpha pixels. Mutates the cut.
+ */
+export function trimLogoBottomStrip(cut: RgbaImage): number {
+  const { width: W, height: H } = cut;
+  if (W < 16 || H < 24) return 0;
+  const rowFrac = new Array<number>(H).fill(0);
+  let total = 0;
+  for (let y = 0; y < H; y++) {
+    let n = 0;
+    for (let x = 0; x < W; x++) if ((cut.data[(y * W + x) * 4 + 3] as number) > 0) n++;
+    rowFrac[y] = n / W;
+    total += n;
+  }
+  if (total === 0) return 0;
+  let lastOpaque = H - 1;
+  while (lastOpaque > 0 && rowFrac[lastOpaque] === 0) lastOpaque--;
+  for (let y = Math.floor(H * 0.72); y < lastOpaque; y++) {
+    const f = rowFrac[y] as number;
+    if (f < 0.03 || f > 0.4) continue; // empty gap (tagline) or solid body
+    const prevMax = Math.max(...rowFrac.slice(Math.max(0, y - 6), y));
+    if (prevMax < 0.45 || f > prevMax * 0.55) continue;
+    const belowMax = Math.max(...rowFrac.slice(y, lastOpaque + 1));
+    const stripH = lastOpaque - y + 1;
+    if (belowMax > 0.45 || stripH > H * 0.18) continue;
+    let removed = 0;
+    for (let yy = Math.max(0, y - 2); yy < H; yy++) {
+      for (let x = 0; x < W; x++) {
+        const o = (yy * W + x) * 4 + 3;
+        if ((cut.data[o] as number) > 0) { cut.data[o] = 0; removed++; }
+      }
+    }
+    return removed;
+  }
+  return 0;
+}
+
+export type GroupColorDecision =
+  | { mode: 'source' }
+  | { mode: 'uniform'; color: { r: number; g: number; b: number } }
+  | { mode: 'source-shadow' };
+
+/**
+ * One colour decision for a whole free-text group: source colours when every
+ * line already reads; otherwise ONE colour (black/white) that works for
+ * every line; otherwise keep source colours and add a glyph shadow. A swap
+ * is never made for a single line alone (STRIDE's subtext flipping black
+ * while the headline stayed white).
+ */
+export function resolveGroupTextColors(
+  items: Array<{
+    srcRatio: number;
+    blackRatio: number;
+    whiteRatio: number;
+  }>,
+  floor = 2.0,
+): GroupColorDecision {
+  if (items.length === 0) return { mode: 'source' };
+  if (items.every((i) => i.srcRatio >= floor)) return { mode: 'source' };
+  const blackMin = Math.min(...items.map((i) => i.blackRatio));
+  const whiteMin = Math.min(...items.map((i) => i.whiteRatio));
+  if (Math.max(blackMin, whiteMin) >= floor) {
+    return { mode: 'uniform', color: blackMin >= whiteMin ? { r: 0, g: 0, b: 0 } : { r: 255, g: 255, b: 255 } };
+  }
+  return { mode: 'source-shadow' };
+}
+
 export interface SupportPoint {
   /** Canvas-space center-x of the product's lowest opaque row. */
   cx: number;

@@ -1,7 +1,8 @@
 import { z } from 'zod';
 import { minLegiblePx } from '../repair/render.js';
 import { presetSafeRect, type Preset } from '../../shared/presets.js';
-import { planBoxSchema, type LayoutPlan, type NormBox, type PlanBox, type TemplateSpec } from '../../shared/schemas.js';
+import { planBoxSchema, type LayoutPlan, type NormBox, type PlanBox, type SourceAnalysis, type TemplateSpec } from '../../shared/schemas.js';
+import { ctaPanelSize, freeOtherTexts } from './planner.js';
 
 /**
  * Resolved layout manifest: the single object every downstream reader uses.
@@ -101,6 +102,9 @@ export interface ManifestFromPlanInput {
   freeText?: { headline: boolean; subtext: boolean };
   /** True when the source panel is transparent (a CTA button, not a panel). */
   ctaPanel?: boolean;
+  /** Source-frame panel box + source width: CTA size comes from the source button. */
+  panelSrcBox?: PlanBox | null;
+  sourceWidth?: number;
 }
 
 /** Build the manifest element list from a layout plan (pre-enforcement). */
@@ -117,7 +121,21 @@ export function manifestFromPlan(input: ManifestFromPlanInput): ResolvedLayoutMa
   });
   if (plan.panel) {
     let panelBox = { ...plan.panel };
-    if (input.ctaPanel) {
+    if (input.ctaPanel && input.panelSrcBox && input.sourceWidth) {
+      // CTA size from the SOURCE button (source-relative), not from
+      // whatever thin/wide box a planner proposed: keep the proposed
+      // box's bottom anchor, take the source-derived size.
+      const size = ctaPanelSize(
+        { bbox: input.panelSrcBox, opaque: true, bg_color: '#000000', text_color: '#ffffff', texts: [] },
+        plan.width, plan.height, input.sourceWidth,
+      );
+      panelBox = {
+        x: Math.round(panelBox.x + panelBox.w / 2 - size.w / 2),
+        y: panelBox.y + panelBox.h - size.h,
+        w: size.w,
+        h: size.h,
+      };
+    } else if (input.ctaPanel) {
       // A CTA keeps button proportions on every planner path: bottom-
       // anchored, at most 45% of canvas width / 9% of canvas height in
       // square/portrait (40% / 20% on landscape), aspect preserved.
@@ -179,6 +197,26 @@ function nestedIn(inner: PlanBox, outer: PlanBox): boolean {
 export interface EnforceInput {
   manifest: ResolvedLayoutManifest;
   direction: 'rtl' | 'ltr';
+  /** Source-frame vertical order of text/panel/logo elements (restack input). */
+  sourceOrder?: Array<{ id: string; srcY: number; srcH: number }>;
+  /** Source-frame product boxes by product index (group arrangement input). */
+  productSrcBoxes?: Array<PlanBox | null>;
+}
+
+/** Source vertical order (logo, headline, subtext, others, panel) for the enforce restack. */
+export function sourceOrderFor(analysis: SourceAnalysis): Array<{ id: string; srcY: number; srcH: number }> {
+  const out: Array<{ id: string; srcY: number; srcH: number }> = [];
+  if (analysis.logo_bbox) out.push({ id: 'logo', srcY: analysis.logo_bbox.y, srcH: analysis.logo_bbox.h });
+  if (analysis.headline) out.push({ id: 'headline', srcY: analysis.headline.bbox.y, srcH: analysis.headline.bbox.h });
+  if (analysis.subtext) out.push({ id: 'subtext', srcY: analysis.subtext.bbox.y, srcH: analysis.subtext.bbox.h });
+  freeOtherTexts(analysis).forEach((t, i) => out.push({ id: `other-${i}`, srcY: t.bbox.y, srcH: t.bbox.h }));
+  if (analysis.panel) out.push({ id: 'panel', srcY: analysis.panel.bbox.y, srcH: analysis.panel.bbox.h });
+  return out;
+}
+
+/** Source product boxes by index for the enforce group relayout. */
+export function productSrcBoxesFor(analysis: SourceAnalysis): Array<PlanBox | null> {
+  return analysis.products.map((p) => ({ ...p.bbox }));
 }
 
 /**
@@ -255,38 +293,53 @@ export function enforceManifest(input: EnforceInput): ResolvedLayoutManifest {
   // around the grown products (text blocking growth stranded small products in
   // the top third while the subtext sat underneath them).
   const growProductsTowardFloor = (ignoreText: boolean, pass: string): void => {
-    // Multi-product square/portrait: grow the GROUP proportionally until
-    // the hero reaches the floor — growing every product to the floor
-    // individually would inflate secondary products (a lying can as tall
-    // as the upright cans) and break their source proportions.
-    if (!tall && !wide && pass === '') {
+    // Multi-product groups grow as ONE group toward the hero floor —
+    // growing every product individually would inflate secondary products
+    // (a lying can as tall as the upright cans) and break their source
+    // proportions, and per-product growth is blocked by the siblings
+    // themselves (NORTHBEAN fb-link shipped thumbnail cans). Positions
+    // scale around the group union origin, so the source arrangement
+    // (relative offsets, pair overlap fractions) is preserved exactly;
+    // the factor steps down until the group fits beside the text column.
+    if (!tall && pass === '') {
       const prods = m.elements.filter((e) => e.kind === 'product');
-      const targetH = Math.round(safe.h * 0.4);
+      const targetH = wide ? Math.round(H * 0.7) : Math.round(safe.h * 0.4);
       const hero = prods.reduce((a, b) => (b.box.h > a.box.h ? b : a), prods[0] as ManifestElement);
       if (prods.length > 1 && hero && hero.box.h < targetH) {
-        const factor = targetH / hero.box.h;
         const solids = m.elements.filter((o) => o.kind !== 'product' && o.kind !== 'shadow' && o.kind !== 'frame' && o.group !== 'text');
-        const grown = prods.map((e) => {
-          const nw = Math.round(e.box.w * factor);
-          const nh = Math.round(e.box.h * factor);
-          const cx = e.box.x + e.box.w / 2;
-          const cy = e.box.y + e.box.h / 2;
-          return clampInto({ x: Math.round(cx - nw / 2), y: Math.round(cy - nh / 2), w: nw, h: nh }, BB);
-        });
-        const fits = grown.every((g, i) => g.w === Math.round((prods[i] as ManifestElement).box.w * factor)
-          && !solids.some((o) => overlaps(g, o.box))
-          && !grown.some((o, j) => j !== i && overlaps(g, o)));
-        if (fits) {
+        const ux = Math.min(...prods.map((e) => e.box.x));
+        const uy = Math.min(...prods.map((e) => e.box.y));
+        const desired = targetH / hero.box.h;
+        let applied = false;
+        for (let step = 0; step < 14 && !applied; step++) {
+          const factor = desired * Math.pow(0.92, step);
+          if (factor <= 1.02) break;
+          const grown = prods.map((e) => ({
+            x: Math.round(ux + (e.box.x - ux) * factor),
+            y: Math.round(uy + (e.box.y - uy) * factor),
+            w: Math.max(8, Math.round(e.box.w * factor)),
+            h: Math.max(8, Math.round(e.box.h * factor)),
+          }));
+          // Shift (never resize) the scaled union into the bound.
+          const gx = Math.min(...grown.map((g) => g.x));
+          const gy = Math.min(...grown.map((g) => g.y));
+          const gx2 = Math.max(...grown.map((g) => g.x + g.w));
+          const gy2 = Math.max(...grown.map((g) => g.y + g.h));
+          if (gx2 - gx > BB.w || gy2 - gy > BB.h) continue;
+          const dx = gx < BB.x ? BB.x - gx : gx2 > BB.x + BB.w ? BB.x + BB.w - gx2 : 0;
+          const dy = gy < BB.y ? BB.y - gy : gy2 > BB.y + BB.h ? BB.y + BB.h - gy2 : 0;
+          const shifted = grown.map((g) => ({ ...g, x: g.x + dx, y: g.y + dy }));
+          if (shifted.some((g) => solids.some((o) => overlaps(g, o.box)))) continue;
           prods.forEach((e, i) => {
             const prevW = e.box.w;
-            e.box = grown[i] as PlanBox;
+            e.box = shifted[i] as PlanBox;
             if (e.scale !== null) e.scale = (e.scale * e.box.w) / Math.max(1, prevW);
             e.source = 'corrected';
           });
-          corrections.push(`products: group grew proportionally to 40% safe-height hero floor (${targetH}px)`);
-        } else {
-          corrections.push('products: below 40% safe-height floor but group growth blocked — needs review');
+          corrections.push(`products: group grew proportionally toward ${wide ? '70% canvas-height' : '40% safe-height'} hero floor (x${factor.toFixed(2)})`);
+          applied = true;
         }
+        if (!applied) corrections.push('products: below size floor but group growth blocked — needs review');
       }
     }
     const productCount = m.elements.filter((e) => e.kind === 'product').length;
@@ -357,6 +410,67 @@ export function enforceManifest(input: EnforceInput): ResolvedLayoutManifest {
     }
   }
 
+  // 2c. Multi-product group arrangement: products that did not overlap in
+  // the source must not overlap here (NORTHBEAN fb-link: two cans placed
+  // on the exact same box, reading as one blob). Re-lay the group inside
+  // its current union box with the source's relative offsets, scaled as
+  // one group.
+  {
+    const prods = m.elements.filter((e) => e.kind === 'product');
+    const srcBoxes = input.productSrcBoxes ?? [];
+    if (prods.length > 1 && prods.every((e) => srcBoxes[Number(e.id.split('-')[1])])) {
+      // Overlap is judged against the SOURCE pair: loose Spark boxes of
+      // neighbouring products overlap slightly by design, so only overlap
+      // well beyond the source pair's fraction counts as a new blob.
+      const pairFrac = (a: PlanBox, b: PlanBox): number =>
+        intersectArea(a, b) / Math.max(1, Math.min(a.w * a.h, b.w * b.h));
+      const srcFrac = (i: number, j: number): number => pairFrac(
+        srcBoxes[Number(prods[i]!.id.split('-')[1])] as PlanBox,
+        srcBoxes[Number(prods[j]!.id.split('-')[1])] as PlanBox,
+      );
+      const pairOverlap = prods.some((a, i) => prods.some((b, j) => j > i
+        && pairFrac(a.box, b.box) > srcFrac(i, j) + 0.05));
+      if (pairOverlap) {
+        const srcs = prods.map((e) => srcBoxes[Number(e.id.split('-')[1])] as PlanBox);
+        const srcU = {
+          x: Math.min(...srcs.map((b) => b.x)),
+          y: Math.min(...srcs.map((b) => b.y)),
+          w: Math.max(...srcs.map((b) => b.x + b.w)) - Math.min(...srcs.map((b) => b.x)),
+          h: Math.max(...srcs.map((b) => b.y + b.h)) - Math.min(...srcs.map((b) => b.y)),
+        };
+        const dstU = {
+          x: Math.min(...prods.map((e) => e.box.x)),
+          y: Math.min(...prods.map((e) => e.box.y)),
+          w: Math.max(...prods.map((e) => e.box.x + e.box.w)) - Math.min(...prods.map((e) => e.box.x)),
+          h: Math.max(...prods.map((e) => e.box.y + e.box.h)) - Math.min(...prods.map((e) => e.box.y)),
+        };
+        const scale = Math.min(dstU.w / Math.max(1, srcU.w), dstU.h / Math.max(1, srcU.h));
+        const placed = prods.map((e, i) => {
+          const s = srcs[i] as PlanBox;
+          return clampInto({
+            x: Math.round(dstU.x + (s.x - srcU.x) * scale),
+            y: Math.round(dstU.y + (s.y - srcU.y) * scale),
+            w: Math.max(8, Math.round(s.w * scale)),
+            h: Math.max(8, Math.round(s.h * scale)),
+          }, BB);
+        });
+        const stillOverlaps = placed.some((a, i) => placed.some((b, j) => j > i
+          && pairFrac(a, b) > srcFrac(i, j) + 0.05));
+        if (!stillOverlaps) {
+          prods.forEach((e, i) => {
+            const prevW = e.box.w;
+            e.box = placed[i] as PlanBox;
+            if (e.scale !== null) e.scale = (e.scale * e.box.w) / Math.max(1, prevW);
+            e.source = 'corrected';
+          });
+          corrections.push('products: group re-laid in source arrangement (overlapping products separated)');
+        } else {
+          corrections.push('products: overlap persists after group relayout — needs review');
+        }
+      }
+    }
+  }
+
   // 3. Text group: one shared alignment edge (right for RTL, left for LTR).
   const wantAlign = input.direction === 'rtl' ? 'right' : 'left';
   for (const e of m.elements) {
@@ -415,6 +529,23 @@ export function enforceManifest(input: EnforceInput): ResolvedLayoutManifest {
       }
     }
     corrections.push(`text group: ${texts.length} boxes share the ${wantAlign} edge`);
+    // The CTA panel belongs to the same text column: snap its alignment
+    // edge to the column too (NORTHBEAN's "Order now" sat right of the
+    // logo/headline/price column in every size).
+    const panelCol = m.elements.find((e) => e.kind === 'panel');
+    if (panelCol) {
+      const sameRow = texts.some((t) => t.box.y < panelCol.box.y + panelCol.box.h && panelCol.box.y < t.box.y + t.box.h);
+      if (!sameRow) {
+        const nx = wantAlign === 'right' ? edgeX - panelCol.box.w : edgeX;
+        const fitW = wantAlign === 'right' ? Math.min(panelCol.box.w, edgeX - BB.x) : Math.min(panelCol.box.w, BB.x + BB.w - nx);
+        const clamped = clampInto({ ...panelCol.box, x: nx, w: Math.max(8, fitW) }, BB);
+        if (clamped.x !== panelCol.box.x) {
+          panelCol.box = clamped;
+          panelCol.source = 'corrected';
+          corrections.push(`panel: snapped to the text column ${wantAlign} edge`);
+        }
+      }
+    }
   }
 
   // Headline dominance (tall/square): the source headline is the hero — a
@@ -745,6 +876,77 @@ export function enforceManifest(input: EnforceInput): ResolvedLayoutManifest {
             }
           }
           corrections.push('text group: restacked in reading order (headline → subtext → panel)');
+        }
+      }
+    }
+  }
+
+  // 6d. Source-order restack (runs last, after every planner/patch move):
+  // the text group — logo, headline, subtext, price/other texts, panel —
+  // keeps the SOURCE vertical order with consistent gaps, so no Wonder
+  // plan or patch can reorder or overlap it (LUMA story: logo under the
+  // headline). Members keep their current y-slots (permuted into source
+  // order), then a separation pass settles gaps; the logo only joins when
+  // it sits near the group, and any result colliding with a product is
+  // reverted (the reading_order/overlap checks then fail honestly).
+  {
+    const order = input.sourceOrder ?? [];
+    if (order.length >= 2) {
+      const byId = new Map(m.elements.map((e) => [e.id, e]));
+      const members = order
+        .filter((o) => byId.has(o.id))
+        .map((o) => ({ el: byId.get(o.id) as ManifestElement, srcY: o.srcY }));
+      const nonLogo = members.filter((mm) => mm.el.kind !== 'logo');
+      if (nonLogo.length >= 1) {
+        const spanTop = Math.min(...nonLogo.map((mm) => mm.el.box.y));
+        const spanBot = Math.max(...nonLogo.map((mm) => mm.el.box.y + mm.el.box.h));
+        const group = members.filter((mm) => mm.el.kind !== 'logo'
+          || (mm.el.box.y + mm.el.box.h >= spanTop - H * 0.2 && mm.el.box.y <= spanBot + H * 0.2));
+        if (group.length >= 2) {
+          const center = (e: ManifestElement): number => e.box.y + e.box.h / 2;
+          const actualOrder = [...group].sort((a, b) => center(a.el) - center(b.el)).map((mm) => mm.el.id);
+          const sourceOrderIds = [...group].sort((a, b) => a.srcY - b.srcY).map((mm) => mm.el.id);
+          const memberOverlap = group.some((a, i) => group.some((b, j) => j > i && overlaps(a.el.box, b.el.box)));
+          if (actualOrder.join(',') !== sourceOrderIds.join(',') || memberOverlap) {
+            const slots = [...group].sort((a, b) => a.el.box.y - b.el.box.y).map((mm) => mm.el.box.y);
+            const sorted = [...group].sort((a, b) => a.srcY - b.srcY);
+            const desired = new Map<string, PlanBox>();
+            sorted.forEach((mm, i) => desired.set(mm.el.id, { ...mm.el.box, y: slots[i] as number }));
+            // Separation pass in source order, then pull up on overflow.
+            for (let i = 1; i < sorted.length; i++) {
+              const prev = desired.get((sorted[i - 1] as (typeof sorted)[number]).el.id) as PlanBox;
+              const cur = desired.get((sorted[i] as (typeof sorted)[number]).el.id) as PlanBox;
+              if (cur.y < prev.y + prev.h + minGap) cur.y = prev.y + prev.h + minGap;
+            }
+            const lastEl = desired.get((sorted[sorted.length - 1] as (typeof sorted)[number]).el.id) as PlanBox;
+            const overflow = lastEl.y + lastEl.h - (BB.y + BB.h);
+            if (overflow > 0) {
+              for (const mm of sorted) {
+                const d = desired.get(mm.el.id) as PlanBox;
+                d.y -= overflow;
+              }
+            }
+            const solids = m.elements.filter((e) => !group.some((mm) => mm.el === e) && e.kind !== 'shadow' && e.kind !== 'frame');
+            const blocked = sorted.some((mm) => {
+              const d = desired.get(mm.el.id) as PlanBox;
+              const clamped = clampInto(d, BB);
+              return clamped.y !== d.y || clamped.x !== d.x || solids.some((s) => overlaps(clamped, s.box));
+            });
+            const stillOverlap = sorted.some((a, i) => sorted.some((b, j) => j > i
+              && overlaps(desired.get(a.el.id) as PlanBox, desired.get(b.el.id) as PlanBox)));
+            if (!blocked && !stillOverlap) {
+              for (const mm of sorted) {
+                const d = desired.get(mm.el.id) as PlanBox;
+                if (d.y !== mm.el.box.y) {
+                  mm.el.box = { ...mm.el.box, y: d.y };
+                  mm.el.source = 'corrected';
+                }
+              }
+              corrections.push('text group: restacked in source order after planning (logo → headline → subtext → price → panel → other)');
+            } else {
+              corrections.push('text group: source-order restack blocked by a product — needs review');
+            }
+          }
         }
       }
     }

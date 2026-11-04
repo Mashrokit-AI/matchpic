@@ -101,9 +101,14 @@ export function checkManifestGeometry(
   // Ragged column: non-same-row text boxes must share the alignment edge
   // in pixels (a shared `align` label with different box edges renders as
   // a ragged column — the defect Wonder kept "fixing" with ±162px moves).
+  // The CTA panel belongs to the text column too (its box edge counts).
   {
-    const stacked = texts.filter(
-      (t) => !texts.some((o) => o !== t && o.box.y < t.box.y + t.box.h && t.box.y < o.box.y + o.box.h),
+    const panelEl = manifest.elements.find((e) => e.kind === 'panel');
+    const columnTexts = panelEl && !texts.some((t) => t.id === panelEl.id)
+      ? [...texts, { ...panelEl, group: 'text' }]
+      : texts;
+    const stacked = columnTexts.filter(
+      (t) => !columnTexts.some((o) => o !== t && o.box.y < t.box.y + t.box.h && t.box.y < o.box.y + o.box.h),
     );
     if (stacked.length >= 2) {
       const align = stacked[0]!.align ?? 'left';
@@ -178,11 +183,16 @@ export function checkManifestGeometry(
   }
 
   // Hero size on tall canvases: a product photo under ~35% of the canvas
-  // height reads as a thumbnail in empty space (every s18 story).
+  // height reads as a thumbnail in empty space (every s18 story). Measure
+  // the product GROUP's union box — a pair of cans side by side fills the
+  // frame even when neither can alone clears the bar.
   if (tall && products.length > 0) {
     const hero = products.reduce((a, b) => (b.box.h > a.box.h ? b : a));
-    if (hero.box.h < Math.round(H * 0.35)) {
-      out.push({ code: 'hero_too_small', severity: 'fail', element: hero.id, detail: `${hero.id} is ${hero.box.h}px tall, below 35% of the ${H}px canvas height on 9:16` });
+    const unionTop = Math.min(...products.map((p) => p.box.y));
+    const unionBottom = Math.max(...products.map((p) => p.box.y + p.box.h));
+    const groupH = unionBottom - unionTop;
+    if (groupH < Math.round(H * 0.35)) {
+      out.push({ code: 'hero_too_small', severity: 'fail', element: hero.id, detail: `product group is ${groupH}px tall (union), below 35% of the ${H}px canvas height on 9:16` });
     }
     const headlineEl = manifest.elements.find((e) => e.id === 'headline');
     if (headlineEl && headlineEl.box.h < Math.round(H * 0.04)) {

@@ -359,6 +359,8 @@ export interface TextLine {
   px: number;
   weight: 400 | 700;
   color: Rgb;
+  /** Soft contrasting glyph shadow (used when no single colour reads for a whole text group). */
+  shadow?: boolean;
 }
 
 export interface TextBlockInput {
@@ -384,7 +386,9 @@ export function buildTextBlockHtml(input: TextBlockInput & { fontCss: string; si
   const lines = input.lines
     .map((l, i) => {
       const size = input.sizes[i] ?? l.px;
-      return `<p class="tline" style="font-size:${size}px;font-weight:${l.weight};color:${cssColor(l.color)}">${isolateNumerals(escapeHtml(l.text))}</p>`;
+      const lum = 0.299 * l.color.r + 0.587 * l.color.g + 0.114 * l.color.b;
+      const shadow = l.shadow ? `;text-shadow:0 1px 4px ${lum > 140 ? 'rgba(0,0,0,0.55)' : 'rgba(255,255,255,0.65)'}` : '';
+      return `<p class="tline" style="font-size:${size}px;font-weight:${l.weight};color:${cssColor(l.color)}${shadow}">${isolateNumerals(escapeHtml(l.text))}</p>`;
     })
     .join('');
   return `<!DOCTYPE html>

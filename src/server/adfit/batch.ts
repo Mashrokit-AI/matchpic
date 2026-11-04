@@ -3,7 +3,7 @@ import type { Preset } from '../../shared/presets.js';
 import type { LayoutPlan, PlanBox, SourceAnalysis } from '../../shared/schemas.js';
 import { TraceCollector, type TraceEventInput } from '../workflow/trace.js';
 import { checkManifestGeometry, type GeometryFinding } from './checks.js';
-import { enforceManifest, type CompositionFamily, type ResolvedLayoutManifest } from './manifest.js';
+import { enforceManifest, productSrcBoxesFor, sourceOrderFor, type CompositionFamily, type ResolvedLayoutManifest } from './manifest.js';
 import { freeOtherTexts } from './planner.js';
 import {
   assemblePreparedSource,
@@ -423,6 +423,8 @@ export function applyPatchesToManifest(
   manifest: ResolvedLayoutManifest,
   patches: WonderPatch[],
   direction: 'rtl' | 'ltr',
+  sourceOrder?: Array<{ id: string; srcY: number; srcH: number }>,
+  productSrcBoxes?: Array<PlanBox | null>,
 ): { manifest: ResolvedLayoutManifest; result: PatchApplication } {
   const clone: ResolvedLayoutManifest = JSON.parse(JSON.stringify(manifest)) as ResolvedLayoutManifest;
   const result: PatchApplication = { applied: [], needsPlate: false, flagged: [], unfixed: [], recompose: false };
@@ -513,7 +515,7 @@ export function applyPatchesToManifest(
       }
     }
     if (appliedHere.length === 0) continue;
-    enforceManifest({ manifest: clone, direction });
+    enforceManifest({ manifest: clone, direction, sourceOrder, productSrcBoxes });
     const violators = targets
       .map((t) => ({ id: t.id, hit: touchesSomething(t) }))
       .filter((v) => v.hit !== null);
@@ -1103,7 +1105,7 @@ export async function runProtectedBatch(opts: BatchOptions): Promise<BatchResult
     for (const o of good) {
       const patches = consolidatePatches(patchesBySize.get(o.preset.id) ?? [], (o.manifest?.elements ?? []).map((e) => ({ id: e.id, group: e.group })));
       if (patches.length === 0 || !o.png || !o.manifest || !o.plan) continue;
-      const { manifest: patched, result } = applyPatchesToManifest(o.manifest, patches, opts.source.analysis.direction);
+      const { manifest: patched, result } = applyPatchesToManifest(o.manifest, patches, opts.source.analysis.direction, sourceOrderFor(opts.source.analysis), productSrcBoxesFor(opts.source.analysis));
       o.trace.emit({
         step: 'adfit_repair',
         tool_or_model: result.needsPlate ? `model:${opts.models.image.model}` : 'code:recompose',
@@ -1249,7 +1251,7 @@ export async function runProtectedBatch(opts: BatchOptions): Promise<BatchResult
       for (const o of good) {
         const patches = consolidatePatches(retryPatches.get(o.preset.id) ?? [], (o.manifest?.elements ?? []).map((e) => ({ id: e.id, group: e.group })));
         if (patches.length === 0 || !o.png || !o.manifest || !o.plan) continue;
-        const { manifest: patched, result } = applyPatchesToManifest(o.manifest, patches, opts.source.analysis.direction);
+        const { manifest: patched, result } = applyPatchesToManifest(o.manifest, patches, opts.source.analysis.direction, sourceOrderFor(opts.source.analysis), productSrcBoxesFor(opts.source.analysis));
         // One plate regen per size across both passes: the retry honors a
         // first-time regen (a background defect found on second look is real),
         // and only declines when the first pass already regenned this size.
